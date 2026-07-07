@@ -1,123 +1,128 @@
 @echo off
-echo ============================================================
-echo FULL MF DATA REFRESH STARTED
-echo ============================================================
+setlocal
+
+title Mutual Fund ETL Pipeline
+color 0A
 
 cd /d "%~dp0"
 
-if exist "%~dp0venv\Scripts\python.exe" (
-    set PYTHON_EXE="%~dp0venv\Scripts\python.exe"
-    echo [INFO] Running in local virtual environment ^(venv^)...
-) else (
-    set PYTHON_EXE=python
-    echo [INFO] Running in global Python environment...
-)
+echo.
+echo ==============================================================================
+echo                    MUTUAL FUND ETL PIPELINE
+echo ==============================================================================
+echo.
+
+:: ==============================================================================
+:: STEP 1 - DOWNLOAD HDFC
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo STEP 1: HDFC Download + Refresh
-echo ============================================================
+echo ==============================================================================
+echo STEP 1 OF 7 - Downloading HDFC Portfolio Files
+echo ==============================================================================
+python 02_scripts\Download_Scripts\download_hdfc_monthly_files.py
+if errorlevel 1 goto :error
 
-%PYTHON_EXE% "%~dp002_scripts\download_hdfc_monthly_files.py"
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: HDFC download/refresh failed.
-    pause
-    exit /b %ERRORLEVEL%
-)
+:: ==============================================================================
+:: STEP 2 - DOWNLOAD ICICI
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo STEP 2: ICICI Clean All Funds
-echo ============================================================
+echo ==============================================================================
+echo STEP 2 OF 7 - Downloading ICICI Portfolio Files
+echo ==============================================================================
+python 02_scripts\Download_Scripts\download_icici_monthly_zip.py
+if errorlevel 1 goto :error
 
-%PYTHON_EXE% "%~dp002_scripts\clean_icici_all_funds.py"
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: ICICI cleaning failed.
-    pause
-    exit /b %ERRORLEVEL%
-)
+:: ==============================================================================
+:: STEP 3 - DOWNLOAD SBI
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo STEP 3: ICICI Quantity Matrix
-echo ============================================================
+echo ==============================================================================
+echo STEP 3 OF 7 - Downloading SBI Portfolio Files
+echo ==============================================================================
+python 02_scripts\Download_Scripts\download_sbi_monthly_files.py
+if errorlevel 1 goto :error
 
-%PYTHON_EXE% "%~dp002_scripts\create_icici_matrix.py"
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: ICICI matrix creation failed.
-    pause
-    exit /b %ERRORLEVEL%
-)
+:: ==============================================================================
+:: STEP 4 - CLEAN HDFC
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo STEP 4: Combined HDFC + ICICI Quantity Matrix
-echo ============================================================
+echo ==============================================================================
+echo STEP 4 OF 7 - Cleaning HDFC Data
+echo ==============================================================================
+python 02_scripts\Cleaning_Scripts\clean_hdfc_all_funds.py
+if errorlevel 1 goto :error
 
-%PYTHON_EXE% "%~dp002_scripts\create_combined_mf_quantity_matrix.py"
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Combined matrix creation failed.
-    pause
-    exit /b %ERRORLEVEL%
-)
+:: ==============================================================================
+:: STEP 5 - CLEAN ICICI
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo STEP 5: Power BI Long Quantity Table
-echo ============================================================
+echo ==============================================================================
+echo STEP 5 OF 7 - Cleaning ICICI Data
+echo ==============================================================================
+python 02_scripts\Cleaning_Scripts\clean_icici_all_funds.py
+if errorlevel 1 goto :error
 
-%PYTHON_EXE% "%~dp002_scripts\create_powerbi_long_quantity_table.py"
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Power BI long table creation failed.
-    pause
-    exit /b %ERRORLEVEL%
-)
+:: ==============================================================================
+:: STEP 6 - CLEAN SBI
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo STEP 6: Upload to Supabase
-echo ============================================================
+echo ==============================================================================
+echo STEP 6 OF 7 - Cleaning SBI Data
+echo ==============================================================================
+python 02_scripts\Cleaning_Scripts\clean_sbi_all_funds.py
+if errorlevel 1 goto :error
 
-%PYTHON_EXE% "%~dp002_scripts\upload_to_supabase.py"
-
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Supabase upload failed.
-    pause
-    exit /b %ERRORLEVEL%
-)
+:: ==============================================================================
+:: STEP 7 - BUILD POWER BI DATASET
+:: ==============================================================================
 
 echo.
-echo ============================================================
-echo FULL MF DATA REFRESH COMPLETED SUCCESSFULLY
-echo ============================================================
+echo ==============================================================================
+echo STEP 7 OF 7 - Building Power BI Dataset
+echo ==============================================================================
+python 02_scripts\build_powerbi_dataset.py
+if errorlevel 1 goto :error
+
+:: ==============================================================================
+:: SUCCESS
+:: ==============================================================================
 
 echo.
-echo Final outputs:
-echo HDFC Matrix:
-echo %~dp004_matrix_output\HDFC\matrix_hdfc_funds_quantity.xlsx
-
+echo ==============================================================================
+echo                     ETL PIPELINE COMPLETED SUCCESSFULLY
+echo ==============================================================================
 echo.
-echo ICICI Matrix:
-echo %~dp004_matrix_output\ICICI\matrix_icici_funds_quantity.xlsx
-
+echo Outputs Generated:
 echo.
-echo Combined Matrix:
-echo %~dp005_matrix\MASTER\matrix_all_amc_funds_quantity.xlsx
-
+echo   - Security Master
+echo   - Power BI Dataset
 echo.
-echo Power BI Long Table:
-echo %~dp005_matrix\MASTER\matrix_all_amc_funds_quantity_long.xlsx
-
+echo You can now refresh your Power BI report.
 echo.
+
 pause
+exit /b 0
+
+:: ==============================================================================
+:: ERROR HANDLER
+:: ==============================================================================
+
+:error
+
+echo.
+echo ==============================================================================
+echo                           PIPELINE FAILED
+echo ==============================================================================
+echo.
+echo One of the scripts returned an error.
+echo Please scroll up to identify the failing step.
+echo.
+
+pause
+exit /b 1

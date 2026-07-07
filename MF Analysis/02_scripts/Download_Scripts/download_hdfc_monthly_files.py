@@ -1,7 +1,6 @@
 import os
 import json
 import re
-import subprocess
 from urllib.parse import unquote
 from pathlib import Path
 from wsgiref import headers
@@ -15,8 +14,7 @@ from datetime import datetime
 
 HDFC_MONTHLY_URL = "https://www.hdfcfund.com/statutory-disclosure/portfolio/monthly-portfolio"
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BAT_FILE = str(PROJECT_ROOT / "run_hdfc_refresh.bat")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Set the month-end date you want to download
 TARGET_DATE_TEXT = "31 May 2026"
@@ -269,13 +267,7 @@ def main():
     print(f"Skipped existing: {skipped}")
 
     print()
-    confirm_refresh = input("Run HDFC matrix refresh BAT now? Type YES to continue: ")
-
-    if confirm_refresh.strip().upper() == "YES":
-        subprocess.run(BAT_FILE, shell=True, check=True)
-        print("HDFC matrix refreshed successfully.")
-    else:
-        print("BAT refresh skipped.")
+    print("HDFC download completed. Run clean_hdfc_all_funds.py next.")
 
 
 if __name__ == "__main__":

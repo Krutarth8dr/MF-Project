@@ -8,7 +8,7 @@ import re
 # SETTINGS
 # ==============================================================================
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DOWNLOAD_FOLDER = PROJECT_ROOT / "01_raw_files" / "SBI"
 DOWNLOAD_FOLDER.mkdir(parents=True, exist_ok=True)

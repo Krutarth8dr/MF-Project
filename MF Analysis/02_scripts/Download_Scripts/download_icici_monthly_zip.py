@@ -1,8 +1,6 @@
 import os
 import zipfile
-import subprocess
 from urllib.parse import quote
-import sys
 from pathlib import Path
 
 import requests
@@ -14,19 +12,14 @@ import requests
 
 BASE_DOWNLOAD_URL = "https://www.icicipruamc.com"
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_ICICI_FOLDER = str(PROJECT_ROOT / "01_raw_files" / "ICICI")
-
-PYTHON_EXE = sys.executable
-
-CLEAN_SCRIPT = str(PROJECT_ROOT / "02_scripts" / "clean_icici_all_funds.py")
-MATRIX_SCRIPT = str(PROJECT_ROOT / "02_scripts" / "create_icici_matrix.py")
 
 # Change this every month
 TARGET_MONTH = "April"
 TARGET_YEAR = 2026
 
-# If folder already exists, skip download/extract and directly refresh matrix
+# If folder already exists, skip download/extract.
 SKIP_IF_ALREADY_EXTRACTED = True
 
 
@@ -135,17 +128,6 @@ def extract_zip(zip_path, extract_folder):
     print("Extraction completed.")
 
 
-def run_script(script_path, description):
-    if not os.path.exists(script_path):
-        raise FileNotFoundError(f"Script not found: {script_path}")
-
-    print()
-    print(description)
-    print("-" * 90)
-
-    subprocess.run([PYTHON_EXE, script_path], check=True)
-
-
 # =========================
 # MAIN PROCESS
 # =========================
@@ -165,7 +147,7 @@ def main():
     zip_path = os.path.join(RAW_ICICI_FOLDER, zip_filename)
 
     print("=" * 90)
-    print("ICICI Monthly Portfolio Download + Matrix Refresh")
+    print("ICICI Monthly Portfolio Download + Extraction")
     print("=" * 90)
     print("Target Month :", TARGET_MONTH)
     print("Target Year  :", TARGET_YEAR)
@@ -195,7 +177,7 @@ def main():
 
             if not download_success:
                 print()
-                print("Download failed. Cleaning/matrix refresh stopped.")
+                print("Download failed. Stopping.")
                 print()
                 print("Manual workaround:")
                 print("1. Download ZIP manually from ICICI website.")
@@ -205,20 +187,10 @@ def main():
                 return
 
             extract_zip(zip_path, extract_folder)
-
-    run_script(
-        CLEAN_SCRIPT,
-        "Step 1: Cleaning ICICI all funds"
-    )
-
-    run_script(
-        MATRIX_SCRIPT,
-        "Step 2: Creating ICICI final matrix"
-    )
-
     print()
     print("=" * 90)
-    print("ICICI download, extraction, cleaning, and matrix refresh completed successfully.")
+    print("ICICI download/extraction completed successfully.")
+    print("Run clean_icici_all_funds.py next.")
     print("=" * 90)
 
 
