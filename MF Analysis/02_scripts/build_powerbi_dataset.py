@@ -3,10 +3,6 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import load_workbook
 
-# ==============================================================================
-# SETTINGS
-# ==============================================================================
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 CLEAN_DATA_FOLDER = PROJECT_ROOT / "03_clean_data"
@@ -41,11 +37,6 @@ FINAL_COLUMNS = [
     "Quantity",
 ]
 
-# ==============================================================================
-# FORMAT HELPERS
-# ==============================================================================
-
-
 def format_month_text(date_series):
     """
     Converts dates to 'Jan-2025' text.
@@ -56,7 +47,6 @@ def format_month_text(date_series):
     month_text = pd.to_datetime(date_series, errors="coerce").dt.strftime("%b-%Y")
 
     return month_text.str.replace("-", "\u2011", regex=False).astype("string")
-
 
 def force_powerbi_text_columns(output_file):
     """
@@ -96,12 +86,6 @@ def force_powerbi_text_columns(output_file):
     workbook.save(output_file)
     workbook.close()
 
-
-# ==============================================================================
-# LOAD CLEANED DATA
-# ==============================================================================
-
-
 def load_all_clean_data():
     """
     Reads every *_All_Funds_Cleaned.xlsx file
@@ -114,9 +98,6 @@ def load_all_clean_data():
     print("=" * 90)
 
     cleaned_files = sorted(CLEAN_DATA_FOLDER.rglob("*_All_Funds_Cleaned.xlsx"))
-
-    if not cleaned_files:
-        raise FileNotFoundError(f"No cleaned files found in:\n{CLEAN_DATA_FOLDER}")
 
     frames = []
     total_rows = 0
@@ -171,12 +152,6 @@ def load_all_clean_data():
         frames,
         ignore_index=True,
     )
-
-
-# ==============================================================================
-# CREATE SECURITY MASTER
-# ==============================================================================
-
 
 def create_security_master(clean_df):
     """
@@ -233,12 +208,6 @@ def create_security_master(clean_df):
     print(f"Output : {SECURITY_MASTER_FILE}")
 
     return security_master
-
-
-# ==============================================================================
-# CREATE POWER BI DATASET
-# ==============================================================================
-
 
 def create_powerbi_dataset(clean_df):
     """
@@ -334,10 +303,6 @@ def create_powerbi_dataset(clean_df):
     print(f"Output : {POWERBI_OUTPUT_FILE}")
 
     return powerbi_df
-# ==============================================================================
-# MAIN
-# ==============================================================================
-
 
 def main():
 
@@ -378,11 +343,6 @@ def main():
     print("------------------------------")
     print(SECURITY_MASTER_FILE)
     print(POWERBI_OUTPUT_FILE)
-
-
-# ==============================================================================
-# RUN
-# ==============================================================================
 
 if __name__ == "__main__":
     main()

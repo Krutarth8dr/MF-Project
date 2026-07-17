@@ -15,29 +15,30 @@ OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_FILE = OUTPUT_FOLDER / "SBI_All_Funds_Cleaned.xlsx"
 
+CANONICAL_WORKBOOK = (
+    RAW_FOLDER / "all-schemes-monthly-portfolio---as-on-31st-may-2026.xlsx"
+)
+
 TARGET_SHEETS = [
     "SLMF",
+    "SLTEF",
     "SMGLF",
+    "SEHF",
+    "SNIF",
     "SFEF",
     "SFLEXI",
     "SMIDCAP",
     "SBLUECHIP",
+    "SAOF",
+    "SIF",
     "SSCF",
     "SMCF",
+    "SESF",
+    "SQF",
+    "SQLF",
 ]
 
-AMC_NAME = "SBI Mutual Fund"
-
-FUND_NAME_REPLACEMENTS = {
-    "SBI Blue Chip Fund": "SBI Large Cap Fund",
-    "SBI Focused Equity Fund": "SBI Focused Fund",
-    "SBI Magnum Global Fund": "SBI MNC Fund",
-    "SBI Magnum Midcap Fund": "SBI Midcap Fund",
-}
-
-# ==============================================================================
-# HELPER FUNCTIONS
-# ==============================================================================
+AMC_NAME = "SBI MF"
 
 
 def extract_fund_name(df):
@@ -58,16 +59,21 @@ def extract_portfolio_date(df):
     """
     Row 3
     Column D contains the portfolio date.
+
+    Normalized to the 1st of the month (e.g. 31-May-2026 -> 1-May-2026) so
+    that every AMC's cleaned output represents each month with a single,
+    consistent date -- this is the convention followed across all cleaning
+    scripts (SBI, Kotak, ABSL, Axis, ...).
     """
 
     value = df.iloc[3, 3]
 
-    return pd.to_datetime(value, errors="coerce")
+    parsed = pd.to_datetime(value, errors="coerce")
 
+    if pd.isna(parsed):
+        return parsed
 
-def normalize_fund_name(fund_name):
-    fund_name = str(fund_name).strip()
-    return FUND_NAME_REPLACEMENTS.get(fund_name, fund_name)
+    return parsed.replace(day=1)
 
 
 def get_month_key(portfolio_date):
@@ -80,19 +86,26 @@ def get_month_key(portfolio_date):
 
 
 def get_processed_keys(existing_df):
+
     existing_df = existing_df.copy()
-    existing_df["FundName"] = existing_df["FundName"].apply(normalize_fund_name)
+
     existing_df["Portfolio_Date"] = pd.to_datetime(
         existing_df["Portfolio_Date"],
         errors="coerce",
     )
+
     existing_df["Month_Key"] = existing_df["Portfolio_Date"].apply(get_month_key)
 
     existing_df = existing_df[
-        existing_df["FundName"].notna() & existing_df["Month_Key"].notna()
+        existing_df["Fund_Name"].notna() & existing_df["Month_Key"].notna()
     ]
 
-    return set(zip(existing_df["FundName"], existing_df["Month_Key"]))
+    return set(
+        zip(
+            existing_df["Fund_Name"],
+            existing_df["Month_Key"],
+        )
+    )
 
 
 def is_valid_isin(isin):
@@ -108,14 +121,57 @@ def is_valid_isin(isin):
     return isin.startswith("INE")
 
 
-# ==============================================================================
-# CLEAN A SINGLE SHEET
-# ==============================================================================
+def load_canonical_fund_names():
+    """
+    Loads the official SBI fund names from the canonical workbook.
+    """
+
+    print("=" * 90)
+    print("Loading Canonical Fund Names")
+    print("=" * 90)
+
+    excel = pd.ExcelFile(
+        CANONICAL_WORKBOOK,
+        engine="openpyxl",
+    )
+
+    fund_name_mapping = {}
+
+    for sheet in TARGET_SHEETS:
+
+        if sheet not in excel.sheet_names:
+            print(f"{sheet:<12} -> NOT FOUND")
+            continue
+
+        preview = pd.read_excel(
+            excel,
+            sheet_name=sheet,
+            header=None,
+            nrows=10,
+        )
+
+        fund_name = str(preview.iloc[2, 3]).strip()
+
+        if ":" in fund_name:
+            fund_name = fund_name.split(":", 1)[1].strip()
+
+        fund_name_mapping[sheet] = fund_name
+
+        print(f"{sheet:<12} -> {fund_name}")
+
+    print()
+
+    return fund_name_mapping
 
 
-def clean_sheet(df, sheet_name):
+STOP_MARKERS = [
+    "TOTAL",
+    "FOREIGN SECURITIES AND /OR OVERSEAS ETF",
+]
 
-    fund_name = normalize_fund_name(extract_fund_name(df))
+
+def clean_sheet(df, sheet_name, fund_name):
+
     portfolio_date = extract_portfolio_date(df)
     header_row = None
 
@@ -147,6 +203,25 @@ def clean_sheet(df, sheet_name):
 
     data = data.rename(columns=rename_map)
 
+    # Stop scanning rows once a stop marker appears and keep only rows above it.
+    def row_contains_stop_marker(row):
+        for cell in row.astype(str):
+            if pd.isna(cell):
+                continue
+            normalized = str(cell).strip().upper()
+            if any(marker in normalized for marker in STOP_MARKERS):
+                return True
+        return False
+
+    stop_index = None
+    for idx in range(len(data)):
+        if row_contains_stop_marker(data.iloc[idx]):
+            stop_index = idx
+            break
+
+    if stop_index is not None:
+        data = data.iloc[:stop_index].copy()
+
     required_columns = [
         "Security_Name",
         "ISIN",
@@ -172,7 +247,7 @@ def clean_sheet(df, sheet_name):
     data["Industry_Rating"] = data["Industry_Rating"].fillna("").astype(str).str.strip()
 
     data.insert(0, "AMC", AMC_NAME)
-    data.insert(1, "FundName", fund_name)
+    data.insert(1, "Fund_Name", fund_name)
     data.insert(2, "Portfolio_Date", portfolio_date)
     data.insert(
         3, "Month", portfolio_date.strftime("%b-%Y") if pd.notna(portfolio_date) else ""
@@ -180,7 +255,7 @@ def clean_sheet(df, sheet_name):
 
     final_columns = [
         "AMC",
-        "FundName",
+        "Fund_Name",
         "Portfolio_Date",
         "Month",
         "Security_Name",
@@ -191,12 +266,12 @@ def clean_sheet(df, sheet_name):
 
     return data[final_columns]
 
-# ==============================================================================
-# PROCESS A SINGLE WORKBOOK
-# ==============================================================================
 
-
-def process_workbook(workbook_path, processed_keys):
+def process_workbook(
+    workbook_path,
+    processed_keys,
+    fund_name_mapping,
+):
 
     print("\n" + "=" * 90)
     print(f"Workbook: {workbook_path.name}")
@@ -214,9 +289,14 @@ def process_workbook(workbook_path, processed_keys):
 
         try:
 
-            df = pd.read_excel(workbook_path, sheet_name=sheet, header=None)
+            df = pd.read_excel(
+                xls,
+                sheet_name=sheet,
+                header=None,
+            )
 
-            fund_name = normalize_fund_name(extract_fund_name(df))
+            fund_name = fund_name_mapping[sheet]
+
             portfolio_date = extract_portfolio_date(df)
             month_key = get_month_key(portfolio_date)
 
@@ -224,14 +304,18 @@ def process_workbook(workbook_path, processed_keys):
                 print(f"{sheet:<12} | {fund_name:<35} | Already processed")
                 continue
 
-            cleaned_df = clean_sheet(df, sheet)
+            cleaned_df = clean_sheet(
+                df,
+                sheet,
+                fund_name,
+            )
 
             cleaned_data.append(cleaned_df)
             processed_keys.add((fund_name, month_key))
 
             print(
                 f"{sheet:<12}"
-                f" | {cleaned_df['FundName'].iloc[0]:<35}"
+                f" | {cleaned_df['Fund_Name'].iloc[0]:<35}"
                 f" | Rows: {len(cleaned_df)}"
             )
 
@@ -245,14 +329,10 @@ def process_workbook(workbook_path, processed_keys):
     return pd.DataFrame()
 
 
-# ==============================================================================
-# MAIN
-# ==============================================================================
-
-
 def main():
 
     workbook_files = sorted(RAW_FOLDER.glob("*.xlsx"))
+    workbook_files += list(RAW_FOLDER.glob("*.xlsx"))
 
     if not workbook_files:
         raise FileNotFoundError(f"No SBI workbook found in:\n{RAW_FOLDER}")
@@ -265,10 +345,12 @@ def main():
     print("Cleaning SBI Monthly Portfolio Files")
     print("=" * 90)
 
+    fund_name_mapping = load_canonical_fund_names()
+
     if OUTPUT_FILE.exists():
         try:
             existing_df = pd.read_excel(OUTPUT_FILE)
-            require_columns = ["FundName", "Portfolio_Date"]
+            require_columns = ["Fund_Name", "Portfolio_Date"]
             missing = [col for col in require_columns if col not in existing_df.columns]
 
             if missing:
@@ -291,7 +373,7 @@ def main():
 
     for workbook in workbook_files:
 
-        cleaned = process_workbook(workbook, processed_keys)
+        cleaned = process_workbook(workbook, processed_keys, fund_name_mapping)
 
         if not cleaned.empty:
             all_data.append(cleaned)
@@ -314,10 +396,10 @@ def main():
     final_df["Portfolio_Date"] = pd.to_datetime(
         final_df["Portfolio_Date"], errors="coerce"
     )
-    final_df["FundName"] = final_df["FundName"].apply(normalize_fund_name)
+
     final_df = final_df.drop_duplicates()
 
-    final_df = final_df.sort_values(by=["Portfolio_Date", "FundName", "Security_Name"])
+    final_df = final_df.sort_values(by=["Portfolio_Date", "Fund_Name", "Security_Name"])
 
     final_df.reset_index(drop=True, inplace=True)
 
@@ -338,7 +420,7 @@ def main():
     print(f"Workbooks Processed : {len(workbook_files)}")
     print(f"New rows added     : {len(new_df)}")
     print(f"Total rows         : {len(final_df)}")
-    print(f"Funds              : {final_df['FundName'].nunique()}")
+    print(f"Funds              : {final_df['Fund_Name'].nunique()}")
     print(f"Output             : {OUTPUT_FILE}")
 
 

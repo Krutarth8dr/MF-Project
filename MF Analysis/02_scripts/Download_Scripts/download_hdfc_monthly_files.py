@@ -17,7 +17,7 @@ HDFC_MONTHLY_URL = "https://www.hdfcfund.com/statutory-disclosure/portfolio/mont
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 # Set the month-end date you want to download
-TARGET_DATE_TEXT = "31 May 2026"
+TARGET_DATE_TEXT = "30 June 2026"
 
 day, month_name, year = TARGET_DATE_TEXT.split()
 

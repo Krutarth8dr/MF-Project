@@ -29,6 +29,26 @@ ICICI_FUNDS = {
         "search": "ICICI Prudential Large Cap Fund",
         "sheet": "BLUECHIP",
     },
+    "ICICI Prudential Arbitrage Fund": {
+        "search": "ICICI Prudential Arbitrage Fund",
+        "sheet": "ARBITRAGE",
+    },
+    "ICICI Prudential Commodities Fund": {
+        "search": "ICICI Prudential Commodities Fund",
+        "sheet": "COMFUND",
+    },
+    "ICICI Prudential Conglomerate Fund": {
+        "search": "ICICI Prudential Conglomerate Fund",
+        "sheet": "CONGLO",
+    },
+    "ICICI Prudential ELSS Tax Saver Fund": {
+        "search": "ICICI Prudential ELSS Tax Saver Fund",
+        "sheet": "LTEF",
+    },
+    "ICICI Prudential Equity & Debt Fund": {
+        "search": "ICICI Prudential Equity & Debt Fund",
+        "sheet": "E&DF",
+    },
     "ICICI Prudential Midcap Fund": {
         "search": "ICICI Prudential Midcap Fund",
         "sheet": "MIDCAP",
@@ -37,9 +57,45 @@ ICICI_FUNDS = {
         "search": "ICICI Prudential Multicap Fund",
         "sheet": "MULTICAP",
     },
+    "ICICI Prudential FMCG Fund": {
+        "search": "ICICI Prudential FMCG Fund",
+        "sheet": "FMCG",
+    },
     "ICICI Prudential Equity Savings Fund": {
         "search": "ICICI Prudential Equity Savings Fund",
         "sheet": "ESF",
+    },
+    "ICICI Prudential Equity Minimum Variance Fund": {
+        "search": "ICICI Prudential Equity Minimum Variance Fund",
+        "sheet": "VARIANCE",
+    },
+    "ICICI Prudential Focused Equity Fund": {
+        "search": "ICICI Prudential Focused Equity Fund",
+        "sheet": "FOCUSED",
+    },
+    "ICICI Prudential Energy Opportunities Fund": {
+        "search": "ICICI Prudential Energy Opportunities Fund",
+        "sheet": "ENERGY",
+    },
+    "ICICI Prudential Infrastructure Fund": {
+        "search": "ICICI Prudential Infrastructure Fund",
+        "sheet": "INFRA",
+    },
+    "ICICI Prudential Exports and Services Fund": {
+        "search": "ICICI Prudential Exports and Services Fund",
+        "sheet": "EXPORTS",
+    },
+    "ICICI Prudential Large & Mid Cap Fund": {
+        "search": "ICICI Prudential Large & Mid Cap Fund",
+        "sheet": "LARGE & MIDCAP",
+    },
+    "ICICI Prudential Manufacturing Fund": {
+        "search": "ICICI Prudential Manufacturing Fund",
+        "sheet": "MGFINDIA",
+    },
+    "ICICI Prudential Value Fund": {
+        "search": "ICICI Prudential Value Fund",
+        "sheet": "DISCO",
     },
 }
 
@@ -67,6 +123,13 @@ STANDARD_COLUMNS = [
     "ISIN",
     "Industry_Rating",
     "Quantity",
+]
+
+STOP_MARKERS = [
+    "UNLISTED",
+    "UNITS OF REAL ESTATE INVESTMENT TRUST (REITS)",
+    "PREFERENCE SHARES",
+    "DEBT INSTRUMENTS",
 ]
 
 # ==============================================================================
@@ -236,6 +299,23 @@ def clean_icici_file(file_path, fund_name, sheet_name, portfolio_date):
         )
 
     df = df[list(available_columns.keys())].rename(columns=available_columns)
+
+    # Stop scanning rows once a stop marker appears and keep only rows above it.
+    def row_contains_stop_marker(row):
+        for cell in row.astype(str):
+            text = str(cell).strip().upper()
+            if any(marker in text for marker in STOP_MARKERS):
+                return True
+        return False
+
+    stop_index = None
+    for idx in range(len(df)):
+        if row_contains_stop_marker(df.iloc[idx]):
+            stop_index = idx
+            break
+
+    if stop_index is not None:
+        df = df.iloc[:stop_index].copy()
 
     # --------------------------------------------------------------------------
     # Basic Cleanup
