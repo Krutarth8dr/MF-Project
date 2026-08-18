@@ -73,8 +73,8 @@ export const REPORT_PREVIEWS = {
     tag: 'Report 6',
     title: '7-Month Institutional Holding Direction',
     description:
-      'A universe-level view highlighting how widely an institutional thesis is shared across asset managers over a 7-month horizon. Identify broad high-consensus names with unbroken accumulation and divergent debate candidates.',
-    previewImage: '/report-previews/report-6.svg',
+      'Tracks the monthly quantity-change direction (increase / decrease / flat) of total institutional holdings for each security across all AMCs — over the latest 7 consecutive months.',
+    previewImage: '/report-previews/report-6.png',
     imageAlt: '7-Month Institutional Holding Direction Report UI Screenshot',
     metaTitle: 'Wealthyneers | 7-Month Institutional Holding Direction',
     metaDesc:
