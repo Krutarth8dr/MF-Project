@@ -245,13 +245,18 @@ export default function Home() {
         </div>
       </section>
 
-      {!isSubscribed && (
         <section id="pricing" className="pricing">
           <div className="container">
             <div className="pricing-card">
-              <span className="pricing-plan-tag">Monthly Institutional Membership</span>
-              <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Full Intelligence Access</h2>
-              <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>One simple subscription. All six premium research reports.</p>
+              <span className="pricing-plan-tag">
+                {isSubscribed ? '● Active Membership' : 'Monthly Institutional Membership'}
+              </span>
+              <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Wealthyneers Monthly</h2>
+              <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+                {isSubscribed
+                  ? 'Your institutional intelligence membership is currently active.'
+                  : 'One simple recurring subscription. Complete access to all six institutional research reports.'}
+              </p>
               
               <div className="price-single-wrap">
                 <span className="price-single-currency">₹</span>
@@ -296,7 +301,15 @@ export default function Home() {
                 </div>
               )}
 
-              {user ? (
+              {isSubscribed ? (
+                <Link
+                  href="/dashboard"
+                  className="btn btn-primary"
+                  style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Go to Research Dashboard →
+                </Link>
+              ) : user ? (
                 <button
                   type="button"
                   onClick={handleSubscribe}
@@ -307,18 +320,21 @@ export default function Home() {
                   {paying ? 'Opening Checkout…' : 'Subscribe Now — ₹30/month'}
                 </button>
               ) : (
-                <Link href="/signup" className="btn btn-primary" style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700 }}>
+                <Link
+                  href="/signup"
+                  className="btn btn-primary"
+                  style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
+                >
                   Subscribe Now — ₹30/month
                 </Link>
               )}
               <div className="upi-badge">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Supports UPI (Google Pay, PhonePe, Paytm, BHIM &amp; QR)
+                Recurring Monthly Subscription via Razorpay (Supports UPI &amp; Cards)
               </div>
             </div>
           </div>
         </section>
-      )}
     </main>
   );
 }
