@@ -30,7 +30,7 @@ export default function ContactPage() {
               <div className="contact-card-desc">
                 For account verification, password recovery, report questions, or feature feedback.
               </div>
-              <a href="mailto:support@wealthyneers.com" className="contact-card-link">
+              <a href="mailto:support@wealthyneers.com?subject=General%20%26%20Technical%20Support" className="contact-card-link">
                 support@wealthyneers.com →
               </a>
             </div>
