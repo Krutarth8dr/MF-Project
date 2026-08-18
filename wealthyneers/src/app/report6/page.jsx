@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { getCachedSubscription, checkUserSubscription } from '@/lib/subscriptionCache';
 import ReportGuideModal from '@/app/components/ReportGuideModal';
 
 // ─── Direction helpers ───────────────────────────────────────────────
@@ -124,9 +125,6 @@ export default function Report6Page() {
   // ── Auth check ───────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
-    const timer = setTimeout(() => {
-      if (mounted) setAuthLoading(false);
-    }, 2500);
 
     const checkAuth = async () => {
       try {
@@ -135,26 +133,22 @@ export default function Report6Page() {
           if (mounted) router.push('/login');
           return;
         }
-        // Check subscription
-        const { data: subData } = await supabase
-          .from('subscriptions')
-          .select('payment_status, subscription_end_date')
-          .eq('user_id', session.user.id)
-          .eq('payment_status', 'completed')
-          .order('subscription_end_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
 
-        const active =
-          subData &&
-          (subData.subscription_end_date === null ||
-            new Date(subData.subscription_end_date) > new Date());
+        // 1. Instant 0ms cache read
+        const cached = getCachedSubscription(session.user.id);
+        if (cached && mounted) {
+          setIsSubscribed(true);
+          setAuthLoading(false);
+        }
 
-        if (mounted) setIsSubscribed(!!active);
+        // 2. Validate in background / resolve if not cached
+        const active = await checkUserSubscription(session.user.id);
+        if (mounted) {
+          setIsSubscribed(active);
+          setAuthLoading(false);
+        }
       } catch (err) {
         console.error('Report 6 auth check error:', err);
-      } finally {
-        clearTimeout(timer);
         if (mounted) setAuthLoading(false);
       }
     };
@@ -162,7 +156,6 @@ export default function Report6Page() {
 
     return () => {
       mounted = false;
-      clearTimeout(timer);
     };
   }, [router]);
 

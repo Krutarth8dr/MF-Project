@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { clearSubscriptionCache } from '@/lib/subscriptionCache';
 
 function getInitials(name, email) {
   if (name && typeof name === 'string' && name.trim().length > 0) {
@@ -79,6 +80,7 @@ export default function AuthNav() {
     try {
       setUser(null);
       setDisplayName('');
+      clearSubscriptionCache();
       try {
         localStorage.clear();
         sessionStorage.clear();

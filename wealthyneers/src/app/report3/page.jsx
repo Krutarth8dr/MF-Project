@@ -15,6 +15,7 @@ import {
   LabelList,
 } from 'recharts';
 import { supabase } from '@/lib/supabase';
+import { getCachedSubscription, checkUserSubscription } from '@/lib/subscriptionCache';
 import ReportGuideModal from '@/app/components/ReportGuideModal';
 
 // ─── Stable Categorical Colors for AMCs ─────────────────────────────
@@ -194,9 +195,6 @@ function Report3Content() {
   // ── 1. Auth & Subscription Verification ──────────────────────────
   useEffect(() => {
     let mounted = true;
-    const timer = setTimeout(() => {
-      if (mounted) setAuthLoading(false);
-    }, 2500);
 
     const checkAuth = async () => {
       try {
@@ -206,25 +204,21 @@ function Report3Content() {
           return;
         }
 
-        const { data: subData } = await supabase
-          .from('subscriptions')
-          .select('payment_status, subscription_end_date')
-          .eq('user_id', session.user.id)
-          .eq('payment_status', 'completed')
-          .order('subscription_end_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        // 1. Instant 0ms cache read
+        const cached = getCachedSubscription(session.user.id);
+        if (cached && mounted) {
+          setIsSubscribed(true);
+          setAuthLoading(false);
+        }
 
-        const active =
-          subData &&
-          (subData.subscription_end_date === null ||
-            new Date(subData.subscription_end_date) > new Date());
-
-        if (mounted) setIsSubscribed(!!active);
+        // 2. Validate in background / resolve if not cached
+        const active = await checkUserSubscription(session.user.id);
+        if (mounted) {
+          setIsSubscribed(active);
+          setAuthLoading(false);
+        }
       } catch (err) {
         console.error('Report 3 auth check error:', err);
-      } finally {
-        clearTimeout(timer);
         if (mounted) setAuthLoading(false);
       }
     };
@@ -232,7 +226,6 @@ function Report3Content() {
 
     return () => {
       mounted = false;
-      clearTimeout(timer);
     };
   }, [router]);
 

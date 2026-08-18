@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
+import { setCachedSubscription, clearSubscriptionCache } from '@/lib/subscriptionCache';
 
 // ─── Date Formatter Helper ───────────────────────────────────────────
 function formatDate(dateStr) {
@@ -170,25 +171,31 @@ export default function ProfilePage() {
         if (active) {
           setCurrentSub(active);
           setSubStatus('active');
+          setCachedSubscription(authUser.id, true, active.subscription_end_date);
         } else if (subs.length > 0) {
           const latest = subs[0];
           setCurrentSub(latest);
           if (latest.payment_status === 'pending') {
             setSubStatus('pending');
+            setCachedSubscription(authUser.id, false);
           } else if (
             latest.payment_status === 'completed' &&
             latest.subscription_end_date &&
             new Date(latest.subscription_end_date) <= new Date()
           ) {
             setSubStatus('expired');
+            setCachedSubscription(authUser.id, false);
           } else if (latest.payment_status === 'failed') {
             setSubStatus('failed');
+            setCachedSubscription(authUser.id, false);
           } else {
             setSubStatus('inactive');
+            setCachedSubscription(authUser.id, false);
           }
         } else {
           setCurrentSub(null);
           setSubStatus('inactive');
+          setCachedSubscription(authUser.id, false);
         }
       } catch (err) {
         console.error('Profile data error:', err);
@@ -222,6 +229,7 @@ export default function ProfilePage() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         setUser(null);
+        clearSubscriptionCache();
         router.push('/login');
       } else if (session?.user) {
         fetchUserData(session.user);
@@ -237,19 +245,23 @@ export default function ProfilePage() {
   // ── Handle Sign Out ────────────────────────────────────────────────
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('Sign out error:', e);
-    } finally {
+      setUser(null);
+      clearSubscriptionCache();
       try {
         localStorage.clear();
         sessionStorage.clear();
         document.cookie.split(';').forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, '')
-            .replace(/=.*/, '=;expires=' + new Date(0).toUTCString() + ';path=/');
+          const name = c.split('=')[0].trim();
+          document.cookie = `${name}=; Max-Age=-99999999; path=/;`;
+          if (typeof window !== 'undefined' && window.location.hostname) {
+            document.cookie = `${name}=; Max-Age=-99999999; path=/; domain=${window.location.hostname};`;
+          }
         });
       } catch (_) {}
+
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      supabase.auth.signOut().catch(() => {});
+    } finally {
       window.location.replace('/login');
     }
   };

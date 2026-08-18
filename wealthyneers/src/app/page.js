@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from '@/lib/supabase';
 
 import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
+import { getCachedSubscription, checkUserSubscription, setCachedSubscription } from '@/lib/subscriptionCache';
 
 export default function Home() {
   const router = useRouter();
@@ -15,64 +16,58 @@ export default function Home() {
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
-    const loadSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+    let mounted = true;
 
-      if (currentUser) {
-        const { data: subData } = await supabase
-          .from('subscriptions')
-          .select('payment_status, subscription_end_date')
-          .eq('user_id', currentUser.id)
-          .eq('payment_status', 'completed')
-          .order('subscription_end_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const active =
-          subData &&
-          (subData.subscription_end_date === null ||
-            new Date(subData.subscription_end_date) > new Date());
-
-        setIsSubscribed(!!active);
-      } else {
-        setIsSubscribed(false);
+    const syncUserSubscription = async (currentUser) => {
+      if (!currentUser) {
+        if (mounted) {
+          setUser(null);
+          setIsSubscribed(false);
+          setLoading(false);
+        }
+        return;
       }
 
-      setLoading(false);
+      if (mounted) {
+        setUser(currentUser);
+        // 1. Instant 0ms cache check (prevents locked flash)
+        const cached = getCachedSubscription(currentUser.id);
+        if (cached) {
+          setIsSubscribed(true);
+        }
+        setLoading(false);
+      }
+
+      // 2. Silent background validation with Supabase
+      try {
+        const active = await checkUserSubscription(currentUser.id);
+        if (mounted) {
+          setIsSubscribed(active);
+        }
+      } catch (e) {
+        console.warn('Subscription background check error:', e);
+      }
     };
-    loadSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
+    // Initial session lookup
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncUserSubscription(session?.user ?? null);
+    }).catch(() => {
+      if (mounted) setLoading(false);
+    });
 
-      if (currentUser) {
-        const { data: subData } = await supabase
-          .from('subscriptions')
-          .select('payment_status, subscription_end_date')
-          .eq('user_id', currentUser.id)
-          .eq('payment_status', 'completed')
-          .order('subscription_end_date', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const active =
-          subData &&
-          (subData.subscription_end_date === null ||
-            new Date(subData.subscription_end_date) > new Date());
-
-        setIsSubscribed(!!active);
-      } else {
-        setIsSubscribed(false);
-      }
+    // Auth listener (only runs on state change)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncUserSubscription(session?.user ?? null);
     });
 
     // Pre-warm Razorpay SDK in background
     loadRazorpaySDK().catch(() => {});
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const [checkoutError, setCheckoutError] = useState(null);
