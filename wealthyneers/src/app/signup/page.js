@@ -86,7 +86,9 @@ export default function SignUp() {
               <strong>✓ Account Successfully Created!</strong>
               <p style={{ margin: '0.5rem 0 0', color: 'inherit', fontSize: '0.85rem' }}>
                 We have sent a verification email to <strong>{email}</strong>.
-                Please check your inbox and click the confirmation link to activate your access.
+              </p>
+              <p style={{ margin: '0.5rem 0 0', color: 'inherit', fontSize: '0.85rem' }}>
+                If an email account exists for the address you entered, you will receive a confirmation link there. Please check your inbox and click the confirmation link to activate your access.
               </p>
             </div>
 
