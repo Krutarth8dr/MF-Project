@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import { supabase } from '@/lib/supabase';
 
-import { startRazorpayCheckout } from '@/lib/razorpay';
+import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
 
 export default function Home() {
   const router = useRouter();
@@ -69,6 +69,9 @@ export default function Home() {
       }
     });
 
+    // Pre-warm Razorpay SDK in background
+    loadRazorpaySDK().catch(() => {});
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -82,19 +85,37 @@ export default function Home() {
 
     setPaying(true);
     setCheckoutError(null);
+
+    // Fallback safety timeout so button never gets stuck
+    const safetyTimer = setTimeout(() => {
+      setPaying((current) => {
+        if (current) {
+          setCheckoutError('Checkout is taking longer than expected. Please check your internet connection or reload.');
+          return false;
+        }
+        return current;
+      });
+    }, 12000);
+
     startRazorpayCheckout({
       user,
-      onOpen: () => setPaying(false),
+      onOpen: () => {
+        clearTimeout(safetyTimer);
+        setPaying(false);
+      },
       onSuccess: () => {
+        clearTimeout(safetyTimer);
         setIsSubscribed(true);
         setPaying(false);
         router.push('/dashboard');
       },
       onError: (msg) => {
+        clearTimeout(safetyTimer);
         setCheckoutError(msg || 'Payment failed or was declined.');
         setPaying(false);
       },
       onDismiss: () => {
+        clearTimeout(safetyTimer);
         setPaying(false);
       },
     });

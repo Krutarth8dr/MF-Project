@@ -1,27 +1,86 @@
-// ─── Razorpay Standard Checkout Helper (UPI, Cards, Netbanking) ─────────
+// ─── Razorpay Checkout Helper (Recurring Subscriptions & Standard Orders) ───
 import { supabase } from '@/lib/supabase';
 
+let sdkLoadPromise = null;
+
 /**
- * Loads Razorpay script dynamically if not already loaded.
+ * Robustly loads Razorpay Checkout SDK script with timeout protection and deduping.
+ * Never hangs indefinitely.
  */
 export function loadRazorpaySDK() {
-  return new Promise((resolve) => {
-    if (typeof window !== 'undefined' && window.Razorpay) {
+  if (typeof window === 'undefined') {
+    return Promise.resolve(false);
+  }
+
+  if (window.Razorpay) {
+    return Promise.resolve(true);
+  }
+
+  if (sdkLoadPromise) {
+    return sdkLoadPromise;
+  }
+
+  sdkLoadPromise = new Promise((resolve) => {
+    // 1. Double-check if Razorpay is already available
+    if (window.Razorpay) {
       resolve(true);
       return;
     }
+
+    // 2. Check if script tag is already in DOM
+    const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
+    if (existingScript) {
+      // Poll every 50ms for up to 4000ms
+      let elapsed = 0;
+      const interval = setInterval(() => {
+        elapsed += 50;
+        if (window.Razorpay) {
+          clearInterval(interval);
+          resolve(true);
+        } else if (elapsed >= 4000) {
+          clearInterval(interval);
+          resolve(!!window.Razorpay);
+        }
+      }, 50);
+      return;
+    }
+
+    // 3. Create and inject script tag with 4s timeout protection
+    let finished = false;
+    const timeout = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        resolve(!!window.Razorpay);
+      }
+    }, 4000);
+
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
+    script.onload = () => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timeout);
+        resolve(true);
+      }
+    };
+    script.onerror = () => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timeout);
+        resolve(false);
+      }
+    };
+
+    (document.head || document.body || document.documentElement).appendChild(script);
   });
+
+  return sdkLoadPromise;
 }
 
 /**
- * Initiates Razorpay payment checkout for ₹30/month membership.
- * Supports Google Pay, PhonePe, Paytm, UPI, Cards, and Netbanking.
+ * Initiates Razorpay checkout for Wealthyneers Monthly Membership (₹30/month).
+ * Supports both recurring subscription flow and standard order fallback.
  *
  * @param {Object} params
  * @param {Object} params.user - Authenticated Supabase user object { id, email, user_metadata }
@@ -43,16 +102,27 @@ export async function startRazorpayCheckout({
   }
 
   try {
-    // 1. Obtain current authenticated Supabase session JWT
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    // 1. Eagerly start loading the SDK concurrently with server request
+    const sdkPromise = loadRazorpaySDK();
 
+    // 2. Obtain current authenticated Supabase session JWT
+    let { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      // Retry once to ensure token sync
+      const refreshed = await supabase.auth.refreshSession();
+      session = refreshed.data?.session;
+    }
+
+    const token = session?.access_token;
     if (!token) {
       throw new Error('Active user session not found. Please log in again.');
     }
 
-    // 2. Create server-side order with JWT authorization
-    const orderRes = await fetch('/api/create-order', {
+    // 3. Request subscription creation from backend
+    let subData = null;
+    let isSubscriptionMode = true;
+
+    const subRes = await fetch('/api/create-subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,94 +130,81 @@ export async function startRazorpayCheckout({
       },
     });
 
-    const orderData = await orderRes.json();
+    subData = await subRes.json();
 
-    if (!orderRes.ok) {
-      if (orderData.code === 'ALREADY_SUBSCRIBED') {
+    if (!subRes.ok) {
+      if (subData.code === 'ALREADY_SUBSCRIBED') {
         throw new Error('You already have an active subscription.');
       }
-      throw new Error(orderData.error || 'Failed to initiate payment order.');
+
+      // If subscription endpoint returned configuration or generic error, try fallback order endpoint
+      console.warn('[razorpay-checkout] Subscription creation failed, trying order endpoint...', subData.error);
+      const orderRes = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        throw new Error(subData.error || orderData.error || 'Failed to initiate payment.');
+      }
+
+      subData = orderData;
+      isSubscriptionMode = false;
     }
 
-    const orderId = orderData.orderId || orderData.id;
-    const keyId = orderData.keyId || orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const subscriptionId = subData.subscriptionId || subData.subscription_id;
+    const orderId = subData.orderId || subData.order_id || subData.id;
+    const keyId = subData.keyId || subData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-    if (!orderId || !keyId) {
-      throw new Error('Invalid payment response from payment server.');
+    if (!keyId || (!subscriptionId && !orderId)) {
+      throw new Error('Invalid payment configuration returned from server.');
     }
 
-    // 3. Load Razorpay SDK
-    const loaded = await loadRazorpaySDK();
-    if (!loaded) {
-      throw new Error('Unable to load payment SDK. Please check your internet connection.');
+    // 4. Ensure Razorpay SDK is ready
+    const isSdkLoaded = await sdkPromise;
+    if (!isSdkLoaded || typeof window === 'undefined' || !window.Razorpay) {
+      throw new Error('Unable to load Razorpay payment SDK. Please check your network or disable ad-blockers and try again.');
     }
 
-    // 4. Configure Razorpay Standard Checkout Options
+    // 5. Configure Razorpay Checkout Options
     const options = {
       key: keyId,
-      order_id: orderId,
-      amount: orderData.amount || 3000,
-      currency: orderData.currency || 'INR',
       name: 'Wealthyneers',
-      description: 'Wealthyneers Monthly Membership — ₹30',
+      description: 'Wealthyneers Monthly Subscription — ₹30/month',
       image: '/wealthyneers-logo.png',
+      amount: subData.amount || 3000,
+      currency: subData.currency || 'INR',
       prefill: {
         email: user.email || '',
         name: user.user_metadata?.full_name || '',
-        contact: user.phone || user.user_metadata?.phone || '',
       },
       theme: {
         color: '#0A4D68',
       },
-      config: {
-        display: {
-          blocks: {
-            upi: {
-              name: 'Pay via UPI (GPay, PhonePe, Paytm, QR)',
-              instruments: [
-                {
-                  method: 'upi',
-                },
-              ],
-            },
-            cards: {
-              name: 'Cards (Credit / Debit Card)',
-              instruments: [
-                {
-                  method: 'card',
-                },
-              ],
-            },
-            netbanking: {
-              name: 'Netbanking',
-              instruments: [
-                {
-                  method: 'netbanking',
-                },
-              ],
-            },
-          },
-          sequence: ['block.upi', 'block.cards', 'block.netbanking'],
-          preferences: {
-            show_default_blocks: false,
-          },
-        },
-      },
       handler: async function (response) {
         try {
-          // Re-fetch active session token in case it refreshed
+          // Re-fetch active session token
           const { data: { session: freshSession } } = await supabase.auth.getSession();
           const activeToken = freshSession?.access_token || token;
 
-          // 5. Verify payment signature on the server
-          const verifyRes = await fetch('/api/verify-payment', {
+          // Determine verification endpoint
+          const endpoint = isSubscriptionMode && (response.razorpay_subscription_id || subscriptionId)
+            ? '/api/verify-subscription'
+            : '/api/verify-payment';
+
+          const verifyRes = await fetch(endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${activeToken}`,
             },
             body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id || orderId,
+              razorpay_subscription_id: response.razorpay_subscription_id || subscriptionId || null,
+              razorpay_order_id: response.razorpay_order_id || orderId || null,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             }),
@@ -173,7 +230,15 @@ export async function startRazorpayCheckout({
       },
     };
 
+    // Attach subscription_id for recurring subscriptions or order_id for one-time orders
+    if (isSubscriptionMode && subscriptionId) {
+      options.subscription_id = subscriptionId;
+    } else if (orderId) {
+      options.order_id = orderId;
+    }
+
     const rzp = new window.Razorpay(options);
+
     rzp.on('payment.failed', function (response) {
       console.error('[razorpay-checkout] Payment failed:', response.error);
       if (onError) {
@@ -181,8 +246,10 @@ export async function startRazorpayCheckout({
       }
     });
 
-    rzp.open();
+    // Notify UI that checkout modal is now opening (resets loading state)
     if (onOpen) onOpen();
+
+    rzp.open();
   } catch (err) {
     console.error('[razorpay-checkout] Initiation error:', err);
     if (onError) {

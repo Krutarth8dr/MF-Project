@@ -1,6 +1,7 @@
 import "./globals.css";
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import AuthNav from "./components/AuthNav";
 import ReportsNav from "./components/ReportsNav";
 
@@ -12,6 +13,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="afterInteractive"
+        />
+      </head>
       <body>
         {/* ── Global Header ── */}
         <header className="header">

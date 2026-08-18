@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { startRazorpayCheckout } from '@/lib/razorpay';
+import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
 
 // ─── Date Formatter Helper ───────────────────────────────────────────
 function formatDate(dateStr) {
@@ -66,10 +66,24 @@ export default function ProfilePage() {
     setPaying(true);
     setCheckoutError(null);
 
+    const safetyTimer = setTimeout(() => {
+      setPaying((current) => {
+        if (current) {
+          setCheckoutError('Checkout is taking longer than expected. Please check your connection or reload.');
+          return false;
+        }
+        return current;
+      });
+    }, 12000);
+
     startRazorpayCheckout({
       user,
-      onOpen: () => setPaying(false),
+      onOpen: () => {
+        clearTimeout(safetyTimer);
+        setPaying(false);
+      },
       onSuccess: async () => {
+        clearTimeout(safetyTimer);
         setPaying(false);
         // Refresh subscription records from database
         const { data: refreshedSubs } = await supabase
@@ -94,10 +108,12 @@ export default function ProfilePage() {
         }
       },
       onError: (msg) => {
+        clearTimeout(safetyTimer);
         setCheckoutError(msg || 'Payment failed or was declined.');
         setPaying(false);
       },
       onDismiss: () => {
+        clearTimeout(safetyTimer);
         setPaying(false);
       },
     });
@@ -107,7 +123,10 @@ export default function ProfilePage() {
   useEffect(() => {
     let isMounted = true;
 
-    const loadProfileData = async () => {
+    // Pre-warm Razorpay SDK in background
+    loadRazorpaySDK().catch(() => {});
+
+    async function loadProfile() {
       setLoading(true);
       setError(null);
 
