@@ -114,16 +114,25 @@ export default function ForgotPasswordPage() {
               />
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: '0.5rem' }}
-              disabled={loading}
-            >
-              {loading ? 'Sending Reset Link…' : 'Send Password Reset Link'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                disabled={loading}
+              >
+                {loading ? 'Sending Reset Link…' : 'Send Reset Link'}
+              </button>
+              <Link
+                href="/login"
+                className="btn btn-outline"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+              >
+                Cancel
+              </Link>
+            </div>
 
-            <div className="auth-link">
+            <div className="auth-link" style={{ marginTop: '1.25rem' }}>
               Remember your password? <Link href="/login">Back to Log In</Link>
             </div>
           </form>

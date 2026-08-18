@@ -591,16 +591,18 @@ export default function ProfilePage() {
 
               <div className="profile-pw-field">
                 <label htmlFor="confirmPassword">Confirm New Password</label>
-                <input
-                  id="confirmPassword"
-                  type={showPasswordText ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-type new password"
-                  className="profile-pw-input"
-                  required
-                  minLength={6}
-                />
+                <div className="profile-pw-input-wrap">
+                  <input
+                    id="confirmPassword"
+                    type={showPasswordText ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-type new password"
+                    className="profile-pw-input"
+                    required
+                    minLength={6}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>

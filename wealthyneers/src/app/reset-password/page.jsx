@@ -240,29 +240,41 @@ export default function ResetPasswordPage() {
 
             <div className="form-group">
               <label htmlFor="confirmPassword">Confirm New Password</label>
-              <input
-                id="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-type new password"
-                autoComplete="new-password"
-                required
-                minLength={6}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="confirmPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-type new password"
+                  autoComplete="new-password"
+                  required
+                  minLength={6}
+                  style={{ width: '100%', paddingRight: '4.5rem' }}
+                />
+              </div>
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', marginTop: '1rem' }}
-              disabled={loading}
-            >
-              {loading ? 'Saving Password…' : 'Reset Password'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                disabled={loading}
+              >
+                {loading ? 'Saving Password…' : 'Reset Password'}
+              </button>
+              <Link
+                href="/login"
+                className="btn btn-outline"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+              >
+                Cancel
+              </Link>
+            </div>
 
-            <div className="auth-link">
-              <Link href="/login">Cancel and Return to Log In</Link>
+            <div className="auth-link" style={{ marginTop: '1.25rem' }}>
+              <Link href="/login">Return to Log In</Link>
             </div>
           </form>
         )}

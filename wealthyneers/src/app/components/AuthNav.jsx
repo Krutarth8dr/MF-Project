@@ -66,24 +66,36 @@ export default function AuthNav() {
     };
   }, []);
 
-  const handleLogout = async () => {
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+
     try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('Sign out error:', e);
-    } finally {
+      setUser(null);
+      setDisplayName('');
       try {
         localStorage.clear();
         sessionStorage.clear();
-        // Clear all cookies
         document.cookie.split(';').forEach((c) => {
-          document.cookie = c
-            .replace(/^ +/, '')
-            .replace(/=.*/, '=;expires=' + new Date(0).toUTCString() + ';path=/');
+          const name = c.split('=')[0].trim();
+          document.cookie = `${name}=; Max-Age=-99999999; path=/;`;
+          if (typeof window !== 'undefined' && window.location.hostname) {
+            document.cookie = `${name}=; Max-Age=-99999999; path=/; domain=${window.location.hostname};`;
+          }
         });
       } catch (_) {}
-      setUser(null);
-      window.location.replace('/login');
+
+      // Fire and forget Supabase signOut so page redirect is never blocked
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      supabase.auth.signOut().catch(() => {});
+    } finally {
+      window.location.href = '/login';
     }
   };
 
@@ -113,10 +125,11 @@ export default function AuthNav() {
           <button
             type="button"
             onClick={handleLogout}
+            disabled={isLoggingOut}
             className="btn btn-outline"
             style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
           >
-            Log Out
+            {isLoggingOut ? 'Logging Out…' : 'Log Out'}
           </button>
         </>
       ) : (
