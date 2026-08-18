@@ -132,7 +132,6 @@ export async function POST(request) {
               {
                 user_id: userId,
                 plan_type: 'monthly_30',
-                amount: 30.0,
                 amount_paid: 30.0,
                 currency: 'INR',
                 payment_status: 'completed',
@@ -176,7 +175,6 @@ export async function POST(request) {
             {
               user_id: userId,
               plan_type: 'monthly_30',
-              amount: 30.0,
               amount_paid: 30.0,
               currency: 'INR',
               payment_status: 'completed',

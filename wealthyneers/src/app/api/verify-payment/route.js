@@ -241,13 +241,11 @@ export async function POST(request) {
         {
           user_id: userId,
           plan_type: EXPECTED_PLAN_TYPE,
-          amount: 30.0,
           amount_paid: 30.0,
           currency: EXPECTED_CURRENCY,
           payment_status: 'completed',
           razorpay_payment_id,
           razorpay_order_id: primaryId,
-          razorpay_signature,
           subscription_start_date: startDate.toISOString(),
           subscription_end_date: endDate.toISOString(),
           auto_renew: true,
