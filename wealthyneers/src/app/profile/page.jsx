@@ -126,7 +126,7 @@ export default function ProfilePage() {
     // Pre-warm Razorpay SDK in background
     loadRazorpaySDK().catch(() => {});
 
-    async function loadProfile() {
+    async function loadProfileData() {
       setLoading(true);
       setError(null);
 
