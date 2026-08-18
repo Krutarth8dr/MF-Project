@@ -27,7 +27,10 @@ export default function ReportsNav() {
         {REPORTS.map((r) => {
           const reportNum = r.id?.startsWith('report') ? r.id.replace('report', '') : null;
           const isActive =
-            pathname === r.href || (reportNum && pathname === `/reports/report-${reportNum}`);
+            pathname === r.href ||
+            (reportNum &&
+              (pathname === `/report-description/${reportNum}` ||
+                pathname === `/reports/report-${reportNum}`));
           return (
             <Link
               key={r.href}

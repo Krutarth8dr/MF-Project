@@ -144,11 +144,11 @@ export default function DashboardPage() {
                       <span className="dash-tile-icon">{r.icon}</span>
                       <span className="dash-tile-tag">{r.tag}</span>
                       <Link
-                        href={`/reports/report-${reportNum}`}
+                        href={`/report-description/${reportNum}`}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          padding: '0.2rem 0.6rem',
+                          padding: '0.2rem 0.65rem',
                           borderRadius: '0.375rem',
                           background: 'rgba(56, 189, 248, 0.12)',
                           border: '1px solid rgba(56, 189, 248, 0.3)',
@@ -157,10 +157,11 @@ export default function DashboardPage() {
                           fontWeight: 600,
                           textDecoration: 'none',
                           transition: 'all 0.15s ease',
+                          whiteSpace: 'nowrap',
                         }}
-                        title={`View ${r.tag} Public Preview & Description`}
+                        title={`View ${r.tag} Description & Visual Preview`}
                       >
-                        Description
+                        Report Description
                       </Link>
                     </div>
                     <span className="dash-tile-badge dash-badge-live">
@@ -177,7 +178,7 @@ export default function DashboardPage() {
                       Open {r.tag} →
                     </Link>
                     <Link
-                      href={`/reports/report-${reportNum}`}
+                      href={`/report-description/${reportNum}`}
                       style={{ color: 'var(--muted, #94a3b8)', fontSize: '0.8rem', textDecoration: 'none' }}
                     >
                       Preview ↗

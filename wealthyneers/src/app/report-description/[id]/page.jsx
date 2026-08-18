@@ -2,96 +2,96 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export const REPORT_PREVIEWS = {
-  'report-1': {
+export const REPORT_DESCRIPTIONS = {
+  '1': {
     id: 1,
-    tag: 'Report 1',
+    tag: 'REPORT 1',
     title: 'Mutual Fund Quantity Trend',
     description:
       'The foundation report for reconstructing institutional holding history of any security. Filter by security, AMC, fund, and industry to analyze long-term accumulation, distribution, and turning points.',
-    previewImage: '/report-previews/report-1.png',
+    image: '/report-previews/report-1.png',
     imageAlt: 'Mutual Fund Quantity Trend Report UI Screenshot',
-    metaTitle: 'Wealthyneers | Mutual Fund Quantity Trend',
-    metaDesc:
-      'Explore the Mutual Fund Quantity Trend report and understand how institutional holdings change across securities, AMCs, and funds.',
     reportHref: '/report1',
+    metaTitle: 'Wealthyneers | Report 1: Mutual Fund Quantity Trend',
+    metaDesc:
+      'Track total institutional holding quantities for any security across all AMCs and funds month-by-month.',
   },
-  'report-2': {
+  '2': {
     id: 2,
-    tag: 'Report 2',
+    tag: 'REPORT 2',
     title: 'Monthly Institutional Activity Monitor',
     description:
-      'Compares the latest portfolio snapshot with previous months. A practical buying and selling scanner tracking largest increases, decreases, new positions, and total exits across the Indian equity mutual fund universe.',
-    previewImage: '/report-previews/report-2.png',
+      'Compares the latest mutual-fund portfolio snapshot with the previous month to identify securities experiencing the largest institutional accumulation, reduction, new entries, and total exits.',
+    image: '/report-previews/report-2.png',
     imageAlt: 'Monthly Institutional Activity Monitor Report UI Screenshot',
-    metaTitle: 'Wealthyneers | Monthly Institutional Activity Monitor',
-    metaDesc:
-      'Scan monthly institutional activity to identify large mutual fund additions, reductions, new positions, and total exits.',
     reportHref: '/report2',
+    metaTitle: 'Wealthyneers | Report 2: Monthly Institutional Activity Monitor',
+    metaDesc:
+      'Compare mutual fund portfolio snapshots and identify largest institutional accumulation, reductions, new positions, and exits.',
   },
-  'report-3': {
+  '3': {
     id: 3,
-    tag: 'Report 3',
+    tag: 'REPORT 3',
     title: 'AMC-wise Stock Intelligence',
     description:
-      'Isolates a single security and compares how different AMCs have changed positions over time. See which AMC accumulated first, comparative exposure levels, and institutional agreement across fund houses.',
-    previewImage: '/report-previews/report-3.png',
+      'Isolate any security and track how individual mutual-fund AMCs have scaled, maintained, or liquidated their holdings over time. Compare accumulation timing, conviction levels, and institutional agreement.',
+    image: '/report-previews/report-3.png',
     imageAlt: 'AMC-wise Stock Intelligence Report UI Screenshot',
-    metaTitle: 'Wealthyneers | AMC-wise Stock Intelligence',
-    metaDesc:
-      'Compare AMC-wise mutual fund holding trends for individual securities to uncover early accumulators and institutional divergence.',
     reportHref: '/report3',
+    metaTitle: 'Wealthyneers | Report 3: AMC-wise Stock Intelligence',
+    metaDesc:
+      'Isolate any security and track how individual AMCs scaled, maintained, or liquidated holdings over time.',
   },
-  'report-4': {
+  '4': {
     id: 4,
-    tag: 'Report 4',
+    tag: 'REPORT 4',
     title: 'AMC Direction Matrix',
     description:
-      'A cross-sectional matrix compressing AMC-level behaviour into directional indicators (🟢 Buying, 🔴 Selling, ⚪ Neutral) across the equity universe, making institutional alignment or disagreement easy to scan at a glance.',
-    previewImage: '/report-previews/report-4.png',
+      'A cross-sectional directional matrix compressing individual AMC month-over-month quantity changes into clear signals (🟢 Buying, 🔴 Selling, ⚪ Neutral) across every security in the universe.',
+    image: '/report-previews/report-4.png',
     imageAlt: 'AMC Direction Matrix Report UI Screenshot',
-    metaTitle: 'Wealthyneers | AMC Direction Matrix',
-    metaDesc:
-      'A cross-sectional matrix displaying mutual fund buying and selling directions across major Indian asset management companies.',
     reportHref: '/report4',
+    metaTitle: 'Wealthyneers | Report 4: AMC Direction Matrix',
+    metaDesc:
+      'Cross-sectional directional matrix compressing individual AMC month-over-month quantity changes across every security.',
   },
-  'report-5': {
+  '5': {
     id: 5,
-    tag: 'Report 5',
+    tag: 'REPORT 5',
     title: 'AMC Buying Breadth Ranking',
     description:
       'Ranks securities by institutional consensus—identifying stocks where multiple AMCs are actively accumulating while experiencing minimal to zero selling pressure.',
-    previewImage: '/report-previews/report-5.png',
+    image: '/report-previews/report-5.png',
     imageAlt: 'AMC Buying Breadth Ranking Report UI Screenshot',
-    metaTitle: 'Wealthyneers | AMC Buying Breadth Ranking',
-    metaDesc:
-      'Institutional buying and selling leaderboards ranking stocks by net institutional consensus and conviction breadth.',
     reportHref: '/report5',
+    metaTitle: 'Wealthyneers | Report 5: AMC Buying Breadth Ranking',
+    metaDesc:
+      'Ranks securities by institutional consensus and conviction breadth with zero selling pressure filters.',
   },
-  'report-6': {
+  '6': {
     id: 6,
-    tag: 'Report 6',
+    tag: 'REPORT 6',
     title: '7-Month Institutional Holding Direction',
     description:
-      'A universe-level view highlighting how widely an institutional thesis is shared across asset managers over a 7-month horizon. Identify broad high-consensus names with unbroken accumulation and divergent debate candidates.',
-    previewImage: '/report-previews/report-6.svg',
+      'A universe-level view highlighting how widely an institutional thesis is shared across asset managers. Identify broad high-consensus names and divergent debate candidates over 7 consecutive months.',
+    image: '/report-previews/report-6.svg',
     imageAlt: '7-Month Institutional Holding Direction Report UI Screenshot',
-    metaTitle: 'Wealthyneers | 7-Month Institutional Holding Direction',
-    metaDesc:
-      'Analyze 7-month consecutive institutional holding trajectories and identify long-term accumulation trends across the equity universe.',
     reportHref: '/report6',
+    metaTitle: 'Wealthyneers | Report 6: 7-Month Institutional Holding Direction',
+    metaDesc:
+      'Track 7-month consecutive institutional holding directions and identify long-term accumulation trends across the equity universe.',
   },
 };
 
 export async function generateStaticParams() {
-  return Object.keys(REPORT_PREVIEWS).map((slug) => ({
-    slug,
+  return Object.keys(REPORT_DESCRIPTIONS).map((id) => ({
+    id,
   }));
 }
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  const report = REPORT_PREVIEWS[slug];
+  const { id } = await params;
+  const report = REPORT_DESCRIPTIONS[id];
   if (!report) return {};
 
   return {
@@ -101,8 +101,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ReportDescriptionPage({ params }) {
-  const { slug } = await params;
-  const report = REPORT_PREVIEWS[slug];
+  const { id } = await params;
+  const report = REPORT_DESCRIPTIONS[id];
 
   if (!report) {
     notFound();
@@ -110,7 +110,7 @@ export default async function ReportDescriptionPage({ params }) {
 
   return (
     <div className="report-preview-page" style={{ minHeight: '80vh', padding: '2.5rem 1rem 4rem' }}>
-      <div className="container" style={{ maxWidth: '1140px', margin: '0 auto' }}>
+      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Navigation Breadcrumb */}
         <div style={{ marginBottom: '1.5rem' }}>
           <Link
@@ -158,7 +158,7 @@ export default async function ReportDescriptionPage({ params }) {
               {report.tag}
             </span>
             <span style={{ color: 'var(--muted, #64748b)', fontSize: '0.85rem' }}>
-              Public Report Overview
+              Report Description &amp; Visual Preview
             </span>
           </div>
 
@@ -187,31 +187,50 @@ export default async function ReportDescriptionPage({ params }) {
           </p>
         </div>
 
-        {/* Large Static Illustrative Preview Image */}
+        {/* Section Heading */}
+        <div style={{ marginBottom: '1rem' }}>
+          <h2
+            style={{
+              fontSize: '1.15rem',
+              fontWeight: 600,
+              color: 'var(--foreground, #f8fafc)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              margin: 0,
+            }}
+          >
+            Report Preview
+          </h2>
+        </div>
+
+        {/* Actual Static Screenshot Preview Display */}
         <div
           style={{
             background: '#0a1124',
             border: '1px solid var(--border, #1c2541)',
             borderRadius: '1rem',
-            padding: '1rem',
-            marginBottom: '1.25rem',
+            padding: '0.75rem',
+            marginBottom: '1rem',
             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
             overflow: 'hidden',
           }}
         >
-          <div style={{ position: 'relative', width: '100%', aspectRatio: '1200 / 680' }}>
-            <Image
-              src={report.previewImage}
+          <div style={{ position: 'relative', width: '100%' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={report.image}
               alt={report.imageAlt}
-              fill
-              sizes="(max-width: 1200px) 100vw, 1140px"
-              style={{ objectFit: 'contain', borderRadius: '0.5rem' }}
-              priority
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+                borderRadius: '0.5rem',
+              }}
             />
           </div>
         </div>
 
-        {/* Disclaimer Note */}
+        {/* Sample / Illustrative Note */}
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <p
             style={{
@@ -219,9 +238,11 @@ export default async function ReportDescriptionPage({ params }) {
               color: 'var(--muted, #94a3b8)',
               fontStyle: 'italic',
               margin: 0,
+              lineHeight: 1.5,
             }}
           >
-            Illustrative preview — example data shown for demonstration purposes only.
+            Illustrative preview — sample data shown for demonstration purposes.<br />
+            The actual report contains live data and may differ from this preview.
           </p>
         </div>
 

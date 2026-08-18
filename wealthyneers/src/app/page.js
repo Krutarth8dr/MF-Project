@@ -194,28 +194,29 @@ export default function Home() {
             {reports.map((report) => (
               <div key={report.id} className="report-card" style={{ display: 'flex', flexDirection: 'column' }}>
                 <div className="report-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div className="report-icon">{report.icon}</div>
-                    <span className="report-badge">{report.tag}</span>
-                    <Link
-                      href={`/reports/report-${report.id}`}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '0.375rem',
-                        background: 'rgba(56, 189, 248, 0.1)',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
-                        color: '#38bdf8',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                      }}
-                      title={`Read ${report.tag} Overview & Preview`}
-                    >
-                      Description
-                    </Link>
-                  </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div className="report-icon">{report.icon}</div>
+                      <span className="report-badge">{report.tag}</span>
+                      <Link
+                        href={`/report-description/${report.id}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '0.2rem 0.65rem',
+                          borderRadius: '0.375rem',
+                          background: 'rgba(56, 189, 248, 0.1)',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          color: '#38bdf8',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title={`Read ${report.tag} Description & Visual Preview`}
+                      >
+                        Report Description
+                      </Link>
+                    </div>
                 </div>
                 <h3 className="report-title">{report.title}</h3>
                 <p className="report-desc">{report.desc}</p>
