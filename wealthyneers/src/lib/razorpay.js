@@ -99,6 +99,40 @@ export async function startRazorpayCheckout({
       theme: {
         color: '#0A4D68',
       },
+      config: {
+        display: {
+          blocks: {
+            upi: {
+              name: 'Pay via UPI (GPay, PhonePe, Paytm, QR)',
+              instruments: [
+                {
+                  method: 'upi',
+                },
+              ],
+            },
+            cards: {
+              name: 'Cards (Credit / Debit Card)',
+              instruments: [
+                {
+                  method: 'card',
+                },
+              ],
+            },
+            netbanking: {
+              name: 'Netbanking',
+              instruments: [
+                {
+                  method: 'netbanking',
+                },
+              ],
+            },
+          },
+          sequence: ['block.upi', 'block.cards', 'block.netbanking'],
+          preferences: {
+            show_default_blocks: false,
+          },
+        },
+      },
       handler: async function (response) {
         try {
           // Re-fetch active session token in case it refreshed
