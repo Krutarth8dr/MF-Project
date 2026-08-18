@@ -27,7 +27,7 @@ def is_valid_isin(value):
 
     value = str(value).strip().upper()
 
-    return bool(re.fullmatch(r"IN[A-Z0-9]{10}", value))
+    return bool(re.fullmatch(r"INE[A-Z0-9]{9}", value))
 
 
 def extract_portfolio_date_from_filename(workbook_path):

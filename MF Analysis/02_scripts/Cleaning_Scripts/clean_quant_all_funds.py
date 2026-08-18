@@ -48,7 +48,7 @@ def is_valid_isin(value):
     if pd.isna(value):
         return False
     value = str(value).strip().upper()
-    return bool(re.fullmatch(r"IN[A-Z0-9]{10}", value))
+    return bool(re.fullmatch(r"INE[A-Z0-9]{9}", value))
 
 
 def find_fund_name(preview: pd.DataFrame) -> str:

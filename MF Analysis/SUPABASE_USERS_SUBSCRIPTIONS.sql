@@ -109,7 +109,7 @@ CREATE POLICY "Enable select for paid subscribers" ON fund_holdings
 -- ============================================
 -- Get active subscribers
 CREATE OR REPLACE VIEW active_subscribers AS
-SELECT DISTINCT
+SELECT DISTINCT ON (u.id)
     u.id,
     u.email,
     u.full_name,
@@ -121,7 +121,7 @@ FROM users u
 JOIN subscriptions s ON u.id = s.user_id
 WHERE s.payment_status = 'completed'
 AND (s.subscription_end_date IS NULL OR s.subscription_end_date > NOW())
-ORDER BY u.created_at DESC;
+ORDER BY u.id, s.subscription_end_date DESC NULLS LAST;
 
 -- Get subscription status for dashboard
 CREATE OR REPLACE VIEW user_subscription_status AS

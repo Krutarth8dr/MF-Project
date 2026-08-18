@@ -59,10 +59,59 @@ ORDER BY portfolio_date DESC;
 -- Enable RLS (Row Level Security) for frontend access
 ALTER TABLE fund_holdings ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policy to allow SELECT for authenticated users
-CREATE POLICY "Enable select for authenticated users" ON fund_holdings
-    FOR SELECT USING (true);
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Enable select for authenticated users" ON fund_holdings;
+DROP POLICY IF EXISTS "Enable select for anonymous users" ON fund_holdings;
+DROP POLICY IF EXISTS "Enable all for all users" ON fund_holdings;
 
--- Allow anonymous (public) SELECT access if needed
-CREATE POLICY "Enable select for anonymous users" ON fund_holdings
-    FOR SELECT USING (true);
+-- Allow full access for fund_holdings (select, insert, update)
+CREATE POLICY "Enable all for all users" ON fund_holdings
+    FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================
+-- 2. SECURITY MASTER TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS security_master (
+    isin VARCHAR(50) PRIMARY KEY,
+    name_1 VARCHAR(255) NOT NULL,
+    name_2 VARCHAR(255),
+    name_3 VARCHAR(255),
+    name_4 VARCHAR(255),
+    name_5 VARCHAR(255),
+    name_6 VARCHAR(255),
+    name_7 VARCHAR(255),
+    name_8 VARCHAR(255),
+    name_9 VARCHAR(255),
+    name_10 VARCHAR(255),
+    name_11 VARCHAR(255),
+    name_12 VARCHAR(255),
+    name_13 VARCHAR(255),
+    name_14 VARCHAR(255),
+    name_15 VARCHAR(255),
+    name_16 VARCHAR(255),
+    name_17 VARCHAR(255),
+    name_18 VARCHAR(255),
+    name_19 VARCHAR(255),
+    name_20 VARCHAR(255),
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index on primary name for quick search
+CREATE INDEX IF NOT EXISTS idx_security_master_name_1 ON security_master(name_1);
+
+-- Enable RLS for security_master
+ALTER TABLE security_master ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "Enable select for authenticated users on security_master" ON security_master;
+DROP POLICY IF EXISTS "Enable select for anonymous users on security_master" ON security_master;
+DROP POLICY IF EXISTS "Enable all for all users on security_master" ON security_master;
+
+-- Allow full access for security_master (select, insert, update)
+CREATE POLICY "Enable all for all users on security_master" ON security_master
+    FOR ALL USING (true) WITH CHECK (true);
+
+

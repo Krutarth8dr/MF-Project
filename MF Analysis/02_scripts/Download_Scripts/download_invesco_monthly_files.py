@@ -1,8 +1,11 @@
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # ============================================================================
 # CONFIGURATION
@@ -24,6 +27,32 @@ HEADERS = {
         "Chrome/137.0.0.0 Safari/537.36"
     )
 }
+
+# Retry/backoff config for transient DNS/connection failures
+MAX_RETRIES = 5
+BACKOFF_FACTOR = 2  # seconds: 2, 4, 8, 16, 32...
+
+
+def build_session() -> requests.Session:
+    """Session that retries on connection/DNS errors and common server errors."""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=MAX_RETRIES,
+        connect=MAX_RETRIES,
+        read=MAX_RETRIES,
+        backoff_factor=BACKOFF_FACTOR,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"],
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.headers.update(HEADERS)
+    return session
+
+
+SESSION = build_session()
 
 MONTH_FIELDS = [
     ("Jan", "JanUrl", "JanName", 1),
@@ -54,7 +83,7 @@ def print_separator(character="=", width=100):
 
 def sanitize_filename(value: str) -> str:
     value = unquote(value)
-    for invalid in ['<', '>', ':', '"', '/', '\\', '|', '?', '*']:
+    for invalid in ["<", ">", ":", '"', "/", "\\", "|", "?", "*"]:
         value = value.replace(invalid, "-")
     value = re.sub(r"\s+", " ", value)
     return value.strip()
@@ -66,11 +95,13 @@ def get_api_url(year: int) -> str:
 
 def fetch_year_data(year: int):
     print(f"Fetching Invesco equity holdings data for {year}...")
-    response = requests.get(get_api_url(year), headers=HEADERS, timeout=TIMEOUT)
+    response = SESSION.get(get_api_url(year), timeout=TIMEOUT)
     response.raise_for_status()
     data = response.json()
     if not isinstance(data, list):
-        raise RuntimeError(f"Unexpected API response for year {year}: expected list, got {type(data)}")
+        raise RuntimeError(
+            f"Unexpected API response for year {year}: expected list, got {type(data)}"
+        )
     return data
 
 
@@ -100,7 +131,7 @@ def download_file(url: str, save_path: Path) -> bool:
         print(f"Skipping existing file: {save_path}")
         return False
     print(f"Downloading {save_path.name}")
-    response = requests.get(url, headers=HEADERS, timeout=TIMEOUT, stream=True)
+    response = SESSION.get(url, timeout=TIMEOUT, stream=True)
     response.raise_for_status()
     with open(save_path, "wb") as output_file:
         for chunk in response.iter_content(chunk_size=8192):
@@ -122,6 +153,7 @@ def main():
     downloaded_count = 0
     skipped_count = 0
     total_candidates = 0
+    failed_files = []
 
     for year in range(START_YEAR, END_YEAR + 1):
         try:
@@ -148,14 +180,24 @@ def main():
                     else:
                         skipped_count += 1
                 except Exception as error:
-                    print(f"ERROR downloading {fund_name} {year}-{month_number:02d}: {error}")
+                    print(
+                        f"ERROR downloading {fund_name} {year}-{month_number:02d}: {error}"
+                    )
+                    failed_files.append((fund_name, year, month_number, str(error)))
 
     print_separator()
     print(f"Total files found  : {total_candidates}")
     print(f"Downloaded         : {downloaded_count}")
     print(f"Skipped existing   : {skipped_count}")
+    print(f"Failed             : {len(failed_files)}")
     print(f"Output root        : {RAW_FOLDER}")
     print_separator()
+    if failed_files:
+        print(
+            "Failed files (re-run the script to retry these; already-downloaded files are skipped):"
+        )
+        for fund_name, year, month_number, error in failed_files:
+            print(f"  - {fund_name} {year}-{month_number:02d}: {error}")
 
 
 if __name__ == "__main__":

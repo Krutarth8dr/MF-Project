@@ -17,22 +17,20 @@ AMC_NAME = "Nippon India Mutual Fund"
 CANONICAL_WORKBOOK = RAW_FOLDER / "NIMF-MONTHLY-PORTFOLIO-31-May-26.xls"
 
 TARGET_SHEETS = [
-    "GF",  
-    "GS",  
+    "GF",
+    "GS",
     "PH",
     "ME",
     "NE",
-    "EO",      
-    "SE",  
+    "EO",
+    "SE",
     "TS",
-    "LE",  
+    "LE",
     "EA",
     "QP",
     "SC",
-    "SF",
     "AF",
     "LC",
-    "MG",  
 ]
 
 STANDARD_COLUMNS = [
@@ -46,9 +44,7 @@ STANDARD_COLUMNS = [
     "Quantity",
 ]
 
-VALID_ISIN_PREFIXES = (
-    "INE",
-)
+VALID_ISIN_PREFIXES = ("INE",)
 
 
 def read_sheet_metadata(excel, sheet_name):
@@ -70,7 +66,6 @@ def read_sheet_metadata(excel, sheet_name):
         month=portfolio_date.month,
         day=1,
     )
-
 
     month = portfolio_date.strftime("%b-%Y")
 
@@ -103,6 +98,7 @@ def extract_portfolio_date(preview):
             pass
 
     raise ValueError(f"Unable to parse date: {date_text}")
+
 
 def load_canonical_fund_names():
     """
@@ -153,7 +149,8 @@ def load_canonical_fund_names():
 
     return mapping
 
-def clean_single_sheet(excel, sheet_name,fund_name):
+
+def clean_single_sheet(excel, sheet_name, fund_name):
     """
     Cleans one Nippon fund sheet and returns a
     standardized dataframe.
@@ -238,7 +235,8 @@ def clean_single_sheet(excel, sheet_name,fund_name):
     instrument_column = "Security_Name"
 
     subtotal_rows = df[
-        df[instrument_column].fillna("").astype(str).str.strip().str.lower() == "subtotal"
+        df[instrument_column].fillna("").astype(str).str.strip().str.lower()
+        == "subtotal"
     ]
 
     if not subtotal_rows.empty:
@@ -272,6 +270,7 @@ def clean_single_sheet(excel, sheet_name,fund_name):
     df = df[STANDARD_COLUMNS]
 
     return df
+
 
 def main():
 
@@ -357,7 +356,6 @@ def main():
 
         excel = pd.ExcelFile(
             file_path,
-
         )
 
         for sheet_name in TARGET_SHEETS:
@@ -510,6 +508,7 @@ def main():
     print(f"Total Rows  : {len(final_df)}")
     print(f"Funds       : {final_df['Fund_Name'].nunique()}")
     print(f"Months      : {final_df['Month'].nunique()}")
+
 
 if __name__ == "__main__":
     main()

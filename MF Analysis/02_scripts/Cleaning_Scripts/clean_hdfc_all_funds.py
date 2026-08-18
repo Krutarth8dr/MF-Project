@@ -1,6 +1,8 @@
-import pandas as pd
-from pathlib import Path
 import re
+import traceback
+from pathlib import Path
+
+import pandas as pd
 
 # ==============================================================================
 # SETTINGS
@@ -8,7 +10,7 @@ import re
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-RAW_HDFC_FOLDER = PROJECT_ROOT / "01_raw_files" / "HDFC"
+RAW_FOLDER = PROJECT_ROOT / "01_raw_files" / "HDFC"
 
 OUTPUT_FOLDER = PROJECT_ROOT / "03_clean_data" / "HDFC"
 OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -17,56 +19,70 @@ OUTPUT_FILE = OUTPUT_FOLDER / "HDFC_All_Funds_Cleaned.xlsx"
 
 AMC_NAME = "HDFC Mutual Fund"
 
-FUNDS = [
-    "HDFC Flexi Cap",
-    "HDFC Multi Cap",
-    "HDFC Large Cap",
-    "HDFC Balanced Advantage Fund",
-    "HDFC Focused Fund",
+STANDARD_COLUMNS = [
+    "AMC",
+    "Fund_Name",
+    "Portfolio_Date",
+    "Month",
+    "Security_Name",
+    "ISIN",
+    "Industry_Rating",
+    "Quantity",
 ]
 
 
 # ==============================================================================
-# HELPER FUNCTIONS
+# HELPERS
 # ==============================================================================
 
 
-def get_month_from_filename(file_name):
-    """
-    Example
+def normalize_header(value):
+    return re.sub(r"[^a-z0-9]", "", str(value).strip().lower())
 
-    Monthly HDFC Flexi Cap Fund - 31 January 2026.xlsx
 
-    Returns
+def parse_date_text(value):
+    if pd.isna(value):
+        return pd.NaT
 
-    Month = Jan-2026
-    Portfolio_Date = 2026-01-01
-    """
+    text = str(value).strip()
 
+    match = re.search(r"portfolio\s+as\s+on\s+(.+)$", text, re.IGNORECASE)
+    if match:
+        text = match.group(1).strip()
+
+    parsed = pd.to_datetime(text, errors="coerce", dayfirst=True)
+
+    if pd.isna(parsed):
+        return pd.NaT
+
+    return parsed.replace(day=1)
+
+
+def extract_portfolio_date_from_file_name(workbook_path):
     match = re.search(
-        r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})",
-        file_name,
+        r"-\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        workbook_path.stem,
+        re.IGNORECASE,
     )
 
     if not match:
-        raise ValueError(f"Month not found in filename: {file_name}")
+        return pd.NaT
 
-    day, month_name, year = match.groups()
+    return parse_date_text(match.group(1))
 
-    date_value = pd.to_datetime(f"{day} {month_name} {year}")
 
-    return (
-        date_value.strftime("%b-%Y"),
-        date_value.replace(day=1),
-    )
+def extract_portfolio_date(df):
+    for row_idx in range(min(len(df), 10)):
+        for value in df.iloc[row_idx].tolist():
+            parsed = parse_date_text(value)
+            if pd.notna(parsed):
+                return parsed
+
+    return pd.NaT
 
 
 def get_month_key(portfolio_date):
-
-    portfolio_date = pd.to_datetime(
-        portfolio_date,
-        errors="coerce",
-    )
+    portfolio_date = pd.to_datetime(portfolio_date, errors="coerce")
 
     if pd.isna(portfolio_date):
         return None
@@ -75,7 +91,6 @@ def get_month_key(portfolio_date):
 
 
 def get_processed_keys(existing_df):
-
     existing_df = existing_df.copy()
 
     existing_df["Portfolio_Date"] = pd.to_datetime(
@@ -98,7 +113,6 @@ def get_processed_keys(existing_df):
 
 
 def is_valid_isin(isin):
-
     if pd.isna(isin):
         return False
 
@@ -107,120 +121,122 @@ def is_valid_isin(isin):
     return isin.startswith("INE")
 
 
-# ==============================================================================
-# CLEAN A SINGLE HDFC FUND
-# ==============================================================================
+def find_header_row(df):
+    for row_idx in range(len(df)):
+        row_values = [normalize_header(value) for value in df.iloc[row_idx].tolist()]
+
+        if "isin" in row_values and "nameoftheinstrument" in row_values:
+            return row_idx
+
+    return None
 
 
-def clean_single_hdfc_fund(fund_name, processed_keys):
+def find_required_columns(columns):
+    normalized_columns = {normalize_header(column): column for column in columns}
 
-    raw_folder = RAW_HDFC_FOLDER / fund_name
+    expected = {
+        "isin": "ISIN",
+        "nameoftheinstrument": "Security_Name",
+        "industryrating": "Industry_Rating",
+        "quantity": "Quantity",
+    }
 
-    if not raw_folder.exists():
-        print(f"Skipping. Folder not found: {raw_folder}")
-        return pd.DataFrame()
+    rename_map = {}
+    missing = []
 
-    files = sorted(raw_folder.glob("*.xlsx"))
+    for normalized_name, standard_name in expected.items():
+        original_column = normalized_columns.get(normalized_name)
 
-    if not files:
-        print(f"Skipping. No Excel files found for: {fund_name}")
-        return pd.DataFrame()
-
-    print()
-    print("=" * 90)
-    print(f"Cleaning fund : {fund_name}")
-    print(f"Files found   : {len(files)}")
-    print("=" * 90)
-
-    cleaned_data = []
-
-    for file_path in files:
-
-        month, portfolio_date = get_month_from_filename(file_path.name)
-        month_key = get_month_key(portfolio_date)
-
-        if (fund_name, month_key) in processed_keys:
-            print(f"Skipping : {file_path.name}")
+        if original_column is None:
+            missing.append(standard_name)
             continue
 
-        print(f"Processing : {file_path.name}")
+        rename_map[original_column] = standard_name
 
-        # --------------------------------------------------------
-        # Read workbook
-        # --------------------------------------------------------
+    return rename_map, missing
 
-        df = pd.read_excel(
-            file_path,
-            header=4,
-        )
 
-        clean_df = pd.DataFrame(index=df.index)
+def clean_quantity(series):
+    return pd.to_numeric(
+        series.astype(str).str.replace(",", "", regex=False).str.strip(),
+        errors="coerce",
+    )
 
-        clean_df["AMC"] = AMC_NAME
-        clean_df["Fund_Name"] = fund_name
-        clean_df["Portfolio_Date"] = portfolio_date
-        clean_df["Month"] = month
 
-        clean_df["ISIN"] = df.iloc[:, 1]
-        clean_df["Security_Name"] = df.iloc[:, 3]
-        clean_df["Industry_Rating"] = df.iloc[:, 4]
-        clean_df["Quantity"] = df.iloc[:, 5]
+# ==============================================================================
+# CLEAN A SINGLE HDFC WORKBOOK
+# ==============================================================================
 
-        # --------------------------------------------------------
-        # Text cleaning
-        # --------------------------------------------------------
 
-        clean_df["ISIN"] = clean_df["ISIN"].astype(str).str.strip()
+def clean_hdfc_file(workbook_path, fund_name):
+    preview_df = pd.read_excel(
+        workbook_path,
+        sheet_name=0,
+        header=None,
+        nrows=30,
+    )
 
-        clean_df["Security_Name"] = clean_df["Security_Name"].astype(str).str.strip()
+    portfolio_date = extract_portfolio_date(preview_df)
 
-        clean_df["Industry_Rating"] = (
-            clean_df["Industry_Rating"].fillna("").astype(str).str.strip()
-        )
+    if pd.isna(portfolio_date):
+        portfolio_date = extract_portfolio_date_from_file_name(workbook_path)
 
-        # --------------------------------------------------------
-        # Quantity cleaning
-        # --------------------------------------------------------
+    if pd.isna(portfolio_date):
+        raise ValueError(f"Portfolio date not found: {workbook_path}")
 
-        clean_df["Quantity"] = (
-            clean_df["Quantity"]
-            .astype(str)
-            .str.replace(",", "", regex=False)
-            .str.replace("-", "0", regex=False)
-            .str.strip()
-        )
+    header_row = find_header_row(preview_df)
 
-        clean_df["Quantity"] = pd.to_numeric(
-            clean_df["Quantity"],
-            errors="coerce",
-        )
+    if header_row is None:
+        raise ValueError(f"Header row not found: {workbook_path}")
 
-        # --------------------------------------------------------
-        # Keep only Indian equities
-        # --------------------------------------------------------
+    df = pd.read_excel(
+        workbook_path,
+        sheet_name=0,
+        header=header_row,
+    )
 
-        clean_df = clean_df[clean_df["ISIN"].apply(is_valid_isin)]
+    df = df.dropna(how="all")
+    df.columns = [str(column).strip() for column in df.columns]
 
-        clean_df = clean_df[clean_df["Quantity"].notna()]
+    rename_map, missing_columns = find_required_columns(df.columns)
 
-        cleaned_data.append(clean_df)
+    if missing_columns:
+        raise ValueError(f"Missing columns {missing_columns} in file:\n{workbook_path}")
 
-        processed_keys.add(
-            (
-                fund_name,
-                month_key,
-            )
-        )
+    df = df[list(rename_map.keys())].rename(columns=rename_map)
 
-        print(f"Rows : {len(clean_df)}")
+    # HDFC files end the equity section with "Sub Total" in the ISIN column.
+    # Keep only rows above that marker before applying ISIN filters.
+    sub_total_mask = (
+        df["ISIN"]
+        .astype(str)
+        .str.strip()
+        .str.contains(r"^sub\s*total$", case=False, na=False, regex=True)
+    )
 
-    if cleaned_data:
-        return pd.concat(
-            cleaned_data,
-            ignore_index=True,
-        )
+    if sub_total_mask.any():
+        first_sub_total_position = sub_total_mask[sub_total_mask].index[0]
+        df = df.loc[:first_sub_total_position].iloc[:-1].copy()
 
-    return pd.DataFrame()
+    df["ISIN"] = df["ISIN"].astype(str).str.strip().str.upper()
+    df = df[df["ISIN"].apply(is_valid_isin)]
+
+    df["Security_Name"] = df["Security_Name"].astype(str).str.strip()
+    df = df[df["Security_Name"].notna()]
+    df = df[df["Security_Name"] != ""]
+    df = df[df["Security_Name"].str.lower() != "nan"]
+
+    df["Industry_Rating"] = df["Industry_Rating"].fillna("").astype(str).str.strip()
+
+    df["Quantity"] = clean_quantity(df["Quantity"])
+    df = df[df["Quantity"].notna()]
+
+    df.insert(0, "AMC", AMC_NAME)
+    df.insert(1, "Fund_Name", fund_name)
+    df.insert(2, "Portfolio_Date", portfolio_date)
+    df.insert(3, "Month", portfolio_date.strftime("%b-%Y"))
+
+    return df[STANDARD_COLUMNS]
 
 
 # ==============================================================================
@@ -229,173 +245,153 @@ def clean_single_hdfc_fund(fund_name, processed_keys):
 
 
 def main():
-
-    print("=" * 90)
+    print("=" * 100)
     print("Cleaning HDFC Monthly Portfolio Files")
-    print("=" * 90)
+    print("=" * 100)
 
-    all_data = []
+    if not RAW_FOLDER.exists():
+        raise FileNotFoundError(f"HDFC raw folder not found:\n{RAW_FOLDER}")
 
     existing_df = None
     processed_keys = set()
 
     if OUTPUT_FILE.exists():
-
         try:
-
             existing_df = pd.read_excel(OUTPUT_FILE)
 
-            required_columns = [
-                "Fund_Name",
-                "Portfolio_Date",
-            ]
-
             missing = [
-                col for col in required_columns if col not in existing_df.columns
+                col for col in STANDARD_COLUMNS if col not in existing_df.columns
             ]
 
             if missing:
-
                 print("Existing cleaned file is incompatible.")
                 print("Reprocessing all HDFC files.")
-
                 existing_df = None
-
             else:
-
+                existing_df = existing_df[STANDARD_COLUMNS]
                 processed_keys = get_processed_keys(existing_df)
-
                 print(
                     f"Existing cleaned file found "
                     f"({len(processed_keys)} fund-month combinations)."
                 )
 
         except Exception as e:
-
             print("Could not read existing cleaned file.")
-
             print(e)
-
             existing_df = None
             processed_keys = set()
 
-    # ----------------------------------------------------------
-    # Process every HDFC fund
-    # ----------------------------------------------------------
+    all_data = []
+    workbook_count = 0
+    skipped_count = 0
+    error_count = 0
 
-    for fund in FUNDS:
+    fund_folders = sorted(folder for folder in RAW_FOLDER.iterdir() if folder.is_dir())
 
-        cleaned = clean_single_hdfc_fund(
-            fund,
-            processed_keys,
+    if not fund_folders:
+        raise FileNotFoundError(f"No HDFC fund folders found in:\n{RAW_FOLDER}")
+
+    for fund_folder in fund_folders:
+        fund_name = fund_folder.name
+        workbook_files = sorted(
+            file
+            for file in fund_folder.glob("*.xlsx")
+            if not file.name.startswith("~$")
         )
 
-        if not cleaned.empty:
-            all_data.append(cleaned)
+        if not workbook_files:
+            print(f"\n{fund_name}")
+            print("No workbook files found")
+            continue
 
-    # ----------------------------------------------------------
-    # Nothing new
-    # ----------------------------------------------------------
+        print()
+        print("#" * 100)
+        print(fund_name)
+        print("#" * 100)
+
+        for workbook_path in workbook_files:
+            workbook_count += 1
+
+            portfolio_date = extract_portfolio_date_from_file_name(workbook_path)
+            month_key = get_month_key(portfolio_date)
+
+            if month_key is not None and (fund_name, month_key) in processed_keys:
+                skipped_count += 1
+                print(f"{workbook_path.name:<75} Already processed")
+                continue
+
+            try:
+                cleaned = clean_hdfc_file(workbook_path, fund_name)
+
+                if cleaned.empty:
+                    print(f"{workbook_path.name:<75} No valid rows")
+                    continue
+
+                all_data.append(cleaned)
+
+                month_key = get_month_key(cleaned["Portfolio_Date"].iloc[0])
+                processed_keys.add((fund_name, month_key))
+
+                print(f"{workbook_path.name:<75} Rows: {len(cleaned)}")
+
+            except Exception:
+                error_count += 1
+                print(f"{workbook_path.name:<75} ERROR")
+                traceback.print_exc()
 
     if not all_data:
-
         if existing_df is not None:
-
             print()
             print("No new HDFC data found.")
             print("Existing cleaned file preserved.")
             print("Output:")
             print(OUTPUT_FILE)
-
             return
 
         raise ValueError("No cleaned HDFC data produced.")
 
-    # ----------------------------------------------------------
-    # Combine new data
-    # ----------------------------------------------------------
+    new_df = pd.concat(all_data, ignore_index=True)
 
-    new_df = pd.concat(
-        all_data,
-        ignore_index=True,
-    )
-
-    if existing_df is not None:
-
-        final_df = pd.concat(
-            [
-                existing_df,
-                new_df,
-            ],
-            ignore_index=True,
-        )
-
+    if existing_df is not None and not existing_df.empty:
+        final_df = pd.concat([existing_df, new_df], ignore_index=True)
     else:
-
         final_df = new_df
-
-    # ----------------------------------------------------------
-    # Cleanup
-    # ----------------------------------------------------------
 
     final_df["Portfolio_Date"] = pd.to_datetime(
         final_df["Portfolio_Date"],
         errors="coerce",
     )
 
+    final_df = final_df[STANDARD_COLUMNS]
     final_df = final_df.drop_duplicates()
-
     final_df = final_df.sort_values(
-        by=[
-            "Portfolio_Date",
-            "Fund_Name",
-            "Security_Name",
-        ],
-        ascending=[
-            True,
-            True,
-            True,
-        ],
+        by=["Portfolio_Date", "Fund_Name", "Security_Name"],
+        ascending=[True, True, True],
     )
-
-    final_df.reset_index(
-        drop=True,
-        inplace=True,
-    )
-
-    # ----------------------------------------------------------
-    # Save
-    # ----------------------------------------------------------
+    final_df.reset_index(drop=True, inplace=True)
 
     if OUTPUT_FILE.exists():
-
         try:
-
             OUTPUT_FILE.unlink()
-
         except PermissionError:
-
-            print()
             print("ERROR")
             print("Please close:")
             print(OUTPUT_FILE)
-
             return
 
-    final_df.to_excel(
-        OUTPUT_FILE,
-        index=False,
-    )
+    final_df.to_excel(OUTPUT_FILE, index=False)
 
     print()
-    print("=" * 90)
+    print("=" * 100)
     print("HDFC Cleaning Complete")
-    print("=" * 90)
-    print(f"Funds Processed : {len(FUNDS)}")
-    print(f"New rows added  : {len(new_df)}")
-    print(f"Total rows      : {len(final_df)}")
-    print(f"Funds           : {final_df['Fund_Name'].nunique()}")
-    print(f"Output          : {OUTPUT_FILE}")
+    print("=" * 100)
+    print(f"Workbooks Checked : {workbook_count}")
+    print(f"Already Processed : {skipped_count}")
+    print(f"Errors            : {error_count}")
+    print(f"New rows added    : {len(new_df)}")
+    print(f"Total rows        : {len(final_df)}")
+    print(f"Funds             : {final_df['Fund_Name'].nunique()}")
+    print(f"Output            : {OUTPUT_FILE}")
 
 
 # ==============================================================================

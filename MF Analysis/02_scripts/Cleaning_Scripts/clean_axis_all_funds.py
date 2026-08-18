@@ -1,7 +1,6 @@
 from pathlib import Path
 import re
 from datetime import datetime
-from unicodedata import name
 
 import pandas as pd
 
@@ -12,21 +11,27 @@ import pandas as pd
 AMC_NAME = "AXIS"
 
 TARGET_SHEETS = [
-    "AXIS500",
     "AXISCON",
+    "AXISBCF",
     "AXISDEF",
-    "AXISEAF",
+    "AXISEHF",
     "AXISEQF",
     "AXISESF",
+    "AXISESG",
     "AXISF25",
     "AXISGOF",
     "AXISIMF",
     "AXISMCF",
+    "AXISMIF",
     "AXISMLC",
     "AXISMLF",
+    "AXISTAF",
+    "AXISSSF",
     "AXISSCF",
     "AXISVAL",
 ]
+
+TARGET_SHEETS = list(dict.fromkeys(TARGET_SHEETS))
 
 STANDARD_COLUMNS = [
     "AMC",
@@ -39,6 +44,7 @@ STANDARD_COLUMNS = [
     "Quantity",
 ]
 
+# Keep the ORIGINAL AXIS section boundaries.
 STOP_MARKERS = [
     "Debt Securities",
     "Money Market Instruments",
@@ -54,7 +60,6 @@ ROOT_FOLDER = Path(__file__).resolve().parents[2]
 RAW_FOLDER = ROOT_FOLDER / "01_raw_files" / "AXIS"
 
 OUTPUT_FOLDER = ROOT_FOLDER / "03_clean_data" / "AXIS"
-
 OUTPUT_FOLDER.mkdir(
     parents=True,
     exist_ok=True,
@@ -62,7 +67,10 @@ OUTPUT_FOLDER.mkdir(
 
 OUTPUT_FILE = OUTPUT_FOLDER / "AXIS_All_Funds_Cleaned.xlsx"
 
+# June 2026 remains the canonical source for Fund_Name.
 CANONICAL_WORKBOOK = RAW_FOLDER / "Monthly_Portfolio_31_05_26.xlsx"
+
+
 # ==============================================================================
 # HELPER FUNCTIONS
 # ==============================================================================
@@ -72,9 +80,21 @@ def print_separator(character="=", width=100):
     print(character * width)
 
 
+def normalize_text(value):
+    if pd.isna(value):
+        return ""
+
+    return re.sub(
+        r"\s+",
+        " ",
+        str(value).replace("\n", " ").strip(),
+    ).lower()
+
+
 def is_valid_isin(value):
     """
-    Returns True only for valid Indian ISINs.
+    Valid Indian ISIN:
+        IN + 10 alphanumeric characters
     """
 
     if pd.isna(value):
@@ -84,7 +104,7 @@ def is_valid_isin(value):
 
     return bool(
         re.fullmatch(
-            r"IN[A-Z0-9]{10}",
+            r"INE[A-Z0-9]{9}",
             value,
         )
     )
@@ -95,54 +115,50 @@ def is_valid_isin(value):
 # ==============================================================================
 
 
-def parse_workbook_date(file_path):
+def parse_date_from_filename(file_path):
     """
-    Extracts the portfolio date from all Axis filename formats.
-
-    Normalized to the 1st of the month (e.g. 31_05_26 -> 1-May-2026), the
-    same convention followed across all cleaning scripts -- the actual day
-    parsed from the filename is discarded and only year/month are kept.
+    Try all filename formats previously supported by the AXIS cleaner.
+    Returns None if no supported filename date exists.
     """
 
     name = file_path.stem
 
-    # New format
+    # ------------------------------------------------------------------
+    # New format:
     # Monthly_Portfolio_31_05_26
-
+    # ------------------------------------------------------------------
     match = re.search(
         r"(\d{2})_(\d{2})_(\d{2})$",
         name,
     )
 
     if match:
-
         day = int(match.group(1))
         month = int(match.group(2))
         year = 2000 + int(match.group(3))
 
-        return pd.Timestamp(datetime(year, month, 1))  # normalized to 1st of month
+        return pd.Timestamp(datetime(year, month, 1))
 
-    # Old format
+    # ------------------------------------------------------------------
+    # Old format:
     # monthly_20portfolio-31_2005_2025
-
+    # ------------------------------------------------------------------
     match = re.search(
         r"(\d{2})_20(\d{2})_(\d{4})$",
         name,
     )
 
     if match:
-
         day = int(match.group(1))
         month = int(match.group(2))
         year = int(match.group(3))
 
-        return pd.Timestamp(datetime(year, month, 1))  # normalized to 1st of month
+        return pd.Timestamp(datetime(year, month, 1))
 
     # ------------------------------------------------------------------
-    # Old text month format
+    # Old text-month format:
     # monthly_20portfolio-30_20june_202024_20
     # ------------------------------------------------------------------
-
     match = re.search(
         r"(\d{2})_20([A-Za-z]+)_20(\d{4})_20$",
         name,
@@ -150,11 +166,6 @@ def parse_workbook_date(file_path):
     )
 
     if match:
-
-        day = int(match.group(1))
-
-        month_name = match.group(2).lower()
-
         month_lookup = {
             "january": 1,
             "february": 2,
@@ -170,30 +181,129 @@ def parse_workbook_date(file_path):
             "december": 12,
         }
 
-        month = month_lookup[month_name]
+        month_name = match.group(2).lower()
 
-        year = int(match.group(3))
+        if month_name in month_lookup:
+            month = month_lookup[month_name]
+            year = int(match.group(3))
 
-        return pd.Timestamp(datetime(year, month, 1))  # normalized to 1st of month
+            return pd.Timestamp(datetime(year, month, 1))
 
     # ------------------------------------------------------------------
     # monthly_20portfolio_2031-10-2025
     # ------------------------------------------------------------------
-
     match = re.search(
         r"20(\d{2})-(\d{2})-(\d{4})$",
         name,
     )
 
     if match:
-
         day = int(match.group(1))
         month = int(match.group(2))
         year = int(match.group(3))
 
-        return pd.Timestamp(datetime(year, month, 1))  # normalized to 1st of month
+        return pd.Timestamp(datetime(year, month, 1))
 
-    raise ValueError(f"Unable to parse date from filename:\n{file_path.name}")
+    return None
+
+
+def parse_date_from_workbook(workbook, sheet_names):
+    """
+    Fallback date parser.
+
+    If the filename has no usable date, inspect the first few rows of
+    the workbook for text such as:
+
+        Monthly Portfolio Statement as on April 30, 2024
+
+    or:
+
+        Portfolio Statement as on April 30, 2024
+    """
+
+    date_pattern = re.compile(
+        r"as\s+on\s+" r"([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        re.IGNORECASE,
+    )
+
+    # Prefer the Index first, then the target sheets.
+    preferred_sheets = []
+
+    if "Index" in sheet_names:
+        preferred_sheets.append("Index")
+
+    preferred_sheets.extend([sheet for sheet in TARGET_SHEETS if sheet in sheet_names])
+
+    for sheet in preferred_sheets:
+
+        try:
+            preview = pd.read_excel(
+                workbook,
+                sheet_name=sheet,
+                header=None,
+                nrows=15,
+            )
+        except Exception:
+            continue
+
+        for row in preview.itertuples(index=False):
+
+            for cell in row:
+
+                if pd.isna(cell):
+                    continue
+
+                text = str(cell).strip()
+
+                match = date_pattern.search(text)
+
+                if not match:
+                    continue
+
+                date_text = match.group(1)
+
+                date_text = re.sub(
+                    r",(\S)",
+                    r", \1",
+                    date_text,
+                )
+
+                parsed = pd.to_datetime(
+                    date_text,
+                    errors="coerce",
+                )
+
+                if pd.notna(parsed):
+                    return parsed.replace(day=1)
+
+    return None
+
+
+def get_portfolio_date(workbook_path, workbook):
+    """
+    Filename is preferred because that was the original AXIS method.
+
+    If the filename is a renamed/uploaded UUID (or otherwise contains no
+    supported date), fall back to the date printed inside the workbook.
+    """
+
+    date_from_filename = parse_date_from_filename(workbook_path)
+
+    if date_from_filename is not None:
+        return date_from_filename
+
+    date_from_workbook = parse_date_from_workbook(
+        workbook,
+        workbook.sheet_names,
+    )
+
+    if date_from_workbook is not None:
+        return date_from_workbook
+
+    raise ValueError(
+        f"Unable to determine portfolio date from filename or workbook: "
+        f"{workbook_path.name}"
+    )
 
 
 # ==============================================================================
@@ -203,9 +313,12 @@ def parse_workbook_date(file_path):
 
 def load_fund_name_mapping():
     """
-    Reads the May 2026 workbook and creates
+    Reads the canonical May/June 2026 AXIS workbook and creates:
 
-    Sheet Code -> Canonical Fund Name
+        Sheet Code -> Canonical Fund Name
+
+    The original AXIS logic is preserved: the first row of each fund sheet
+    contains the fund name in column B.
     """
 
     print()
@@ -252,6 +365,98 @@ def load_fund_name_mapping():
 
 
 # ==============================================================================
+# SHEET HEADER DETECTION
+# ==============================================================================
+
+
+def find_header_row_and_columns(workbook, sheet_name):
+    """
+    Detect the AXIS holdings header dynamically.
+
+    This preserves the original expected fields but does not assume that
+    the header is at a fixed row.
+
+    Supported security-name variants include:
+        Name of the Instrument
+        Name of the Instrument / Issuer
+
+    Supported industry variants include:
+        Industry
+        Industry / Rating
+        Industry / Rating (or similar normalized forms)
+    """
+
+    preview = pd.read_excel(
+        workbook,
+        sheet_name=sheet_name,
+        header=None,
+        nrows=30,
+    )
+
+    for row_idx in range(len(preview)):
+
+        row = preview.iloc[row_idx].tolist()
+
+        normalized = [normalize_text(value) for value in row]
+
+        security_col = None
+        isin_col = None
+        industry_col = None
+        quantity_col = None
+
+        # Security name.
+        for col_idx, value in enumerate(normalized):
+
+            if value.startswith("name of the instrument"):
+                security_col = col_idx
+                break
+
+        # ISIN.
+        for col_idx, value in enumerate(normalized):
+
+            if value == "isin":
+                isin_col = col_idx
+                break
+
+        # Industry / Rating.
+        for col_idx, value in enumerate(normalized):
+
+            if (
+                value == "industry"
+                or value.startswith("industry / rating")
+                or value.startswith("industry^")
+                or value.startswith("industry /")
+            ):
+                industry_col = col_idx
+                break
+
+        # Quantity.
+        for col_idx, value in enumerate(normalized):
+
+            if value == "quantity":
+                quantity_col = col_idx
+                break
+
+        if (
+            security_col is not None
+            and isin_col is not None
+            and industry_col is not None
+            and quantity_col is not None
+        ):
+            return (
+                row_idx,
+                {
+                    "Security_Name": security_col,
+                    "ISIN": isin_col,
+                    "Industry_Rating": industry_col,
+                    "Quantity": quantity_col,
+                },
+            )
+
+    raise ValueError(f"{sheet_name}: Header row not found.")
+
+
+# ==============================================================================
 # SHEET CLEANING
 # ==============================================================================
 
@@ -263,39 +468,36 @@ def clean_sheet(
     fund_name,
 ):
     """
-    Cleans a single Axis fund sheet.
+    Clean one AXIS fund sheet.
+
+    Original AXIS section logic is preserved:
+
+        Start:
+        '(a) Listed / awaiting listing on Stock Exchanges'
+
+        Stop at the first occurrence of one of:
+            Debt Securities
+            Money Market Instruments
+            Reverse Repo
+            TREPS
+            Net Receivables
+            GRAND TOTAL
+            Sub Total
     """
 
     print(f"{sheet_name:<10} Cleaning...")
 
     # -------------------------------------------------------------------------
-    # Detect header row
+    # Detect the actual header row and actual column positions.
     # -------------------------------------------------------------------------
 
-    preview = pd.read_excel(
+    header_row, column_map = find_header_row_and_columns(
         workbook,
-        sheet_name=sheet_name,
-        header=None,
-        nrows=20,
+        sheet_name,
     )
 
-    header_row = None
-
-    for i in range(len(preview)):
-
-        row = preview.iloc[i].fillna("").astype(str).str.upper().tolist()
-
-        row_text = " | ".join(row)
-
-        if "NAME OF THE INSTRUMENT" in row_text and "ISIN" in row_text:
-            header_row = i
-            break
-
-    if header_row is None:
-        raise ValueError(f"{sheet_name}: Header row not found.")
-
     # -------------------------------------------------------------------------
-    # Read sheet
+    # Read the sheet using the detected header.
     # -------------------------------------------------------------------------
 
     data = pd.read_excel(
@@ -304,42 +506,33 @@ def clean_sheet(
         header=header_row,
     )
 
-    data = data.dropna(
-        how="all",
-    ).reset_index(drop=True)
-
-    data.columns = [str(col).strip() for col in data.columns]
+    data = data.dropna(how="all").reset_index(drop=True)
 
     # -------------------------------------------------------------------------
-    # Rename columns
+    # Rename detected columns by position.
+    #
+    # This is more robust than relying on pandas' exact header text.
     # -------------------------------------------------------------------------
 
-    rename_map = {
-        "Name of the Instrument": "Security_Name",
-        "ISIN": "ISIN",
-        "Industry": "Industry_Rating",
-        "Industry / Rating": "Industry_Rating",
-        "Quantity": "Quantity",
-    }
+    security_col = data.columns[column_map["Security_Name"]]
+
+    isin_col = data.columns[column_map["ISIN"]]
+
+    industry_col = data.columns[column_map["Industry_Rating"]]
+
+    quantity_col = data.columns[column_map["Quantity"]]
 
     data = data.rename(
-        columns=rename_map,
+        columns={
+            security_col: "Security_Name",
+            isin_col: "ISIN",
+            industry_col: "Industry_Rating",
+            quantity_col: "Quantity",
+        }
     )
 
-    required_columns = [
-        "Security_Name",
-        "ISIN",
-        "Industry_Rating",
-        "Quantity",
-    ]
-
-    for column in required_columns:
-
-        if column not in data.columns:
-            raise ValueError(f"{sheet_name}: Missing column '{column}'")
-
     # -------------------------------------------------------------------------
-    # Find start of equity section
+    # Find start of equity section.
     # -------------------------------------------------------------------------
 
     security = data["Security_Name"].fillna("").astype(str).str.strip()
@@ -348,7 +541,9 @@ def clean_sheet(
 
     for i, value in enumerate(security):
 
-        if value == "(a) Listed / awaiting listing on Stock Exchanges":
+        normalized_value = normalize_text(value)
+
+        if normalized_value == "(a) listed / awaiting listing on stock exchanges":
             start_row = i + 1
             break
 
@@ -356,18 +551,28 @@ def clean_sheet(
         raise ValueError(f"{sheet_name}: Equity section not found.")
 
     # -------------------------------------------------------------------------
-    # Find end of equity section
+    # Find end of equity section.
+    #
+    # IMPORTANT: preserve the original AXIS stop-marker methodology.
     # -------------------------------------------------------------------------
 
     end_row = len(data)
 
-    for i in range(start_row, len(data)):
+    for i in range(
+        start_row,
+        len(data),
+    ):
 
         value = security.iloc[i]
 
+        if not value:
+            continue
+
+        value_upper = value.upper()
+
         for marker in STOP_MARKERS:
 
-            if marker.upper() in value.upper():
+            if marker.upper() in value_upper:
 
                 end_row = i
                 break
@@ -378,7 +583,7 @@ def clean_sheet(
     data = data.iloc[start_row:end_row].copy()
 
     # -------------------------------------------------------------------------
-    # Keep only valid equity rows
+    # Keep only valid equity holdings.
     # -------------------------------------------------------------------------
 
     data = data[data["ISIN"].apply(is_valid_isin)]
@@ -395,7 +600,9 @@ def clean_sheet(
     data["Industry_Rating"] = data["Industry_Rating"].fillna("").astype(str).str.strip()
 
     # -------------------------------------------------------------------------
-    # Add metadata
+    # Add metadata.
+    #
+    # Fund_Name comes from the canonical workbook.
     # -------------------------------------------------------------------------
 
     data.insert(
@@ -440,9 +647,18 @@ def main():
     print("Cleaning Axis Monthly Portfolio Files")
     print_separator()
 
+    # --------------------------------------------------------------------------
+    # Canonical Fund Names
+    # --------------------------------------------------------------------------
+
     fund_name_mapping = load_fund_name_mapping()
 
+    # --------------------------------------------------------------------------
+    # Monthly workbooks
+    # --------------------------------------------------------------------------
+
     workbook_files = list(RAW_FOLDER.glob("*.xls"))
+
     workbook_files += list(RAW_FOLDER.glob("*.xlsx"))
 
     workbook_files = [file for file in workbook_files if not file.name.startswith("~$")]
@@ -461,11 +677,24 @@ def main():
         print(workbook_path.name)
         print_separator("#")
 
-        portfolio_date = parse_workbook_date(workbook_path)
+        try:
 
-        workbook = pd.ExcelFile(
-            workbook_path,
-        )
+            workbook = pd.ExcelFile(
+                workbook_path,
+            )
+
+            # Filename first; workbook text as fallback.
+            portfolio_date = get_portfolio_date(
+                workbook_path,
+                workbook,
+            )
+
+            print(f"Portfolio Date : " f"{portfolio_date.strftime('%b-%Y')}")
+
+        except Exception as error:
+
+            print(f"ERROR opening/date detection: {error}")
+            continue
 
         for sheet in TARGET_SHEETS:
 
@@ -486,7 +715,8 @@ def main():
                     fund_name=fund_name,
                 )
 
-                all_data.append(cleaned)
+                if not cleaned.empty:
+                    all_data.append(cleaned)
 
             except Exception as error:
 
@@ -499,18 +729,18 @@ def main():
 
         raise RuntimeError("No cleaned data generated.")
 
+    # --------------------------------------------------------------------------
+    # Combine.
+    # --------------------------------------------------------------------------
+
     final_df = pd.concat(
         all_data,
         ignore_index=True,
     )
 
-    final_df = final_df.drop_duplicates(
-        subset=[
-            "Fund_Name",
-            "Portfolio_Date",
-            "ISIN",
-        ]
-    )
+    # Keep the original Axis de-duplication concept, but avoid collapsing
+    # distinct securities that happen to share a Fund/Date/ISIN unexpectedly.
+    final_df = final_df.drop_duplicates()
 
     final_df = final_df.sort_values(
         [
@@ -520,10 +750,13 @@ def main():
         ]
     ).reset_index(drop=True)
 
+    # --------------------------------------------------------------------------
+    # Write.
+    # --------------------------------------------------------------------------
+
     if OUTPUT_FILE.exists():
 
         try:
-
             OUTPUT_FILE.unlink()
 
         except PermissionError:
@@ -545,7 +778,11 @@ def main():
     print_separator()
 
     print(f"Workbooks Processed : {total_workbooks}")
+
     print(f"Total Rows          : {len(final_df)}")
+
+    print(f"Funds               : " f"{final_df['Fund_Name'].nunique()}")
+
     print(f"Output              : {OUTPUT_FILE}")
 
 

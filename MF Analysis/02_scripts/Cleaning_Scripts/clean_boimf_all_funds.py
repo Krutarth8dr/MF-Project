@@ -26,7 +26,7 @@ CANONICAL_JUNE = os.path.join(ROOT_RAW, '2026', '06', 'monthly-portfolio---30-ju
 TARGET_SHEETS = ["YB04","YB07","YB08","YB09","YB21","YB30","YB31","YB33","YB34","YB36","YB37","YB38","YB39","YB40","YB41","YB43","YB44"]
 START_DATE = date(2024, 10, 1)
 AMC_NAME = "Bank Of India"
-ISIN_RE = re.compile(r"IN[A-Z0-9]{10}")
+ISIN_RE = re.compile(r"INE[A-Z0-9]{9}")
 
 STANDARD_COLUMNS = ["AMC","Fund_Name","Portfolio_Date","Month","Security_Name","ISIN","Industry_Rating","Quantity"]
 

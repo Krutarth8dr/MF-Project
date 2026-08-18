@@ -27,18 +27,10 @@ TARGET_SHEETS = [
     "Focused",
     "DAAF",
     "ESF",
-    "EQUALNIFTY50",
-    "ARBITRAGE",
     "HEALTHCARE",
-    "NIFTY50INDEX",
-    "NIFTYNEXT50INDEX",
     "QUANT",
     "VALUE",
-    "Nifty 50 Equal ETF",
-    "NIFTY MIDCAP 150 Q50",
-    "Nifty Private Bank ETF",
     "Multi Asset",
-    "Nifty Smallcap250 Quality 50",
     "Multicap Fund",
     "Business Cycle Fund",
 ]
@@ -65,7 +57,7 @@ def is_valid_isin(value):
 
     return bool(
         re.fullmatch(
-            r"IN[A-Z0-9]{10}",
+            r"INE[A-Z0-9]{9}",
             value,
         )
     )
@@ -628,4 +620,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

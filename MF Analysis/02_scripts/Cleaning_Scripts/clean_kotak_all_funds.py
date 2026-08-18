@@ -30,9 +30,7 @@ CANONICAL_FILENAME_HINTS = ["june", "2026"]  # must all appear (case-insensitive
 # confirmed-clean equity-style sheet. Add more equity-style codes here once
 # each one has been checked.
 TARGET_SHEETS = [
-    "A50",
     "CMP",
-    "BSI",
     "CON",
     "ELS",
     "EME",
@@ -55,7 +53,6 @@ TARGET_SHEETS = [
     "MAF",
     "MID",
     "MUC",
-    "NCI",
     "SEF",
     "SPO",
     "SRF",

@@ -22,17 +22,12 @@ OUTPUT_FOLDER.mkdir(
 OUTPUT_FILE = OUTPUT_FOLDER / "JIO_BLACKROCK_All_Funds_Cleaned.xlsx"
 
 CANONICAL_WORKBOOK = (
-    RAW_FOLDER / "JioBlackRock Mutual Fund-Monthly-Portfolio-30-06-2026.xlsx"
+    RAW_FOLDER / "Jio BlackRock Mutual Fund-Monthly-Portfolio-30-06-2026.xlsx"
 )
 
 TARGET_SHEETS = [
     "JBLARGE",
-    "JBN50",
-    "JBNNX50",
-    "JBNM150",
-    "JBNS250",
     "JBFLEXI",
-    "JBARB",
     "JBSECRO",
 ]
 

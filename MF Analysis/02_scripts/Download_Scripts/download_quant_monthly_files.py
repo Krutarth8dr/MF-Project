@@ -233,13 +233,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--start-year",
         type=int,
-        default=2024,
+        default=2026,
         help="Start year for download range",
     )
     parser.add_argument(
         "--start-month",
         type=int,
-        default=10,
+        default=7,
         help="Start month for download range (1-12)",
     )
     parser.add_argument(
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--end-month",
         type=int,
-        default=6,
+        default=7,
         help="End month for download range (1-12)",
     )
     parser.add_argument(
