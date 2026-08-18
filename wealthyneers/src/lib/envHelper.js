@@ -6,10 +6,10 @@ import path from 'path';
  * to prevent stale process.env memory caches when keys or plan IDs are updated.
  */
 export function getRazorpayCredentials() {
-  let keyId = process.env.RAZORPAY_KEY_ID;
-  let keySecret = process.env.RAZORPAY_KEY_SECRET;
-  let planId = process.env.RAZORPAY_PLAN_ID || 'plan_TR9KJErgeQJndX';
-  let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+  let keyId = (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim().replace(/['"]/g, '');
+  let keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim().replace(/['"]/g, '');
+  let planId = (process.env.RAZORPAY_PLAN_ID || '').trim().replace(/['"]/g, '');
+  let webhookSecret = (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim().replace(/['"]/g, '');
 
   if (process.env.NODE_ENV !== 'production') {
     try {
