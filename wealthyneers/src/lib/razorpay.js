@@ -1,4 +1,4 @@
-// ─── Razorpay Checkout Helper (Recurring Subscriptions & Standard Orders) ───
+// ─── Razorpay Checkout Helper (UPI, Cards, Netbanking) ──────────────────
 import { supabase } from '@/lib/supabase';
 
 let sdkLoadPromise = null;
@@ -30,7 +30,6 @@ export function loadRazorpaySDK() {
     // 2. Check if script tag is already in DOM
     const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
     if (existingScript) {
-      // Poll every 50ms for up to 4000ms
       let elapsed = 0;
       const interval = setInterval(() => {
         elapsed += 50;
@@ -80,7 +79,7 @@ export function loadRazorpaySDK() {
 
 /**
  * Initiates Razorpay checkout for Wealthyneers Monthly Membership (₹30/month).
- * Supports both recurring subscription flow and standard order fallback.
+ * Full UPI, QR Code, Card, and Netbanking support.
  *
  * @param {Object} params
  * @param {Object} params.user - Authenticated Supabase user object { id, email, user_metadata }
@@ -108,7 +107,6 @@ export async function startRazorpayCheckout({
     // 2. Obtain current authenticated Supabase session JWT
     let { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      // Retry once to ensure token sync
       const refreshed = await supabase.auth.refreshSession();
       session = refreshed.data?.session;
     }
@@ -118,11 +116,8 @@ export async function startRazorpayCheckout({
       throw new Error('Active user session not found. Please log in again.');
     }
 
-    // 3. Request subscription creation from backend
-    let subData = null;
-    let isSubscriptionMode = true;
-
-    const subRes = await fetch('/api/create-subscription', {
+    // 3. Create server-side order with JWT authorization
+    const orderRes = await fetch('/api/create-order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -130,54 +125,37 @@ export async function startRazorpayCheckout({
       },
     });
 
-    subData = await subRes.json();
+    const orderData = await orderRes.json();
 
-    if (!subRes.ok) {
-      if (subData.code === 'ALREADY_SUBSCRIBED') {
+    if (!orderRes.ok) {
+      if (orderData.code === 'ALREADY_SUBSCRIBED') {
         throw new Error('You already have an active subscription.');
       }
-
-      // If subscription endpoint returned configuration or generic error, try fallback order endpoint
-      console.warn('[razorpay-checkout] Subscription creation failed, trying order endpoint...', subData.error);
-      const orderRes = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) {
-        throw new Error(subData.error || orderData.error || 'Failed to initiate payment.');
-      }
-
-      subData = orderData;
-      isSubscriptionMode = false;
+      throw new Error(orderData.error || 'Failed to initiate payment.');
     }
 
-    const subscriptionId = subData.subscriptionId || subData.subscription_id;
-    const orderId = subData.orderId || subData.order_id || subData.id;
-    const keyId = subData.keyId || subData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const orderId = orderData.orderId || orderData.order_id || orderData.id;
+    const keyId = orderData.keyId || orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-    if (!keyId || (!subscriptionId && !orderId)) {
+    if (!orderId || !keyId) {
       throw new Error('Invalid payment configuration returned from server.');
     }
 
     // 4. Ensure Razorpay SDK is ready
     const isSdkLoaded = await sdkPromise;
     if (!isSdkLoaded || typeof window === 'undefined' || !window.Razorpay) {
-      throw new Error('Unable to load Razorpay payment SDK. Please check your network or disable ad-blockers and try again.');
+      throw new Error('Unable to load Razorpay payment SDK. Please check your network connection.');
     }
 
-    // 5. Configure Razorpay Checkout Options
+    // 5. Configure Razorpay Standard Checkout Options (UPI, Cards, Netbanking)
     const options = {
       key: keyId,
+      order_id: orderId,
+      amount: orderData.amount || 3000,
+      currency: orderData.currency || 'INR',
       name: 'Wealthyneers',
-      description: 'Wealthyneers Monthly Subscription — ₹30/month',
+      description: 'Wealthyneers Monthly Membership — ₹30',
       image: '/wealthyneers-logo.png',
-      amount: subData.amount || 3000,
-      currency: subData.currency || 'INR',
       prefill: {
         email: user.email || '',
         name: user.user_metadata?.full_name || '',
@@ -187,24 +165,17 @@ export async function startRazorpayCheckout({
       },
       handler: async function (response) {
         try {
-          // Re-fetch active session token
           const { data: { session: freshSession } } = await supabase.auth.getSession();
           const activeToken = freshSession?.access_token || token;
 
-          // Determine verification endpoint
-          const endpoint = isSubscriptionMode && (response.razorpay_subscription_id || subscriptionId)
-            ? '/api/verify-subscription'
-            : '/api/verify-payment';
-
-          const verifyRes = await fetch(endpoint, {
+          const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${activeToken}`,
             },
             body: JSON.stringify({
-              razorpay_subscription_id: response.razorpay_subscription_id || subscriptionId || null,
-              razorpay_order_id: response.razorpay_order_id || orderId || null,
+              razorpay_order_id: response.razorpay_order_id || orderId,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             }),
@@ -230,13 +201,6 @@ export async function startRazorpayCheckout({
       },
     };
 
-    // Attach subscription_id for recurring subscriptions or order_id for one-time orders
-    if (isSubscriptionMode && subscriptionId) {
-      options.subscription_id = subscriptionId;
-    } else if (orderId) {
-      options.order_id = orderId;
-    }
-
     const rzp = new window.Razorpay(options);
 
     rzp.on('payment.failed', function (response) {
@@ -246,7 +210,6 @@ export async function startRazorpayCheckout({
       }
     });
 
-    // Notify UI that checkout modal is now opening (resets loading state)
     if (onOpen) onOpen();
 
     rzp.open();
