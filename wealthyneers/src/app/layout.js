@@ -13,13 +13,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
+      <body>
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="afterInteractive"
         />
-      </head>
-      <body>
         {/* ── Global Header ── */}
         <header className="header">
           <div className="container header-content">

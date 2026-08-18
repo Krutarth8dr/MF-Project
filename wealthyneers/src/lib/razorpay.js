@@ -21,56 +21,50 @@ export function loadRazorpaySDK() {
   }
 
   sdkLoadPromise = new Promise((resolve) => {
-    // 1. Double-check if Razorpay is already available
     if (window.Razorpay) {
       resolve(true);
       return;
     }
 
-    // 2. Check if script tag is already in DOM
+    let finished = false;
+    const finish = (result) => {
+      if (!finished) {
+        finished = true;
+        clearTimeout(timeout);
+        if (!result) {
+          sdkLoadPromise = null; // Reset to allow retry if failed
+        }
+        resolve(result);
+      }
+    };
+
+    const timeout = setTimeout(() => {
+      finish(!!window.Razorpay);
+    }, 4000);
+
     const existingScript = document.querySelector('script[src*="checkout.razorpay.com"]');
     if (existingScript) {
+      existingScript.addEventListener('load', () => finish(true));
+      existingScript.addEventListener('error', () => finish(false));
       let elapsed = 0;
       const interval = setInterval(() => {
         elapsed += 50;
         if (window.Razorpay) {
           clearInterval(interval);
-          resolve(true);
-        } else if (elapsed >= 4000) {
+          finish(true);
+        } else if (elapsed >= 3500) {
           clearInterval(interval);
-          resolve(!!window.Razorpay);
+          finish(!!window.Razorpay);
         }
       }, 50);
       return;
     }
 
-    // 3. Create and inject script tag with 4s timeout protection
-    let finished = false;
-    const timeout = setTimeout(() => {
-      if (!finished) {
-        finished = true;
-        resolve(!!window.Razorpay);
-      }
-    }, 4000);
-
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
-    script.onload = () => {
-      if (!finished) {
-        finished = true;
-        clearTimeout(timeout);
-        resolve(true);
-      }
-    };
-    script.onerror = () => {
-      if (!finished) {
-        finished = true;
-        clearTimeout(timeout);
-        resolve(false);
-      }
-    };
-
+    script.onload = () => finish(true);
+    script.onerror = () => finish(false);
     (document.head || document.body || document.documentElement).appendChild(script);
   });
 
