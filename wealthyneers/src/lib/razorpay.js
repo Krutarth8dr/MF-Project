@@ -1,4 +1,4 @@
-// ─── Razorpay Recurring Subscription Checkout Helper ─────────────────
+// ─── Razorpay Standard Checkout Helper (UPI, Cards, Netbanking) ─────────
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -20,7 +20,8 @@ export function loadRazorpaySDK() {
 }
 
 /**
- * Initiates Razorpay recurring subscription checkout for ₹30/month.
+ * Initiates Razorpay payment checkout for ₹30/month membership.
+ * Supports Google Pay, PhonePe, Paytm, UPI, Cards, and Netbanking.
  *
  * @param {Object} params
  * @param {Object} params.user - Authenticated Supabase user object { id, email, user_metadata }
@@ -50,8 +51,8 @@ export async function startRazorpayCheckout({
       throw new Error('Active user session not found. Please log in again.');
     }
 
-    // 2. Create server-side subscription with JWT authorization
-    const subRes = await fetch('/api/create-subscription', {
+    // 2. Create server-side order with JWT authorization
+    const orderRes = await fetch('/api/create-order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -59,20 +60,20 @@ export async function startRazorpayCheckout({
       },
     });
 
-    const subData = await subRes.json();
+    const orderData = await orderRes.json();
 
-    if (!subRes.ok) {
-      if (subData.code === 'ALREADY_SUBSCRIBED') {
+    if (!orderRes.ok) {
+      if (orderData.code === 'ALREADY_SUBSCRIBED') {
         throw new Error('You already have an active subscription.');
       }
-      throw new Error(subData.error || 'Failed to initiate subscription.');
+      throw new Error(orderData.error || 'Failed to initiate payment order.');
     }
 
-    const subscriptionId = subData.subscriptionId || subData.id;
-    const keyId = subData.keyId || subData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const orderId = orderData.orderId || orderData.id;
+    const keyId = orderData.keyId || orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
-    if (!subscriptionId || !keyId) {
-      throw new Error('Invalid subscription response from payment server.');
+    if (!orderId || !keyId) {
+      throw new Error('Invalid payment response from payment server.');
     }
 
     // 3. Load Razorpay SDK
@@ -81,16 +82,19 @@ export async function startRazorpayCheckout({
       throw new Error('Unable to load payment SDK. Please check your internet connection.');
     }
 
-    // 4. Configure Razorpay Subscription Checkout Options
+    // 4. Configure Razorpay Standard Checkout Options
     const options = {
       key: keyId,
-      subscription_id: subscriptionId, // Recurring subscription
+      order_id: orderId,
+      amount: orderData.amount || 3000,
+      currency: orderData.currency || 'INR',
       name: 'Wealthyneers',
-      description: 'Wealthyneers Monthly Subscription — ₹30/month',
+      description: 'Wealthyneers Monthly Membership — ₹30',
       image: '/wealthyneers-logo.png',
       prefill: {
         email: user.email || '',
         name: user.user_metadata?.full_name || '',
+        contact: user.phone || user.user_metadata?.phone || '',
       },
       theme: {
         color: '#0A4D68',
@@ -101,15 +105,15 @@ export async function startRazorpayCheckout({
           const { data: { session: freshSession } } = await supabase.auth.getSession();
           const activeToken = freshSession?.access_token || token;
 
-          // 5. Verify subscription signature on the server
-          const verifyRes = await fetch('/api/verify-subscription', {
+          // 5. Verify payment signature on the server
+          const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${activeToken}`,
             },
             body: JSON.stringify({
-              razorpay_subscription_id: response.razorpay_subscription_id || subscriptionId,
+              razorpay_order_id: response.razorpay_order_id || orderId,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             }),
@@ -117,7 +121,7 @@ export async function startRazorpayCheckout({
 
           const verifyData = await verifyRes.json();
           if (!verifyRes.ok || !verifyData.success) {
-            throw new Error(verifyData.error || 'Subscription verification failed.');
+            throw new Error(verifyData.error || 'Payment verification failed.');
           }
 
           if (onSuccess) {
@@ -125,7 +129,7 @@ export async function startRazorpayCheckout({
           }
         } catch (verifyErr) {
           console.error('[razorpay-checkout] Verification error:', verifyErr);
-          if (onError) onError(verifyErr.message || 'Subscription verification failed.');
+          if (onError) onError(verifyErr.message || 'Payment verification failed.');
         }
       },
       modal: {
@@ -148,7 +152,7 @@ export async function startRazorpayCheckout({
   } catch (err) {
     console.error('[razorpay-checkout] Initiation error:', err);
     if (onError) {
-      onError(err.message || 'Could not start subscription checkout.');
+      onError(err.message || 'Could not start payment checkout.');
     }
   }
 }
