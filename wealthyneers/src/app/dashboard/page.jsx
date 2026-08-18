@@ -131,27 +131,61 @@ export default function DashboardPage() {
             <p>Select a report below or from the top navigation bar to explore institutional fund holdings analytics.</p>
           </div>
           <div className="dash-report-grid">
-            {REPORTS.map((r) => (
-              <Link
-                key={r.id}
-                href={r.href}
-                className="dash-report-tile dash-tile-live"
-                style={{ textDecoration: 'none' }}
-              >
-                <div className="dash-tile-top">
-                  <span className="dash-tile-icon">{r.icon}</span>
-                  <span className="dash-tile-badge dash-badge-live">
-                    Live
-                  </span>
+            {REPORTS.map((r) => {
+              const reportNum = r.id.replace('report', '');
+              return (
+                <div
+                  key={r.id}
+                  className="dash-report-tile dash-tile-live"
+                  style={{ display: 'flex', flexDirection: 'column' }}
+                >
+                  <div className="dash-tile-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="dash-tile-icon">{r.icon}</span>
+                      <span className="dash-tile-tag">{r.tag}</span>
+                      <Link
+                        href={`/reports/report-${reportNum}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '0.2rem 0.6rem',
+                          borderRadius: '0.375rem',
+                          background: 'rgba(56, 189, 248, 0.12)',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          color: '#38bdf8',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title={`View ${r.tag} Public Preview & Description`}
+                      >
+                        Description
+                      </Link>
+                    </div>
+                    <span className="dash-tile-badge dash-badge-live">
+                      Live
+                    </span>
+                  </div>
+                  <div className="dash-tile-title" style={{ marginTop: '0.25rem' }}>{r.title}</div>
+                  <div className="dash-tile-desc">{r.description}</div>
+                  <div style={{ marginTop: 'auto', paddingTop: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Link
+                      href={r.href}
+                      style={{ color: 'var(--primary, #0284c7)', fontWeight: 600, fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      Open {r.tag} →
+                    </Link>
+                    <Link
+                      href={`/reports/report-${reportNum}`}
+                      style={{ color: 'var(--muted, #94a3b8)', fontSize: '0.8rem', textDecoration: 'none' }}
+                    >
+                      Preview ↗
+                    </Link>
+                  </div>
                 </div>
-                <div className="dash-tile-tag">{r.tag}</div>
-                <div className="dash-tile-title">{r.title}</div>
-                <div className="dash-tile-desc">{r.description}</div>
-                <div style={{ marginTop: 'auto', paddingTop: '1.25rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem' }}>
-                  Open {r.tag} →
-                </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
 
           {/* Custom Report / Raw Data Notice */}

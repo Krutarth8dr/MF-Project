@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#1C2541"/>
+    </linearGradient>
+    <linearGradient id="cardBg3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111D38"/>
+      <stop offset="100%" stop-color="#0E172C"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="680" fill="url(#bg3)"/>
+
+  <!-- Window Chrome Header -->
+  <rect x="24" y="24" width="1152" height="632" rx="12" fill="url(#cardBg3)" stroke="#233554" stroke-width="1.5"/>
+  <rect x="24" y="24" width="1152" height="48" rx="12" fill="#0A1124"/>
+  <circle cx="50" cy="48" r="6" fill="#EF4444"/>
+  <circle cx="70" cy="48" r="6" fill="#F59E0B"/>
+  <circle cx="90" cy="48" r="6" fill="#10B981"/>
+  <text x="115" y="53" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500">Wealthyneers — Report 3: AMC-wise Stock Intelligence</text>
+  <rect x="990" y="38" width="166" height="22" rx="4" fill="#1E293B"/>
+  <text x="1002" y="53" fill="#38BDF8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600">DEMO PREVIEW</text>
+
+  <!-- Top Filter Bar -->
+  <rect x="48" y="90" width="1104" height="54" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <text x="68" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">ISOLATE SECURITY:</text>
+  <rect x="210" y="102" width="300" height="30" rx="6" fill="#0A1124" stroke="#38BDF8" stroke-width="1"/>
+  <text x="224" y="122" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Apex Global Technologies Ltd.</text>
+
+  <text x="535" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">GROUPING:</text>
+  <rect x="620" y="102" width="180" height="30" rx="6" fill="#0A1124" stroke="#233554" stroke-width="1"/>
+  <text x="632" y="122" fill="#CBD5E1" font-family="sans-serif" font-size="12">Top 15 AMCs by Weight</text>
+
+  <rect x="990" y="102" width="142" height="30" rx="6" fill="#0284C7"/>
+  <text x="1016" y="122" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="600">Compare AMCs</text>
+
+  <!-- Comparative Intelligence Matrix -->
+  <rect x="48" y="160" width="1104" height="476" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <rect x="48" y="160" width="1104" height="38" fill="#0E172C"/>
+  <text x="68" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">AMC / FUND HOUSE</text>
+  <text x="320" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">JULY 2024</text>
+  <text x="460" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">AUGUST 2024</text>
+  <text x="610" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">SEPTEMBER 2024</text>
+  <text x="770" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">3-MONTH TREND</text>
+  <text x="960" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">INSTITUTIONAL STANCE</text>
+
+  <!-- Row 1 -->
+  <g transform="translate(0, 208)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">HDFC Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">1.20 Cr</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">1.32 Cr</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">1.45 Cr</text>
+    <path d="M 770 20 L 795 18 L 820 14 L 845 8" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 Continuous Inflow</text>
+  </g>
+  <line x1="48" y1="252" x2="1152" y2="252" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 2 -->
+  <g transform="translate(0, 260)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">ICICI Prudential Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">95.00 L</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">1.05 Cr</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">1.18 Cr</text>
+    <path d="M 770 22 L 795 19 L 820 15 L 845 9" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 High Conviction Add</text>
+  </g>
+  <line x1="48" y1="304" x2="1152" y2="304" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 3 -->
+  <g transform="translate(0, 312)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">SBI Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">70.00 L</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">78.50 L</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">92.40 L</text>
+    <path d="M 770 24 L 795 20 L 820 16 L 845 7" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 Rapid Scaling</text>
+  </g>
+  <line x1="48" y1="356" x2="1152" y2="356" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 4 -->
+  <g transform="translate(0, 364)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Nippon India Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">58.00 L</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">50.00 L</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">42.00 L</text>
+    <path d="M 770 8 L 795 14 L 820 18 L 845 24" fill="none" stroke="#EF4444" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#7F1D1D"/>
+    <text x="975" y="24" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 Gradual Trimming</text>
+  </g>
+  <line x1="48" y1="408" x2="1152" y2="408" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 5 -->
+  <g transform="translate(0, 416)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Kotak Mahindra Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">35.00 L</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">35.20 L</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">35.10 L</text>
+    <path d="M 770 16 L 795 15 L 820 16 L 845 16" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#1E293B"/>
+    <text x="982" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="11" font-weight="700">⚪ Neutral Hold</text>
+  </g>
+  <line x1="48" y1="460" x2="1152" y2="460" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 6 -->
+  <g transform="translate(0, 468)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Axis Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">0.00</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">12.50 L</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">28.00 L</text>
+    <path d="M 770 24 L 795 24 L 820 16 L 845 6" fill="none" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#1E3A8A"/>
+    <text x="980" y="24" fill="#93C5FD" font-family="sans-serif" font-size="11" font-weight="700">✨ Fresh Inflow</text>
+  </g>
+  <line x1="48" y1="512" x2="1152" y2="512" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 7 -->
+  <g transform="translate(0, 520)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">DSP Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">18.00 L</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">19.50 L</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">22.00 L</text>
+    <path d="M 770 20 L 795 18 L 820 16 L 845 12" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 Incremental Add</text>
+  </g>
+  <line x1="48" y1="564" x2="1152" y2="564" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 8 -->
+  <g transform="translate(0, 572)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">UTI Mutual Fund</text>
+    <text x="320" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">12.00 L</text>
+    <text x="460" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">12.00 L</text>
+    <text x="610" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">12.10 L</text>
+    <path d="M 770 16 L 795 16 L 820 16 L 845 16" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#1E293B"/>
+    <text x="982" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="11" font-weight="700">⚪ Neutral Hold</text>
+  </g>
+</svg>

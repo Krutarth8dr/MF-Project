@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#1C2541"/>
+    </linearGradient>
+    <linearGradient id="cardBg2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111D38"/>
+      <stop offset="100%" stop-color="#0E172C"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="680" fill="url(#bg2)"/>
+
+  <!-- Window Chrome Header -->
+  <rect x="24" y="24" width="1152" height="632" rx="12" fill="url(#cardBg2)" stroke="#233554" stroke-width="1.5"/>
+  <rect x="24" y="24" width="1152" height="48" rx="12" fill="#0A1124"/>
+  <circle cx="50" cy="48" r="6" fill="#EF4444"/>
+  <circle cx="70" cy="48" r="6" fill="#F59E0B"/>
+  <circle cx="90" cy="48" r="6" fill="#10B981"/>
+  <text x="115" y="53" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500">Wealthyneers — Report 2: Monthly Institutional Activity Monitor</text>
+  <rect x="990" y="38" width="166" height="22" rx="4" fill="#1E293B"/>
+  <text x="1002" y="53" fill="#38BDF8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600">DEMO PREVIEW</text>
+
+  <!-- Top Filter Bar -->
+  <rect x="48" y="90" width="1104" height="54" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <text x="68" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">SNAPSHOT MONTH:</text>
+  <rect x="200" y="102" width="200" height="30" rx="6" fill="#0A1124" stroke="#38BDF8" stroke-width="1"/>
+  <text x="214" y="122" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">September 2024 (vs Aug)</text>
+
+  <text x="430" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">ACTIVITY FILTER:</text>
+  <rect x="545" y="102" width="260" height="30" rx="6" fill="#0A1124" stroke="#233554" stroke-width="1"/>
+  <text x="558" y="122" fill="#CBD5E1" font-family="sans-serif" font-size="12">All Significant Actions (Adds/Cuts/Exits)</text>
+
+  <rect x="990" y="102" width="142" height="30" rx="6" fill="#0284C7"/>
+  <text x="1014" y="122" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="600">Scan Activity</text>
+
+  <!-- Activity Overview Tabs / Metric Blocks -->
+  <g transform="translate(48, 160)">
+    <!-- Tab 1 -->
+    <rect x="0" y="0" width="260" height="66" rx="8" fill="#064E3B" stroke="#059669" stroke-width="1.5"/>
+    <text x="16" y="24" fill="#A7F3D0" font-family="sans-serif" font-size="11" font-weight="700">🟢 TOP ACCUMULATIONS</text>
+    <text x="16" y="50" fill="#FFFFFF" font-family="sans-serif" font-size="18" font-weight="700">142 Stocks Added</text>
+
+    <!-- Tab 2 -->
+    <rect x="280" y="0" width="260" height="66" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="296" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">🔴 TOP REDUCTIONS</text>
+    <text x="296" y="50" fill="#F8FAFC" font-family="sans-serif" font-size="18" font-weight="700">89 Stocks Trimmed</text>
+
+    <!-- Tab 3 -->
+    <rect x="560" y="0" width="260" height="66" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="576" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">✨ NEW POSITIONS</text>
+    <text x="576" y="50" fill="#F8FAFC" font-family="sans-serif" font-size="18" font-weight="700">24 Fresh Entrants</text>
+
+    <!-- Tab 4 -->
+    <rect x="840" y="0" width="264" height="66" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="856" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">🚪 TOTAL EXITS</text>
+    <text x="856" y="50" fill="#F8FAFC" font-family="sans-serif" font-size="18" font-weight="700">16 Complete Exits</text>
+  </g>
+
+  <!-- Activity Scanner Table -->
+  <rect x="48" y="242" width="1104" height="394" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <rect x="48" y="242" width="1104" height="36" fill="#0E172C"/>
+  <text x="68" y="265" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">SECURITY NAME</text>
+  <text x="340" y="265" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">SECTOR</text>
+  <text x="500" y="265" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">PREV QTY</text>
+  <text x="640" y="265" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">CURR QTY</text>
+  <text x="780" y="265" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">NET CHANGE</text>
+  <text x="960" y="265" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">INSTITUTIONAL ACTION</text>
+
+  <!-- Row 1 -->
+  <g transform="translate(0, 285)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Apex Global Technologies Ltd.</text>
+    <text x="340" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">IT - Software</text>
+    <text x="500" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">4.54 Cr</text>
+    <text x="640" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">4.82 Cr</text>
+    <text x="780" y="24" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="700">+28.15 L (+6.2%)</text>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 Aggressive Buying</text>
+  </g>
+  <line x1="48" y1="328" x2="1152" y2="328" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 2 -->
+  <g transform="translate(0, 335)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Zenith Industrial Engineering</text>
+    <text x="340" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Capital Goods</text>
+    <text x="500" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">1.82 Cr</text>
+    <text x="640" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">2.30 Cr</text>
+    <text x="780" y="24" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="700">+48.10 L (+26.4%)</text>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 Heavy Inflow</text>
+  </g>
+  <line x1="48" y1="378" x2="1152" y2="378" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 3 -->
+  <g transform="translate(0, 385)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Orion Logistics &amp; Infra</text>
+    <text x="340" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Logistics</text>
+    <text x="500" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">0.00</text>
+    <text x="640" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">32.50 L</text>
+    <text x="780" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="700">+32.50 L (New)</text>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#1E3A8A"/>
+    <text x="980" y="24" fill="#93C5FD" font-family="sans-serif" font-size="11" font-weight="700">✨ New Position</text>
+  </g>
+  <line x1="48" y1="428" x2="1152" y2="428" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 4 -->
+  <g transform="translate(0, 435)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Nova Financial Services Ltd.</text>
+    <text x="340" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">NBFC</text>
+    <text x="500" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">3.12 Cr</text>
+    <text x="640" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">2.61 Cr</text>
+    <text x="780" y="24" fill="#EF4444" font-family="sans-serif" font-size="12" font-weight="700">-51.20 L (-16.4%)</text>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#7F1D1D"/>
+    <text x="975" y="24" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 Heavy Trimming</text>
+  </g>
+  <line x1="48" y1="478" x2="1152" y2="478" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 5 -->
+  <g transform="translate(0, 485)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Vertex Power Systems</text>
+    <text x="340" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Power &amp; Utilities</text>
+    <text x="500" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">95.00 L</text>
+    <text x="640" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">0.00</text>
+    <text x="780" y="24" fill="#EF4444" font-family="sans-serif" font-size="12" font-weight="700">-95.00 L (-100%)</text>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#7F1D1D"/>
+    <text x="982" y="24" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🚪 Complete Exit</text>
+  </g>
+  <line x1="48" y1="528" x2="1152" y2="528" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 6 -->
+  <g transform="translate(0, 535)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Beacon Pharmaceuticals</text>
+    <text x="340" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Healthcare</text>
+    <text x="500" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="12">1.10 Cr</text>
+    <text x="640" y="24" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">1.25 Cr</text>
+    <text x="780" y="24" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="700">+15.00 L (+13.6%)</text>
+    <rect x="960" y="8" width="160" height="24" rx="12" fill="#065F46"/>
+    <text x="975" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 Steady Inflow</text>
+  </g>
+</svg>

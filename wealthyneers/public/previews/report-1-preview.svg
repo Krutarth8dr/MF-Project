@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#1C2541"/>
+    </linearGradient>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111D38"/>
+      <stop offset="100%" stop-color="#0E172C"/>
+    </linearGradient>
+    <linearGradient id="chartLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00B4D8"/>
+      <stop offset="50%" stop-color="#48CAE4"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="chartArea" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00B4D8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#00B4D8" stop-opacity="0.0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="680" fill="url(#bg)"/>
+
+  <!-- Window Chrome Header -->
+  <rect x="24" y="24" width="1152" height="632" rx="12" fill="url(#cardBg)" stroke="#233554" stroke-width="1.5"/>
+  <rect x="24" y="24" width="1152" height="48" rx="12" fill="#0A1124"/>
+  <circle cx="50" cy="48" r="6" fill="#EF4444"/>
+  <circle cx="70" cy="48" r="6" fill="#F59E0B"/>
+  <circle cx="90" cy="48" r="6" fill="#10B981"/>
+  <text x="115" y="53" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500">Wealthyneers — Report 1: Mutual Fund Quantity Trend</text>
+  <rect x="990" y="38" width="166" height="22" rx="4" fill="#1E293B"/>
+  <text x="1002" y="53" fill="#38BDF8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600">DEMO PREVIEW</text>
+
+  <!-- Top Filter Bar -->
+  <rect x="48" y="90" width="1104" height="54" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <text x="68" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">SECURITY:</text>
+  <rect x="140" y="102" width="280" height="30" rx="6" fill="#0A1124" stroke="#38BDF8" stroke-width="1"/>
+  <text x="154" y="122" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Apex Global Technologies Ltd.</text>
+  
+  <text x="445" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">AMC:</text>
+  <rect x="485" y="102" width="180" height="30" rx="6" fill="#0A1124" stroke="#233554" stroke-width="1"/>
+  <text x="498" y="122" fill="#CBD5E1" font-family="sans-serif" font-size="12">All AMCs (44)</text>
+
+  <text x="685" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">PERIOD:</text>
+  <rect x="745" y="102" width="140" height="30" rx="6" fill="#0A1124" stroke="#233554" stroke-width="1"/>
+  <text x="758" y="122" fill="#CBD5E1" font-family="sans-serif" font-size="12">12 Months (MoM)</text>
+
+  <rect x="1010" y="102" width="122" height="30" rx="6" fill="#0284C7"/>
+  <text x="1038" y="122" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="600">Filter Data</text>
+
+  <!-- Metric Summary Cards -->
+  <g transform="translate(48, 160)">
+    <rect x="0" y="0" width="260" height="74" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="16" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">TOTAL QUANTITY HELD</text>
+    <text x="16" y="54" fill="#38BDF8" font-family="sans-serif" font-size="22" font-weight="700">4,82,45,000</text>
+    <text x="175" y="52" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="600">+14.8% ↑</text>
+
+    <rect x="280" y="0" width="260" height="74" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="296" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">TOTAL AMCs INVESTED</text>
+    <text x="296" y="54" fill="#F8FAFC" font-family="sans-serif" font-size="22" font-weight="700">28 AMCs</text>
+    <text x="430" y="52" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="600">+3 New</text>
+
+    <rect x="560" y="0" width="260" height="74" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="576" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">ESTIMATED MARKET VALUE</text>
+    <text x="576" y="54" fill="#F8FAFC" font-family="sans-serif" font-size="22" font-weight="700">₹1,428.50 Cr</text>
+    <text x="730" y="52" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="600">+18.2%</text>
+
+    <rect x="840" y="0" width="264" height="74" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+    <text x="856" y="24" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="600">INSTITUTIONAL STANCE</text>
+    <rect x="856" y="36" width="150" height="24" rx="12" fill="#065F46"/>
+    <text x="872" y="52" fill="#34D399" font-family="sans-serif" font-size="12" font-weight="700">Strong Accumulation</text>
+  </g>
+
+  <!-- Interactive-Style Quantity Trend Chart -->
+  <rect x="48" y="250" width="1104" height="240" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <text x="68" y="278" fill="#F8FAFC" font-family="sans-serif" font-size="14" font-weight="600">12-Month Total Quantity Trajectory (Shares in Lakhs)</text>
+
+  <!-- Chart Gridlines -->
+  <line x1="80" y1="310" x2="1120" y2="310" stroke="#233554" stroke-dasharray="4 4" stroke-width="1"/>
+  <text x="55" y="314" fill="#64748B" font-family="sans-serif" font-size="10">500L</text>
+
+  <line x1="80" y1="360" x2="1120" y2="360" stroke="#233554" stroke-dasharray="4 4" stroke-width="1"/>
+  <text x="55" y="364" fill="#64748B" font-family="sans-serif" font-size="10">400L</text>
+
+  <line x1="80" y1="410" x2="1120" y2="410" stroke="#233554" stroke-dasharray="4 4" stroke-width="1"/>
+  <text x="55" y="414" fill="#64748B" font-family="sans-serif" font-size="10">300L</text>
+
+  <line x1="80" y1="450" x2="1120" y2="450" stroke="#233554" stroke-width="1"/>
+
+  <!-- Chart Area and Line -->
+  <path d="M 100 420 L 190 410 L 280 415 L 370 395 L 460 380 L 550 365 L 640 370 L 730 350 L 820 335 L 910 320 L 1000 310 L 1090 295 L 1090 450 L 100 450 Z" fill="url(#chartArea)"/>
+  <path d="M 100 420 L 190 410 L 280 415 L 370 395 L 460 380 L 550 365 L 640 370 L 730 350 L 820 335 L 910 320 L 1000 310 L 1090 295" fill="none" stroke="url(#chartLine)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Data Points -->
+  <circle cx="100" cy="420" r="4" fill="#38BDF8"/>
+  <circle cx="370" cy="395" r="4" fill="#38BDF8"/>
+  <circle cx="640" cy="370" r="4" fill="#38BDF8"/>
+  <circle cx="910" cy="320" r="4" fill="#38BDF8"/>
+  <circle cx="1090" cy="295" r="5" fill="#10B981" stroke="#FFFFFF" stroke-width="2"/>
+
+  <!-- Tooltip on peak -->
+  <rect x="1010" y="245" width="130" height="42" rx="6" fill="#0A1124" stroke="#10B981" stroke-width="1.5"/>
+  <text x="1022" y="263" fill="#94A3B8" font-family="sans-serif" font-size="10">Sep '24 (Latest)</text>
+  <text x="1022" y="279" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="700">482.45L (+6.2%)</text>
+
+  <!-- Month X-Axis Labels -->
+  <text x="90" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Oct '23</text>
+  <text x="180" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Nov '23</text>
+  <text x="270" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Dec '23</text>
+  <text x="360" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Jan '24</text>
+  <text x="450" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Feb '24</text>
+  <text x="540" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Mar '24</text>
+  <text x="630" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Apr '24</text>
+  <text x="720" y="470" fill="#64748B" font-family="sans-serif" font-size="11">May '24</text>
+  <text x="810" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Jun '24</text>
+  <text x="900" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Jul '24</text>
+  <text x="990" y="470" fill="#64748B" font-family="sans-serif" font-size="11">Aug '24</text>
+  <text x="1075" y="470" fill="#38BDF8" font-family="sans-serif" font-size="11" font-weight="700">Sep '24</text>
+
+  <!-- Table Preview Section -->
+  <rect x="48" y="504" width="1104" height="132" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <rect x="48" y="504" width="1104" height="32" fill="#0E172C"/>
+  <text x="68" y="525" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">MONTH</text>
+  <text x="240" y="525" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">TOTAL QUANTITY</text>
+  <text x="460" y="525" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">NET CHANGE (MoM)</text>
+  <text x="700" y="525" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">AMC COUNT</text>
+  <text x="920" y="525" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">INSTITUTIONAL ACTION</text>
+
+  <!-- Row 1 -->
+  <text x="68" y="558" fill="#F8FAFC" font-family="sans-serif" font-size="12" font-weight="600">September 2024</text>
+  <text x="240" y="558" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">4,82,45,120</text>
+  <text x="460" y="558" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="600">+28,15,400 (+6.2%)</text>
+  <text x="700" y="558" fill="#CBD5E1" font-family="sans-serif" font-size="12">28 AMCs (84 Funds)</text>
+  <rect x="920" y="544" width="115" height="20" rx="10" fill="#065F46"/>
+  <text x="932" y="558" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="600">🟢 Net Accumulation</text>
+
+  <!-- Row 2 -->
+  <line x1="48" y1="574" x2="1152" y2="574" stroke="#233554" stroke-width="0.75"/>
+  <text x="68" y="598" fill="#F8FAFC" font-family="sans-serif" font-size="12" font-weight="600">August 2024</text>
+  <text x="240" y="598" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">4,54,29,720</text>
+  <text x="460" y="598" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="600">+19,80,000 (+4.5%)</text>
+  <text x="700" y="598" fill="#CBD5E1" font-family="sans-serif" font-size="12">27 AMCs (81 Funds)</text>
+  <rect x="920" y="584" width="115" height="20" rx="10" fill="#065F46"/>
+  <text x="932" y="598" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="600">🟢 Net Accumulation</text>
+
+  <!-- Row 3 -->
+  <line x1="48" y1="612" x2="1152" y2="612" stroke="#233554" stroke-width="0.75"/>
+  <text x="68" y="630" fill="#F8FAFC" font-family="sans-serif" font-size="12" font-weight="600">July 2024</text>
+  <text x="240" y="630" fill="#38BDF8" font-family="sans-serif" font-size="12" font-weight="600">4,34,49,720</text>
+  <text x="460" y="630" fill="#10B981" font-family="sans-serif" font-size="12" font-weight="600">+14,20,500 (+3.3%)</text>
+  <text x="700" y="630" fill="#CBD5E1" font-family="sans-serif" font-size="12">26 AMCs (78 Funds)</text>
+  <rect x="920" y="618" width="115" height="20" rx="10" fill="#065F46"/>
+  <text x="932" y="630" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="600">🟢 Net Accumulation</text>
+</svg>

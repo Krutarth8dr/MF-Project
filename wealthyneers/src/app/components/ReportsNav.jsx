@@ -25,7 +25,9 @@ export default function ReportsNav() {
     <nav className="global-reports-nav">
       <div className="global-reports-nav-inner">
         {REPORTS.map((r) => {
-          const isActive = pathname === r.href;
+          const reportNum = r.id?.startsWith('report') ? r.id.replace('report', '') : null;
+          const isActive =
+            pathname === r.href || (reportNum && pathname === `/reports/report-${reportNum}`);
           return (
             <Link
               key={r.href}

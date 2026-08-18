@@ -191,42 +191,55 @@ export default function Home() {
           )}
 
           <div className="reports-grid">
-            {reports.map((report) => {
-              const CardContent = (
-                <>
-                  <div className="report-top">
+            {reports.map((report) => (
+              <div key={report.id} className="report-card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="report-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div className="report-icon">{report.icon}</div>
                     <span className="report-badge">{report.tag}</span>
+                    <Link
+                      href={`/reports/report-${report.id}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '0.375rem',
+                        background: 'rgba(56, 189, 248, 0.1)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: '#38bdf8',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                      }}
+                      title={`Read ${report.tag} Overview & Preview`}
+                    >
+                      Description
+                    </Link>
                   </div>
-                  <h3 className="report-title">{report.title}</h3>
-                  <p className="report-desc">{report.desc}</p>
-                  
-                  {!isSubscribed ? (
-                    <div className="locked">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                      </svg>
-                      Subscribers Only
-                    </div>
-                  ) : (
-                    <div className="report-open-link" style={{ marginTop: 'auto', paddingTop: '1rem', fontSize: '0.88rem', fontWeight: 600, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      Open Report →
-                    </div>
-                  )}
-                </>
-              );
-
-              return isSubscribed ? (
-                <Link key={report.id} href={report.href} className="report-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column' }}>
-                  {CardContent}
-                </Link>
-              ) : (
-                <div key={report.id} className="report-card">
-                  {CardContent}
                 </div>
-              );
-            })}
+                <h3 className="report-title">{report.title}</h3>
+                <p className="report-desc">{report.desc}</p>
+                
+                {!isSubscribed ? (
+                  <div className="locked" style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Subscribers Only
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Link
+                      href={report.href}
+                      style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--primary, #0284c7)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      Open {report.tag} →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#1C2541"/>
+    </linearGradient>
+    <linearGradient id="cardBg4" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#111D38"/>
+      <stop offset="100%" stop-color="#0E172C"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="680" fill="url(#bg4)"/>
+
+  <!-- Window Chrome Header -->
+  <rect x="24" y="24" width="1152" height="632" rx="12" fill="url(#cardBg4)" stroke="#233554" stroke-width="1.5"/>
+  <rect x="24" y="24" width="1152" height="48" rx="12" fill="#0A1124"/>
+  <circle cx="50" cy="48" r="6" fill="#EF4444"/>
+  <circle cx="70" cy="48" r="6" fill="#F59E0B"/>
+  <circle cx="90" cy="48" r="6" fill="#10B981"/>
+  <text x="115" y="53" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="500">Wealthyneers — Report 4: AMC Direction Matrix</text>
+  <rect x="990" y="38" width="166" height="22" rx="4" fill="#1E293B"/>
+  <text x="1002" y="53" fill="#38BDF8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600">DEMO PREVIEW</text>
+
+  <!-- Top Filter Bar -->
+  <rect x="48" y="90" width="1104" height="54" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <text x="68" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">UNIVERSE:</text>
+  <rect x="150" y="102" width="200" height="30" rx="6" fill="#0A1124" stroke="#38BDF8" stroke-width="1"/>
+  <text x="164" y="122" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Nifty 500 Equities</text>
+
+  <text x="375" y="122" fill="#94A3B8" font-family="sans-serif" font-size="12" font-weight="600">SORT BY:</text>
+  <rect x="445" y="102" width="220" height="30" rx="6" fill="#0A1124" stroke="#233554" stroke-width="1"/>
+  <text x="458" y="122" fill="#CBD5E1" font-family="sans-serif" font-size="12">Highest Buying Agreement</text>
+
+  <!-- Legend -->
+  <g transform="translate(710, 107)">
+    <circle cx="10" cy="10" r="5" fill="#10B981"/>
+    <text x="22" y="14" fill="#A7F3D0" font-family="sans-serif" font-size="11" font-weight="600">Buying</text>
+    <circle cx="85" cy="10" r="5" fill="#EF4444"/>
+    <text x="97" y="14" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="600">Selling</text>
+    <circle cx="155" cy="10" r="5" fill="#64748B"/>
+    <text x="167" y="14" fill="#CBD5E1" font-family="sans-serif" font-size="11" font-weight="600">Hold / None</text>
+  </g>
+
+  <rect x="990" y="102" width="142" height="30" rx="6" fill="#0284C7"/>
+  <text x="1016" y="122" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="600">Apply Filter</text>
+
+  <!-- Cross-Sectional Direction Matrix -->
+  <rect x="48" y="160" width="1104" height="476" rx="8" fill="#162444" stroke="#233554" stroke-width="1"/>
+  <rect x="48" y="160" width="1104" height="38" fill="#0E172C"/>
+  <text x="68" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">SECURITY NAME</text>
+  <text x="290" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">SECTOR</text>
+  <text x="430" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">HDFC</text>
+  <text x="510" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">ICICI</text>
+  <text x="590" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">SBI</text>
+  <text x="670" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">KOTAK</text>
+  <text x="750" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">NIPPON</text>
+  <text x="840" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">AXIS</text>
+  <text x="940" y="184" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">INSTITUTIONAL CONSENSUS</text>
+
+  <!-- Row 1 -->
+  <g transform="translate(0, 206)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Apex Global Technologies</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">IT - Software</text>
+    <!-- Badges -->
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="435" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="515" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="595" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="674" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="755" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="845" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#065F46"/>
+    <text x="955" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🔥 85% Buying Consensus</text>
+  </g>
+  <line x1="48" y1="250" x2="1152" y2="250" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 2 -->
+  <g transform="translate(0, 258)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Zenith Industrial Engineering</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Capital Goods</text>
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="435" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="515" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="595" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="675" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="754" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="845" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#065F46"/>
+    <text x="955" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 80% Buying Consensus</text>
+  </g>
+  <line x1="48" y1="302" x2="1152" y2="302" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 3 -->
+  <g transform="translate(0, 310)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Nova Financial Services</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">NBFC</text>
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="433" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="513" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="594" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="673" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="753" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="843" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#7F1D1D"/>
+    <text x="955" y="24" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 75% Selling Pressure</text>
+  </g>
+  <line x1="48" y1="354" x2="1152" y2="354" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 4 -->
+  <g transform="translate(0, 362)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Solaris Clean Energy</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Power &amp; Renewables</text>
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="435" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="513" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="595" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="673" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="754" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="845" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#78350F"/>
+    <text x="965" y="24" fill="#FDE68A" font-family="sans-serif" font-size="11" font-weight="700">🟡 Divergent Debate</text>
+  </g>
+  <line x1="48" y1="406" x2="1152" y2="406" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 5 -->
+  <g transform="translate(0, 414)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Beacon Pharmaceuticals</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Healthcare</text>
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="435" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="515" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="594" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="675" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="755" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="844" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#065F46"/>
+    <text x="955" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 67% Buying Consensus</text>
+  </g>
+  <line x1="48" y1="458" x2="1152" y2="458" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 6 -->
+  <g transform="translate(0, 466)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Orion Logistics Ltd.</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">Logistics</text>
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="435" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="515" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="595" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="675" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="755" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#065F46"/><text x="845" y="25" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🟢 BUY</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#065F46"/>
+    <text x="955" y="24" fill="#34D399" font-family="sans-serif" font-size="11" font-weight="700">🔥 100% Unanimous Inflow</text>
+  </g>
+  <line x1="48" y1="510" x2="1152" y2="510" stroke="#233554" stroke-width="0.75"/>
+
+  <!-- Row 7 -->
+  <g transform="translate(0, 518)">
+    <text x="68" y="24" fill="#F8FAFC" font-family="sans-serif" font-size="13" font-weight="600">Pinnacle Consumer Goods</text>
+    <text x="290" y="24" fill="#94A3B8" font-family="sans-serif" font-size="12">FMCG</text>
+    <rect x="424" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="434" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="504" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="514" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="584" y="10" width="46" height="22" rx="4" fill="#7F1D1D"/><text x="593" y="25" fill="#FCA5A5" font-family="sans-serif" font-size="11" font-weight="700">🔴 SELL</text>
+    <rect x="664" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="674" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="744" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="754" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="834" y="10" width="46" height="22" rx="4" fill="#1E293B"/><text x="844" y="25" fill="#94A3B8" font-family="sans-serif" font-size="11" font-weight="700">⚪ HOLD</text>
+    <rect x="940" y="8" width="180" height="24" rx="12" fill="#1E293B"/>
+    <text x="965" y="24" fill="#CBD5E1" font-family="sans-serif" font-size="11" font-weight="700">⚪ Inactive / Neutral</text>
+  </g>
+</svg>
