@@ -146,7 +146,7 @@ export default function ProfilePage() {
           if (isMounted) {
             clearTimeout(timer);
             setLoading(false);
-            window.location.href = '/login';
+            router.push('/login');
           }
           return;
         }
@@ -236,8 +236,10 @@ export default function ProfilePage() {
     const {
       data: { subscription: authListener },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || (!session && isMounted)) {
-        window.location.href = '/login';
+      if (event === 'SIGNED_OUT') {
+        router.push('/login');
+      } else if (session?.user && isMounted) {
+        setUser(session.user);
       }
     });
 
@@ -245,7 +247,7 @@ export default function ProfilePage() {
       isMounted = false;
       authListener?.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   // ── Handle Sign Out ────────────────────────────────────────────────
   const handleSignOut = async () => {
