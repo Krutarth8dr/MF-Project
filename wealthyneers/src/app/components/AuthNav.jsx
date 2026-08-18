@@ -75,9 +75,15 @@ export default function AuthNav() {
       try {
         localStorage.clear();
         sessionStorage.clear();
+        // Clear all cookies
+        document.cookie.split(';').forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, '')
+            .replace(/=.*/, '=;expires=' + new Date(0).toUTCString() + ';path=/');
+        });
       } catch (_) {}
       setUser(null);
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   };
 

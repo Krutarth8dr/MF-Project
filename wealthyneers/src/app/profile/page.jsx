@@ -126,49 +126,22 @@ export default function ProfilePage() {
     // Pre-warm Razorpay SDK in background
     loadRazorpaySDK().catch(() => {});
 
-    async function loadProfileData() {
-      setLoading(true);
-      setError(null);
+    const fetchUserData = async (authUser) => {
+      if (!authUser || !isMounted) return;
+      setUser(authUser);
 
-      // Safety timeout: Never stay stuck in loading state for more than 2.5s
-      const timer = setTimeout(() => {
-        if (isMounted) setLoading(false);
-      }, 2500);
+      let resolvedName =
+        authUser.user_metadata?.full_name ||
+        authUser.user_metadata?.name ||
+        authUser.email?.split('@')[0] ||
+        'Account';
+      setProfileName(resolvedName);
 
       try {
-        // 1. Get authenticated user session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError || !session?.user) {
-          if (isMounted) {
-            clearTimeout(timer);
-            setLoading(false);
-            router.push('/login');
-          }
-          return;
-        }
-
-        const authUser = session.user;
-        if (!isMounted) return;
-        setUser(authUser);
-
-        // Immediate fallback display name from auth metadata
-        let resolvedName =
-          authUser.user_metadata?.full_name ||
-          authUser.user_metadata?.name ||
-          authUser.user_metadata?.display_name ||
-          authUser.email?.split('@')[0] ||
-          'Account';
-        setProfileName(resolvedName);
-
-        // 2. Fetch public.users and subscriptions in parallel for speed
         const [userResult, subResult] = await Promise.allSettled([
           supabase
             .from('users')
-            .select('full_name, name, display_name')
+            .select('full_name')
             .eq('id', authUser.id)
             .maybeSingle(),
           supabase
@@ -178,17 +151,15 @@ export default function ProfilePage() {
             .order('subscription_end_date', { ascending: false, nullsFirst: false }),
         ]);
 
-        if (userResult.status === 'fulfilled' && userResult.value?.data) {
-          const userData = userResult.value.data;
-          const customName = userData.full_name || userData.name || userData.display_name;
-          if (customName && isMounted) setProfileName(customName);
+        if (userResult.status === 'fulfilled' && userResult.value?.data?.full_name) {
+          if (isMounted) setProfileName(userResult.value.data.full_name);
         }
 
         const subs = (subResult.status === 'fulfilled' && subResult.value?.data) || [];
         if (!isMounted) return;
         setSubscriptions(subs);
 
-        // 3. Determine Active Subscription
+        // Determine Active Subscription
         const active = subs.find(
           (s) =>
             s.payment_status === 'completed' &&
@@ -220,26 +191,40 @@ export default function ProfilePage() {
           setSubStatus('inactive');
         }
       } catch (err) {
-        console.error('Profile load error:', err);
-        if (isMounted) {
-          setError('Unable to load your account information. Please refresh the page.');
-        }
+        console.error('Profile data error:', err);
       } finally {
-        clearTimeout(timer);
         if (isMounted) setLoading(false);
       }
     };
 
-    loadProfileData();
+    // 1. Check Session & User
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        fetchUserData(session.user);
+      } else {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user) {
+            fetchUserData(user);
+          } else if (isMounted) {
+            setLoading(false);
+          }
+        }).catch(() => {
+          if (isMounted) setLoading(false);
+        });
+      }
+    }).catch(() => {
+      if (isMounted) setLoading(false);
+    });
 
-    // Listen for auth state changes
+    // 2. Auth state change listener
     const {
       data: { subscription: authListener },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
+        setUser(null);
         router.push('/login');
-      } else if (session?.user && isMounted) {
-        setUser(session.user);
+      } else if (session?.user) {
+        fetchUserData(session.user);
       }
     });
 
@@ -259,8 +244,13 @@ export default function ProfilePage() {
       try {
         localStorage.clear();
         sessionStorage.clear();
+        document.cookie.split(';').forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, '')
+            .replace(/=.*/, '=;expires=' + new Date(0).toUTCString() + ';path=/');
+        });
       } catch (_) {}
-      window.location.href = '/login';
+      window.location.replace('/login');
     }
   };
 
