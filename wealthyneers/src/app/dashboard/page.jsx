@@ -150,34 +150,66 @@ export default function DashboardPage() {
                   className="dash-report-tile dash-tile-live"
                   style={{ display: 'flex', flexDirection: 'column' }}
                 >
-                  <div className="dash-tile-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className="dash-tile-icon">{r.icon}</span>
-                      <span className="dash-tile-tag">{r.tag}</span>
+                  <div
+                    className="dash-tile-top"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.75rem',
+                      marginBottom: '1rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {/* Left: Report Icon + Stacked Tag */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <span className="dash-tile-icon" style={{ fontSize: '1.85rem', lineHeight: 1 }}>{r.icon}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.05rem' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--secondary)' }}>
+                          REPORT
+                        </span>
+                        <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1 }}>
+                          {reportNum}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right: Report Description Button + Live Badge */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                       <Link
                         href={`/report-description/${reportNum}`}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          padding: '0.2rem 0.65rem',
+                          padding: '0.22rem 0.55rem',
                           borderRadius: '0.375rem',
-                          background: 'rgba(56, 189, 248, 0.12)',
-                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          background: 'rgba(56, 189, 248, 0.1)',
+                          border: '1px solid rgba(56, 189, 248, 0.28)',
                           color: '#38bdf8',
-                          fontSize: '0.75rem',
+                          fontSize: '0.72rem',
                           fontWeight: 600,
                           textDecoration: 'none',
                           transition: 'all 0.15s ease',
                           whiteSpace: 'nowrap',
+                          letterSpacing: '0.01em',
                         }}
                         title={`View ${r.tag} Description & Visual Preview`}
                       >
                         Report Description
                       </Link>
+                      <span
+                        className="dash-tile-badge dash-badge-live"
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: '2rem',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        Live
+                      </span>
                     </div>
-                    <span className="dash-tile-badge dash-badge-live">
-                      Live
-                    </span>
                   </div>
                   <div className="dash-tile-title" style={{ marginTop: '0.25rem' }}>{r.title}</div>
                   <div className="dash-tile-desc">{r.description}</div>
