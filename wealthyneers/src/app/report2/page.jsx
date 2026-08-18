@@ -205,31 +205,47 @@ export default function Report2Page() {
 
   // ── 1. Auth & Subscription Verification ──────────────────────────
   useEffect(() => {
+    let mounted = true;
+    const timer = setTimeout(() => {
+      if (mounted) setAuthLoading(false);
+    }, 2500);
+
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          if (mounted) router.push('/login');
+          return;
+        }
+
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('payment_status, subscription_end_date')
+          .eq('user_id', session.user.id)
+          .eq('payment_status', 'completed')
+          .order('subscription_end_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const active =
+          subData &&
+          (subData.subscription_end_date === null ||
+            new Date(subData.subscription_end_date) > new Date());
+
+        if (mounted) setIsSubscribed(!!active);
+      } catch (err) {
+        console.error('Report 2 auth check error:', err);
+      } finally {
+        clearTimeout(timer);
+        if (mounted) setAuthLoading(false);
       }
-
-      const { data: subData } = await supabase
-        .from('subscriptions')
-        .select('payment_status, subscription_end_date')
-        .eq('user_id', session.user.id)
-        .eq('payment_status', 'completed')
-        .order('subscription_end_date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const active =
-        subData &&
-        (subData.subscription_end_date === null ||
-          new Date(subData.subscription_end_date) > new Date());
-
-      setIsSubscribed(!!active);
-      setAuthLoading(false);
     };
     checkAuth();
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, [router]);
 
   // ── 2. Load Dynamic Dates & Initial Filter Options ───────────────
