@@ -111,6 +111,11 @@ export default function ProfilePage() {
       setLoading(true);
       setError(null);
 
+      // Safety timeout: Never stay stuck in loading state for more than 2.5s
+      const timer = setTimeout(() => {
+        if (isMounted) setLoading(false);
+      }, 2500);
+
       try {
         // 1. Get authenticated user session
         const {
@@ -119,7 +124,11 @@ export default function ProfilePage() {
         } = await supabase.auth.getSession();
 
         if (sessionError || !session?.user) {
-          router.push('/login');
+          if (isMounted) {
+            clearTimeout(timer);
+            setLoading(false);
+            window.location.href = '/login';
+          }
           return;
         }
 
@@ -127,52 +136,40 @@ export default function ProfilePage() {
         if (!isMounted) return;
         setUser(authUser);
 
-        // 2. Resolve user's display name from metadata or public.users
+        // Immediate fallback display name from auth metadata
         let resolvedName =
           authUser.user_metadata?.full_name ||
           authUser.user_metadata?.name ||
           authUser.user_metadata?.display_name ||
-          '';
+          authUser.email?.split('@')[0] ||
+          'Account';
+        setProfileName(resolvedName);
 
-        try {
-          const { data: userData } = await supabase
+        // 2. Fetch public.users and subscriptions in parallel for speed
+        const [userResult, subResult] = await Promise.allSettled([
+          supabase
             .from('users')
             .select('full_name, name, display_name')
             .eq('id', authUser.id)
-            .maybeSingle();
+            .maybeSingle(),
+          supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', authUser.id)
+            .order('subscription_end_date', { ascending: false, nullsFirst: false }),
+        ]);
 
-          if (userData) {
-            resolvedName =
-              userData.full_name ||
-              userData.name ||
-              userData.display_name ||
-              resolvedName;
-          }
-        } catch {
-          // public.users query is optional fallback
+        if (userResult.status === 'fulfilled' && userResult.value?.data) {
+          const userData = userResult.value.data;
+          const customName = userData.full_name || userData.name || userData.display_name;
+          if (customName && isMounted) setProfileName(customName);
         }
 
-        if (!resolvedName && authUser.email) {
-          resolvedName = authUser.email.split('@')[0];
-        }
-        if (isMounted) setProfileName(resolvedName);
-
-        // 3. Query all user subscription records using authenticated UUID
-        const { data: subData, error: subError } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .order('subscription_end_date', { ascending: false, nullsFirst: false });
-
-        if (subError) {
-          console.error('Subscription fetch error:', subError);
-        }
-
-        const subs = subData || [];
+        const subs = (subResult.status === 'fulfilled' && subResult.value?.data) || [];
         if (!isMounted) return;
         setSubscriptions(subs);
 
-        // 4. Determine Active Subscription (Identical to Dashboard gating logic)
+        // 3. Determine Active Subscription
         const active = subs.find(
           (s) =>
             s.payment_status === 'completed' &&
@@ -209,6 +206,7 @@ export default function ProfilePage() {
           setError('Unable to load your account information. Please refresh the page.');
         }
       } finally {
+        clearTimeout(timer);
         if (isMounted) setLoading(false);
       }
     };
@@ -218,9 +216,9 @@ export default function ProfilePage() {
     // Listen for auth state changes
     const {
       data: { subscription: authListener },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        router.push('/login');
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (!session && isMounted)) {
+        window.location.href = '/login';
       }
     });
 
@@ -228,13 +226,21 @@ export default function ProfilePage() {
       isMounted = false;
       authListener?.unsubscribe();
     };
-  }, [router]);
+  }, []);
 
   // ── Handle Sign Out ────────────────────────────────────────────────
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Sign out error:', e);
+    } finally {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (_) {}
+      window.location.href = '/login';
+    }
   };
 
   // ── Handle Password Change ─────────────────────────────────────────

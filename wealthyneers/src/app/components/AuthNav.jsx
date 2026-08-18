@@ -29,13 +29,8 @@ export default function AuthNav() {
   useEffect(() => {
     let mounted = true;
 
-    // Helper to update user state cleanly without duplicate renders
     const syncUser = (authUser) => {
       if (!mounted) return;
-      const newId = authUser?.id || null;
-      if (currentUserIdRef.current === newId && initialized) return;
-
-      currentUserIdRef.current = newId;
       setUser(authUser);
 
       if (authUser) {
@@ -54,6 +49,8 @@ export default function AuthNav() {
     // 1. Initial Session Check
     supabase.auth.getSession().then(({ data: { session } }) => {
       syncUser(session?.user ?? null);
+    }).catch(() => {
+      if (mounted) setInitialized(true);
     });
 
     // 2. Auth State Listener
@@ -65,16 +62,23 @@ export default function AuthNav() {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
-  }, [initialized]);
+  }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    currentUserIdRef.current = null;
-    router.push('/login');
-    router.refresh();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Sign out error:', e);
+    } finally {
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (_) {}
+      setUser(null);
+      window.location.href = '/login';
+    }
   };
 
   const initials = getInitials(displayName, user?.email);
