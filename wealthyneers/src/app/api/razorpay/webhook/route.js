@@ -11,6 +11,21 @@ function getSupabaseAdminClient() {
   });
 }
 
+async function getUserFullName(supabaseAdmin, userId) {
+  if (!userId) return null;
+  try {
+    const { data: userProfile } = await supabaseAdmin
+      .from('users')
+      .select('full_name')
+      .eq('id', userId)
+      .maybeSingle();
+    return userProfile?.full_name || null;
+  } catch (err) {
+    console.warn('[razorpay-webhook] Could not fetch user full_name:', err?.message || err);
+    return null;
+  }
+}
+
 // In-memory idempotency cache for recently processed event IDs (prevent duplicates)
 const processedEvents = new Map();
 const IDEMPOTENCY_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -109,28 +124,35 @@ export async function POST(request) {
             ? new Date(subEntity.current_end * 1000).toISOString()
             : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
+          const fullName = await getUserFullName(supabaseAdmin, userId);
+
           // Check if subscription record already exists
           const { data: existing } = await supabaseAdmin
             .from('subscriptions')
-            .select('id')
+            .select('id, full_name')
             .eq('razorpay_order_id', subId)
             .maybeSingle();
 
           if (existing) {
+            const updatePayload = {
+              payment_status: 'completed',
+              subscription_start_date: startDate,
+              subscription_end_date: endDate,
+              auto_renew: true,
+              updated_at: new Date().toISOString(),
+            };
+            if (fullName && !existing.full_name) {
+              updatePayload.full_name = fullName;
+            }
             await supabaseAdmin
               .from('subscriptions')
-              .update({
-                payment_status: 'completed',
-                subscription_start_date: startDate,
-                subscription_end_date: endDate,
-                auto_renew: true,
-                updated_at: new Date().toISOString(),
-              })
+              .update(updatePayload)
               .eq('id', existing.id);
           } else {
             await supabaseAdmin.from('subscriptions').insert([
               {
                 user_id: userId,
+                full_name: fullName,
                 plan_type: 'monthly_30',
                 amount_paid: 30.0,
                 currency: 'INR',
@@ -170,10 +192,13 @@ export async function POST(request) {
             }
           }
 
+          const fullName = await getUserFullName(supabaseAdmin, userId);
+
           // Insert renewal cycle record or update existing sub
           await supabaseAdmin.from('subscriptions').insert([
             {
               user_id: userId,
+              full_name: fullName,
               plan_type: 'monthly_30',
               amount_paid: 30.0,
               currency: 'INR',

@@ -194,12 +194,28 @@ export async function POST(request) {
       ? new Date(rzpSub.current_end * 1000).toISOString()
       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    // 9. Insert Subscription Record via Service-Role
+    // 9. Fetch user's full_name from public.users
+    let fullName = null;
+    try {
+      const { data: userProfile } = await supabaseAdmin
+        .from('users')
+        .select('full_name')
+        .eq('id', userId)
+        .maybeSingle();
+      if (userProfile?.full_name) {
+        fullName = userProfile.full_name;
+      }
+    } catch (nameErr) {
+      console.warn('[verify-subscription] Could not fetch user full_name:', nameErr?.message || nameErr);
+    }
+
+    // 10. Insert Subscription Record via Service-Role
     const { data, error } = await supabaseAdmin
       .from('subscriptions')
       .insert([
         {
           user_id: userId,
+          full_name: fullName,
           plan_type: 'monthly_30',
           amount_paid: 30.0,
           currency: 'INR',

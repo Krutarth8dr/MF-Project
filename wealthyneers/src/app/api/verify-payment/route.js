@@ -234,12 +234,28 @@ export async function POST(request) {
       );
     }
 
-    // 8. Insert Subscription Record via Service-Role
+    // 8. Fetch user's full_name from public.users
+    let fullName = null;
+    try {
+      const { data: userProfile } = await supabaseAdmin
+        .from('users')
+        .select('full_name')
+        .eq('id', userId)
+        .maybeSingle();
+      if (userProfile?.full_name) {
+        fullName = userProfile.full_name;
+      }
+    } catch (nameErr) {
+      console.warn('[verify-payment] Could not fetch user full_name:', nameErr?.message || nameErr);
+    }
+
+    // 9. Insert Subscription Record via Service-Role
     const { data, error } = await supabaseAdmin
       .from('subscriptions')
       .insert([
         {
           user_id: userId,
+          full_name: fullName,
           plan_type: EXPECTED_PLAN_TYPE,
           amount_paid: 30.0,
           currency: EXPECTED_CURRENCY,
