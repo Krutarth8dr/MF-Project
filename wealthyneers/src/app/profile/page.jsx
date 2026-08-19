@@ -455,9 +455,9 @@ export default function ProfilePage() {
               <span className="profile-info-value">
                 <strong>
                   {subStatus === 'active'
-                    ? 'Monthly Institutional Access'
+                    ? '30-Day Institutional Access'
                     : currentSub?.plan_type === 'monthly_30'
-                    ? 'Monthly Institutional Access'
+                    ? '30-Day Institutional Access'
                     : currentSub?.plan_type || 'No active plan'}
                 </strong>
               </span>
@@ -532,7 +532,7 @@ export default function ProfilePage() {
                 className="btn btn-primary"
                 style={{ width: '100%' }}
               >
-                {paying ? 'Opening Checkout…' : 'Subscribe Now — ₹30/month'}
+                {paying ? 'Opening Checkout…' : 'Get Access Now — ₹30 for 30 days'}
               </button>
             )}
           </div>

@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getClientIp, checkRateLimit, rateLimitExceededResponse } from '@/lib/rateLimit';
 import { getRazorpayCredentials } from '@/lib/envHelper';
 
-const EXPECTED_AMOUNT_PAISE = 3000;
+const EXPECTED_AMOUNT_PAISE = 3000; // ₹30.00 = 3000 paise (Fixed Server-Side)
 const EXPECTED_CURRENCY = 'INR';
 const EXPECTED_PLAN_TYPE = 'monthly_30';
 
@@ -86,20 +86,17 @@ export async function POST(request) {
       );
     }
 
-    // 4. Parse Request Body
+    // 4. Parse Request Body (Strictly One-Time Order Parameters)
     const body = await request.json();
     const {
       razorpay_order_id,
-      razorpay_subscription_id,
       razorpay_payment_id,
       razorpay_signature,
     } = body;
 
-    const subId = razorpay_subscription_id;
     const orderId = razorpay_order_id;
-    const primaryId = subId || orderId;
 
-    if (!primaryId || !razorpay_payment_id || !razorpay_signature) {
+    if (!orderId || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
         { code: 'INVALID_PARAMETERS', error: 'Missing required payment verification parameters.' },
         { status: 400 }
@@ -107,18 +104,10 @@ export async function POST(request) {
     }
 
     // 5. Cryptographic Signature Verification (Timing-Safe Comparison)
-    let expectedSignature;
-    if (subId) {
-      expectedSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${razorpay_payment_id}|${subId}`)
-        .digest('hex');
-    } else {
-      expectedSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${orderId}|${razorpay_payment_id}`)
-        .digest('hex');
-    }
+    const expectedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(`${orderId}|${razorpay_payment_id}`)
+      .digest('hex');
 
     const expectedBuf = Buffer.from(expectedSignature, 'utf8');
     const signatureBuf = Buffer.from(razorpay_signature, 'utf8');
@@ -127,7 +116,7 @@ export async function POST(request) {
       expectedBuf.length !== signatureBuf.length ||
       !crypto.timingSafeEqual(expectedBuf, signatureBuf)
     ) {
-      console.warn(`[verify-payment] INVALID_SIGNATURE for ${subId ? 'sub ' + subId : 'order ' + orderId}`);
+      console.warn(`[verify-payment] INVALID_SIGNATURE for order: ${orderId}`);
       return NextResponse.json(
         { code: 'INVALID_SIGNATURE', error: 'Invalid payment signature. Verification rejected.' },
         { status: 400 }
@@ -140,83 +129,53 @@ export async function POST(request) {
       key_secret: keySecret,
     });
 
-    let startDate = new Date();
-    let endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + 1);
+    let rzpOrder, rzpPayment;
+    try {
+      [rzpOrder, rzpPayment] = await Promise.all([
+        instance.orders.fetch(orderId),
+        instance.payments.fetch(razorpay_payment_id),
+      ]);
+    } catch (apiErr) {
+      console.error('[verify-payment] Order fetch error:', apiErr?.message || apiErr);
+      return NextResponse.json(
+        { code: 'ORDER_MISMATCH', error: 'Unable to verify order authenticity with payment gateway.' },
+        { status: 400 }
+      );
+    }
 
-    if (subId) {
-      let rzpSub, rzpPayment;
-      try {
-        [rzpSub, rzpPayment] = await Promise.all([
-          instance.subscriptions.fetch(subId),
-          instance.payments.fetch(razorpay_payment_id),
-        ]);
-      } catch (apiErr) {
-        console.error('[verify-payment] Subscription fetch error:', apiErr?.message || apiErr);
-        return NextResponse.json(
-          { code: 'SUBSCRIPTION_MISMATCH', error: 'Unable to verify subscription with payment gateway.' },
-          { status: 400 }
-        );
-      }
+    if (!rzpOrder || rzpOrder.id !== orderId) {
+      return NextResponse.json(
+        { code: 'ORDER_MISMATCH', error: 'Razorpay order verification failed.' },
+        { status: 400 }
+      );
+    }
 
-      if (!rzpSub || rzpSub.id !== subId) {
-        return NextResponse.json(
-          { code: 'SUBSCRIPTION_MISMATCH', error: 'Razorpay subscription verification failed.' },
-          { status: 400 }
-        );
-      }
+    if (rzpOrder.notes?.user_id && rzpOrder.notes.user_id !== userId) {
+      return NextResponse.json(
+        { code: 'USER_MISMATCH', error: 'Order does not belong to the current authenticated account.' },
+        { status: 403 }
+      );
+    }
 
-      if (rzpSub.notes?.user_id && rzpSub.notes.user_id !== userId) {
-        return NextResponse.json(
-          { code: 'USER_MISMATCH', error: 'Subscription does not belong to this account.' },
-          { status: 403 }
-        );
-      }
+    if (rzpOrder.amount !== EXPECTED_AMOUNT_PAISE) {
+      return NextResponse.json(
+        { code: 'AMOUNT_MISMATCH', error: 'Order amount does not match required price.' },
+        { status: 400 }
+      );
+    }
 
-      if (rzpSub.current_start) startDate = new Date(rzpSub.current_start * 1000);
-      if (rzpSub.current_end) endDate = new Date(rzpSub.current_end * 1000);
-    } else {
-      let rzpOrder, rzpPayment;
-      try {
-        [rzpOrder, rzpPayment] = await Promise.all([
-          instance.orders.fetch(orderId),
-          instance.payments.fetch(razorpay_payment_id),
-        ]);
-      } catch (apiErr) {
-        console.error('[verify-payment] Order fetch error:', apiErr?.message || apiErr);
-        return NextResponse.json(
-          { code: 'ORDER_MISMATCH', error: 'Unable to verify order authenticity with payment gateway.' },
-          { status: 400 }
-        );
-      }
+    if (rzpOrder.currency !== EXPECTED_CURRENCY) {
+      return NextResponse.json(
+        { code: 'CURRENCY_MISMATCH', error: 'Order currency mismatch.' },
+        { status: 400 }
+      );
+    }
 
-      if (!rzpOrder || rzpOrder.id !== orderId) {
-        return NextResponse.json(
-          { code: 'ORDER_MISMATCH', error: 'Razorpay order verification failed.' },
-          { status: 400 }
-        );
-      }
-
-      if (rzpOrder.amount !== EXPECTED_AMOUNT_PAISE) {
-        return NextResponse.json(
-          { code: 'AMOUNT_MISMATCH', error: 'Order amount does not match required subscription price.' },
-          { status: 400 }
-        );
-      }
-
-      if (rzpOrder.currency !== EXPECTED_CURRENCY) {
-        return NextResponse.json(
-          { code: 'CURRENCY_MISMATCH', error: 'Order currency mismatch.' },
-          { status: 400 }
-        );
-      }
-
-      if (rzpPayment.status !== 'captured' && rzpPayment.status !== 'authorized') {
-        return NextResponse.json(
-          { code: 'PAYMENT_NOT_CAPTURED', error: `Payment is not in a valid state (status: ${rzpPayment.status}).` },
-          { status: 400 }
-        );
-      }
+    if (rzpPayment.status !== 'captured' && rzpPayment.status !== 'authorized') {
+      return NextResponse.json(
+        { code: 'PAYMENT_NOT_CAPTURED', error: `Payment is not in a valid state (status: ${rzpPayment.status}).` },
+        { status: 400 }
+      );
     }
 
     // 7. Check Duplicate / Replay Protection
@@ -234,7 +193,7 @@ export async function POST(request) {
       );
     }
 
-    // 8. Fetch user's full_name from public.users
+    // 8. Fetch user's full_name server-side from public.users
     let fullName = null;
     try {
       const { data: userProfile } = await supabaseAdmin
@@ -249,7 +208,11 @@ export async function POST(request) {
       console.warn('[verify-payment] Could not fetch user full_name:', nameErr?.message || nameErr);
     }
 
-    // 9. Insert Subscription Record via Service-Role
+    // 9. Compute 30-day Access Window (One-Time Payment)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // 10. Insert One-Time Access Record via Service-Role (auto_renew: false)
     const { data, error } = await supabaseAdmin
       .from('subscriptions')
       .insert([
@@ -261,10 +224,10 @@ export async function POST(request) {
           currency: EXPECTED_CURRENCY,
           payment_status: 'completed',
           razorpay_payment_id,
-          razorpay_order_id: primaryId,
+          razorpay_order_id: orderId,
           subscription_start_date: startDate.toISOString(),
           subscription_end_date: endDate.toISOString(),
-          auto_renew: true,
+          auto_renew: false, // Strictly ONE-TIME (no recurring billing)
         },
       ])
       .select()
@@ -277,16 +240,16 @@ export async function POST(request) {
           { status: 409 }
         );
       }
-      console.error('[verify-payment] SUBSCRIPTION_CREATION_FAILED:', error);
+      console.error('[verify-payment] ACCESS_RECORD_CREATION_FAILED:', error);
       return NextResponse.json(
-        { code: 'SUBSCRIPTION_CREATION_FAILED', error: 'Failed to record active subscription in database.' },
+        { code: 'SUBSCRIPTION_CREATION_FAILED', error: 'Failed to record active access in database.' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Subscription successfully activated.',
+      message: 'Access successfully activated for 30 days.',
       subscription: data,
     });
   } catch (error) {

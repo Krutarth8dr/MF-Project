@@ -265,19 +265,19 @@ export default function Home() {
           <div className="container">
             <div className="pricing-card">
               <span className="pricing-plan-tag">
-                {isSubscribed ? '● Active Membership' : 'Monthly Institutional Membership'}
+                {isSubscribed ? '● Active Access' : '30-Day Institutional Access'}
               </span>
-              <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Wealthyneers Monthly</h2>
+              <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Wealthyneers 30-Day Access</h2>
               <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
                 {isSubscribed
-                  ? 'Your institutional intelligence membership is currently active.'
-                  : 'One simple recurring subscription. Complete access to all six institutional research reports.'}
+                  ? 'Your institutional intelligence access is currently active.'
+                  : 'One simple one-time payment. Complete access to all six institutional research reports for 30 days.'}
               </p>
               
               <div className="price-single-wrap">
                 <span className="price-single-currency">₹</span>
                 <span className="price-single-val">30</span>
-                <span className="price-single-period">/ month</span>
+                <span className="price-single-period">for 30 days</span>
               </div>
               
               <ul className="features">
@@ -333,7 +333,7 @@ export default function Home() {
                   className="btn btn-primary"
                   style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700 }}
                 >
-                  {paying ? 'Opening Checkout…' : 'Subscribe Now — ₹30/month'}
+                  {paying ? 'Opening Checkout…' : 'Get Access Now — ₹30 for 30 days'}
                 </button>
               ) : (
                 <Link
@@ -341,7 +341,7 @@ export default function Home() {
                   className="btn btn-primary"
                   style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
                 >
-                  Subscribe Now — ₹30/month
+                  Get Access Now — ₹30 for 30 days
                 </Link>
               )}
               <div className="upi-badge">

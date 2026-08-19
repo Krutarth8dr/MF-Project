@@ -72,13 +72,13 @@ export function loadRazorpaySDK() {
 }
 
 /**
- * Initiates Razorpay checkout for Wealthyneers Monthly Membership (₹30/month).
+ * Initiates Razorpay checkout for Wealthyneers 30-Day Institutional Access (₹30 for 30 days).
  * Full UPI, QR Code, Card, and Netbanking support.
  *
  * @param {Object} params
  * @param {Object} params.user - Authenticated Supabase user object { id, email, user_metadata }
  * @param {Function} [params.onOpen] - Callback when checkout modal successfully opens
- * @param {Function} [params.onSuccess] - Callback on verified subscription completion
+ * @param {Function} [params.onSuccess] - Callback on verified payment completion
  * @param {Function} [params.onError] - Callback on error
  * @param {Function} [params.onDismiss] - Callback when user closes payment modal
  */
@@ -123,7 +123,7 @@ export async function startRazorpayCheckout({
 
     if (!orderRes.ok) {
       if (orderData.code === 'ALREADY_SUBSCRIBED') {
-        throw new Error('You already have an active subscription.');
+        throw new Error('You already have active access.');
       }
       throw new Error(orderData.error || 'Failed to initiate payment.');
     }
@@ -148,7 +148,7 @@ export async function startRazorpayCheckout({
       amount: orderData.amount || 3000,
       currency: orderData.currency || 'INR',
       name: 'Wealthyneers',
-      description: 'Wealthyneers Monthly Membership — ₹30',
+      description: 'Wealthyneers 30-Day Access — ₹30',
       image: '/wealthyneers-logo.png',
       prefill: {
         email: user.email || '',
