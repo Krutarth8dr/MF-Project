@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { validateFullName, checkPasswordRequirements } from '@/lib/validation';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -15,23 +16,40 @@ export default function SignUp() {
   const [signedUp, setSignedUp] = useState(false);
   const router = useRouter();
 
+  // Dynamic real-time password requirements evaluation
+  const pwCheck = useMemo(() => checkPasswordRequirements(password), [password]);
+
   const handleSignUp = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
+    // 1. Full Name Validation
+    const nameValidation = validateFullName(fullName);
+    if (!nameValidation.valid) {
+      setError(nameValidation.error);
+      return;
+    }
+
+    // 2. Password Security Validation
+    if (!pwCheck.isValid) {
+      setError('Password does not meet the requirements.');
+      return;
+    }
+
+    setLoading(true);
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
         data: {
-          full_name: fullName.trim(),
+          full_name: nameValidation.value,
         },
       },
     });
 
-    if (error) {
-      setError(error.message || 'Failed to create account.');
+    if (signUpError) {
+      setError(signUpError.message || 'Failed to create account.');
       setLoading(false);
     } else {
       // If auto-confirmed or session is active, redirect to home
@@ -139,7 +157,7 @@ export default function SignUp() {
                   placeholder="••••••••"
                   autoComplete="new-password"
                   required
-                  minLength={6}
+                  minLength={8}
                   style={{ width: '100%', paddingRight: '4.5rem' }}
                 />
                 <button
@@ -159,6 +177,45 @@ export default function SignUp() {
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
+              </div>
+
+              {/* Dynamic Password Requirements Checklist */}
+              <div
+                style={{
+                  marginTop: '0.65rem',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'rgba(10, 77, 104, 0.03)',
+                  border: '1px solid var(--border)',
+                  fontSize: '0.78rem',
+                  lineHeight: 1.4,
+                }}
+              >
+                <div style={{ fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.35rem' }}>
+                  Password must contain:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.minLength ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.minLength ? '✓' : '○'}</span>
+                    <span>At least 8 characters</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasUpper ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasUpper ? '✓' : '○'}</span>
+                    <span>One uppercase letter</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasLower ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasLower ? '✓' : '○'}</span>
+                    <span>One lowercase letter</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasNumber ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasNumber ? '✓' : '○'}</span>
+                    <span>One number</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasSpecial ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasSpecial ? '✓' : '○'}</span>
+                    <span>One special character</span>
+                  </div>
+                </div>
               </div>
             </div>
 

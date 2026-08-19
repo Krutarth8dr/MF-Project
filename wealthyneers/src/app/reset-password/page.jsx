@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { checkPasswordRequirements } from '@/lib/validation';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -60,12 +61,14 @@ export default function ResetPasswordPage() {
     };
   }, []);
 
+  const pwCheck = useMemo(() => checkPasswordRequirements(password), [password]);
+
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     setError(null);
 
-    if (!password || password.length < 6) {
-      setError('New password must be at least 6 characters long.');
+    if (!pwCheck.isValid) {
+      setError('Password does not meet the requirements.');
       return;
     }
 
@@ -205,17 +208,17 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleUpdatePassword}>
             <div className="form-group">
               <label htmlFor="password">New Password</label>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
+                  placeholder="••••••••"
                   autoComplete="new-password"
                   required
-                  minLength={6}
-                  style={{ paddingRight: '4.5rem' }}
+                  minLength={8}
+                  style={{ width: '100%', paddingRight: '4.5rem' }}
                 />
                 <button
                   type="button"
@@ -223,18 +226,56 @@ export default function ResetPasswordPage() {
                   style={{
                     position: 'absolute',
                     right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
                     color: 'var(--secondary)',
                     fontSize: '0.8rem',
                     cursor: 'pointer',
                     fontWeight: 600,
+                    padding: '0.25rem 0.5rem',
                   }}
                 >
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
+              </div>
+
+              {/* Dynamic Password Requirements Checklist */}
+              <div
+                style={{
+                  marginTop: '0.65rem',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'rgba(10, 77, 104, 0.03)',
+                  border: '1px solid var(--border)',
+                  fontSize: '0.78rem',
+                  lineHeight: 1.4,
+                }}
+              >
+                <div style={{ fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.35rem' }}>
+                  Password must contain:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.minLength ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.minLength ? '✓' : '○'}</span>
+                    <span>At least 8 characters</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasUpper ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasUpper ? '✓' : '○'}</span>
+                    <span>One uppercase letter</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasLower ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasLower ? '✓' : '○'}</span>
+                    <span>One lowercase letter</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasNumber ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasNumber ? '✓' : '○'}</span>
+                    <span>One number</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: pwCheck.hasSpecial ? '#059669' : 'var(--secondary)' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.82rem', width: '12px' }}>{pwCheck.hasSpecial ? '✓' : '○'}</span>
+                    <span>One special character</span>
+                  </div>
+                </div>
               </div>
             </div>
 

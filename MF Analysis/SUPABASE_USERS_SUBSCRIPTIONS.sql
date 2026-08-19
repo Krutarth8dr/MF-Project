@@ -69,9 +69,27 @@ CREATE POLICY "Users can read own subscriptions" ON subscriptions
 -- This function creates a user record when someone signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  raw_name TEXT;
+  clean_name TEXT;
 BEGIN
-  INSERT INTO public.users (id, email)
-  VALUES (NEW.id, NEW.email);
+  raw_name := TRIM(COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
+  
+  -- Server-side regex validation: English letters, spaces, hyphens, apostrophes (2-100 chars)
+  IF raw_name ~ '^[A-Za-z]+([ ''-][A-Za-z]+)*$' AND LENGTH(raw_name) BETWEEN 2 AND 100 THEN
+    clean_name := raw_name;
+  ELSE
+    clean_name := NULL;
+  END IF;
+
+  INSERT INTO public.users (id, email, full_name)
+  VALUES (NEW.id, NEW.email, clean_name)
+  ON CONFLICT (id) DO UPDATE
+  SET 
+    email = EXCLUDED.email,
+    full_name = COALESCE(EXCLUDED.full_name, public.users.full_name),
+    updated_at = CURRENT_TIMESTAMP;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
