@@ -689,6 +689,99 @@ export default function InvestorProfilePage() {
           </p>
         </div>
 
+        {/* Introductory Guidance Section */}
+        <div
+          className="q-guidance-card"
+          style={{
+            background: 'var(--card-bg, #ffffff)',
+            border: '1px solid var(--border, #e2e8f0)',
+            borderRadius: '1rem',
+            padding: '1.25rem 1.5rem',
+            marginBottom: '2rem',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <span
+                style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(10, 77, 104, 0.09)',
+                  color: 'var(--primary, #0a4d68)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '0.1rem',
+                }}
+              >
+                1
+              </span>
+              <p style={{ margin: 0, fontSize: '0.94rem', color: 'var(--foreground)', lineHeight: 1.55, fontWeight: 500 }}>
+                Glad you have taken the first step.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <span
+                style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(10, 77, 104, 0.09)',
+                  color: 'var(--primary, #0a4d68)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '0.1rem',
+                }}
+              >
+                2
+              </span>
+              <p style={{ margin: 0, fontSize: '0.94rem', color: 'var(--foreground)', lineHeight: 1.55, fontWeight: 500 }}>
+                Let&apos;s navigate through some questions. We have to understand your investment objectives, goals and mindset.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+              <span
+                style={{
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(10, 77, 104, 0.09)',
+                  color: 'var(--primary, #0a4d68)',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '0.1rem',
+                }}
+              >
+                3
+              </span>
+              <p style={{ margin: 0, fontSize: '0.94rem', color: 'var(--foreground)', lineHeight: 1.55, fontWeight: 500 }}>
+                This will give clarity to both of us and we will be able to discuss wealth management more effectively.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Global Error Banner */}
         {errorMsg && (
           <div className="r6-error-bar" style={{ marginBottom: '2rem' }}>

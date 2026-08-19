@@ -109,7 +109,7 @@ export default function AuthNav() {
         // Invisible placeholder during initial 50ms hydration to prevent navbar collapse/flicker
         <div style={{ display: 'flex', gap: '1rem', opacity: 0, pointerEvents: 'none' }}>
           <span style={{ fontSize: '0.92rem' }}>Dashboard</span>
-          <span style={{ fontSize: '0.92rem' }}>Invest with Us</span>
+          <span style={{ fontSize: '0.92rem' }}>Build Wealth</span>
           <span style={{ width: '80px', height: '32px' }} />
         </div>
       ) : user ? (
@@ -118,7 +118,7 @@ export default function AuthNav() {
             Dashboard
           </Link>
           <Link href="/invest" style={{ fontSize: '0.92rem' }}>
-            Invest with Us
+            Build Wealth
           </Link>
           <Link href="/profile" className="nav-profile-pill" title="View Account & Subscription Profile">
             <span className="nav-avatar-circle">{initials}</span>
@@ -138,7 +138,7 @@ export default function AuthNav() {
         <>
           <Link href="/#reports">Reports</Link>
           <Link href="/#pricing">Pricing</Link>
-          <Link href="/invest">Invest with Us</Link>
+          <Link href="/invest">Build Wealth</Link>
           <Link href="/login" className="btn btn-outline">
             Log In
           </Link>

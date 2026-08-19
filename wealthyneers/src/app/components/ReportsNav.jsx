@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 
 const REPORTS = [
   { href: '/dashboard', label: 'Dashboard', icon: '📊', id: 'dashboard' },
-  { href: '/invest', label: 'Invest with Us', title: 'Guided Mutual Funds', icon: '🎯', id: 'invest' },
+  { href: '/invest', label: 'Build Wealth', title: 'Guided Mutual Funds', icon: '🎯', id: 'invest' },
   { href: '/report1', label: 'Report 1', title: 'Quantity Trend', icon: '📈', id: 'report1' },
   { href: '/report2', label: 'Report 2', title: 'Activity Monitor', icon: '⚡', id: 'report2' },
   { href: '/report3', label: 'Report 3', title: 'AMC Intelligence', icon: '🏢', id: 'report3' },
