@@ -173,7 +173,12 @@ export default function Home() {
         <section className="hero">
           <div className="container">
             <h1>Navigate Markets with Precision</h1>
-            <p>Get exclusive access to our 6 proprietary institutional research reports, designed for serious investors who demand institutional-grade insights.</p>
+            <p style={{ marginBottom: '0.85rem' }}>
+              Get exclusive access to our 6 proprietary institutional research reports, designed for serious investors who demand institutional-grade insights.
+            </p>
+            <p style={{ marginBottom: '2.5rem' }}>
+              Track what leading AMCs are buying, holding, and selling through interactive reports.
+            </p>
             <div className="hero-cta">
               <Link href="/signup" className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2.5rem' }}>
                 Get Started Free
