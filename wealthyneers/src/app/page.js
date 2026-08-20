@@ -198,8 +198,11 @@ export default function Home() {
 
           {!loading && user && isSubscribed && (
             <div className="reports-sub-banner" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>
                 You have active premium access to all 6 institutional reports.
+              </p>
+              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '1.5rem' }}>
+                Track what leading AMCs are buying, holding, and selling through interactive reports.
               </p>
               <Link
                 href="/dashboard"
