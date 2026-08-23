@@ -45,18 +45,6 @@ export default function ContactPage() {
                 support@wealthyneers.com →
               </a>
             </div>
-
-            <div className="contact-card-item">
-              <div className="contact-card-icon">⏱️</div>
-              <div className="contact-card-title">Support Hours &amp; Response</div>
-              <div className="contact-card-desc">
-                Monday – Friday: 9:30 AM to 6:30 PM IST.<br />
-                Typical response turnaround: <strong>within 24 to 48 hours</strong>.
-              </div>
-              <span style={{ fontSize: '0.85rem', color: 'var(--secondary)', marginTop: 'auto', paddingTop: '0.5rem' }}>
-                Online Support Desk
-              </span>
-            </div>
           </div>
         </div>
       </div>

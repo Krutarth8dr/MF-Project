@@ -127,7 +127,6 @@ export default function SignUp() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Doe"
                 autoComplete="name"
                 required
               />
