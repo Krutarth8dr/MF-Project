@@ -6781,3 +6781,448 @@ a {
 
 
 
+
+
+/* ==========================================================================
+   WEALTHYNEERS COMPREHENSIVE RESPONSIVE DESIGN SYSTEM (MOBILE & TABLET PASS)
+   ========================================================================== */
+
+/* ── Mobile Navigation Drawer & Toggle System (<= 768px) ── */
+.mobile-nav-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--foreground);
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  z-index: 1001;
+  flex-shrink: 0;
+}
+
+.mobile-nav-toggle:hover,
+.mobile-nav-toggle:focus-visible {
+  background-color: rgba(10, 77, 104, 0.08);
+  border-color: var(--primary);
+  outline: none;
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.mobile-nav-drawer {
+  background-color: var(--card-bg, #ffffff);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1.5rem 2rem;
+  gap: 1.25rem;
+  margin-top: 73px;
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-nav-user-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-nav-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(10, 77, 104, 0.04);
+}
+
+.mobile-user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.mobile-user-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.mobile-user-subtext {
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.mobile-nav-guest-header {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mobile-guest-badge {
+  display: inline-block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+  background-color: rgba(10, 77, 104, 0.08);
+  padding: 0.25rem 0.65rem;
+  border-radius: 1rem;
+}
+
+.mobile-nav-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mobile-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  min-height: 48px;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--foreground);
+  transition: all 0.15s ease;
+}
+
+.mobile-nav-row:hover,
+.mobile-nav-row:focus-visible {
+  background-color: rgba(10, 77, 104, 0.07);
+  color: var(--primary);
+}
+
+.mobile-nav-row.active {
+  background-color: rgba(10, 77, 104, 0.1);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.mobile-nav-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.mobile-nav-footer {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.mobile-logout-btn {
+  width: 100%;
+  min-height: 48px;
+  color: #dc2626 !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  font-weight: 600;
+}
+
+.mobile-auth-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.mobile-auth-btn {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Breakpoint: Tablets & Laptops (<= 1024px) ── */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 1.5rem;
+  }
+}
+
+/* ── Breakpoint: Mobile & Tablet Transition (<= 768px) ── */
+@media (max-width: 768px) {
+  /* Navigation */
+  .desktop-nav-links {
+    display: none !important;
+  }
+  .mobile-nav-toggle {
+    display: flex !important;
+  }
+  .header {
+    padding: 1rem 0;
+  }
+  .global-reports-nav {
+    top: 65px;
+  }
+  .global-reports-nav-inner {
+    padding: 0.35rem 1rem;
+    gap: 0.25rem;
+  }
+  .global-nav-tab {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+    min-height: 38px;
+  }
+
+  /* Dashboard */
+  .dash-overview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .dash-report-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Questionnaire / Investor Profile */
+  .q-options-grid.cols-3,
+  .q-options-grid.cols-4,
+  .q-options-grid.cols-5 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .q-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  .q-section-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Table Containers Horizontal Scroll */
+  .r2-table-wrap,
+  .r4-table-wrap,
+  .r5-table-wrap,
+  .r6-table-wrap,
+  .profile-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+
+  /* Footer */
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+/* ── Breakpoint: Filter / Dropdown Clamp (<= 640px) ── */
+@media (max-width: 640px) {
+  /* Report Filters and Autocomplete Dropdowns */
+  .r1-autocomplete-list,
+  .r1-sec-dropdown,
+  .r1-amc-panel,
+  .r2-amc-panel,
+  .r2-sec-dropdown,
+  .r3-sec-dropdown,
+  .r3-alt-names-wrap,
+  .r4-sec-dropdown,
+  .r4-amc-panel,
+  .r5-sec-dropdown,
+  .r5-amc-panel,
+  .r6-filter-select {
+    width: 100% !important;
+    max-width: calc(100vw - 2rem) !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 250 !important;
+  }
+
+  .r1-filter-bar,
+  .r2-filter-bar,
+  .r4-filter-bar,
+  .r5-filter-bar,
+  .r6-filter-bar {
+    padding: 1rem !important;
+    gap: 0.75rem !important;
+  }
+
+  .r1-filter-group,
+  .r2-filter-group,
+  .r3-filter-group,
+  .r4-filter-group,
+  .r5-filter-group,
+  .r6-filter-group {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .r1-chart-hdr {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .r1-chart-container {
+    height: 300px !important;
+    min-height: 280px !important;
+  }
+
+  .r3-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .r3-chart-controls {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Sticky First Column for Wide Analytical Tables */
+  .r2-table th:first-child,
+  .r2-table td:first-child,
+  .r4-table th:first-child,
+  .r4-table td:first-child,
+  .r5-table th:first-child,
+  .r5-table td:first-child,
+  .r6-table th:first-child,
+  .r6-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 4 !important;
+    background-color: var(--card-bg, #ffffff) !important;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .r2-table thead th:first-child,
+  .r4-table thead th:first-child,
+  .r5-table thead th:first-child,
+  .r6-table thead th:first-child {
+    z-index: 10 !important;
+  }
+}
+
+/* ── Breakpoint: Compact Mobile Phones (<= 480px) ── */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  /* Typography */
+  .hero h1 {
+    font-size: 1.85rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 1rem !important;
+  }
+  .hero p {
+    font-size: 0.98rem !important;
+    margin-bottom: 2rem !important;
+  }
+  .hero-cta {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .hero-cta .btn {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  /* Pricing */
+  .pricing-card {
+    padding: 1.75rem 1.25rem !important;
+  }
+
+  /* Auth Cards */
+  .auth-card,
+  .login-card,
+  .signup-card,
+  .profile-card {
+    padding: 1.5rem 1.25rem !important;
+    width: 100% !important;
+  }
+  .form-input,
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  select {
+    font-size: 1rem !important; /* Prevents iOS auto-zoom */
+    min-height: 46px !important;
+  }
+
+  /* Questionnaire / Investor Profile */
+  .q-options-grid.cols-1,
+  .q-options-grid.cols-2,
+  .q-options-grid.cols-3,
+  .q-options-grid.cols-4,
+  .q-options-grid.cols-5 {
+    grid-template-columns: 1fr !important;
+    gap: 0.55rem !important;
+  }
+
+  .q-opt-card {
+    min-height: 48px !important;
+    padding: 0.75rem 0.95rem !important;
+    font-size: 0.92rem !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+  }
+
+  .q-section-card {
+    padding: 1.25rem 1rem !important;
+  }
+
+  .questionnaire-actions {
+    flex-direction: column-reverse !important;
+    gap: 0.75rem !important;
+  }
+
+  .questionnaire-actions .btn {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  .declaration-checkbox {
+    flex-shrink: 0 !important;
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+
+  /* Footer */
+  .footer-top {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+}
