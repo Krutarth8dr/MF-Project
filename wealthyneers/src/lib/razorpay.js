@@ -145,6 +145,7 @@ export async function startRazorpayCheckout({
     const options = {
       key: keyId,
       order_id: orderId,
+      checkout_config_id: 'config_TTA4yOciDuRJ46',
       amount: orderData.amount || 3000,
       currency: orderData.currency || 'INR',
       name: 'Wealthyneers',

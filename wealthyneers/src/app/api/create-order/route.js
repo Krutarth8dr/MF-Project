@@ -88,6 +88,7 @@ export async function POST(request) {
       amount: SUBSCRIPTION_PRICE_PAISE,
       currency: SUBSCRIPTION_CURRENCY,
       receipt: `rcpt_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`,
+      checkout_config_id: 'config_TTA4yOciDuRJ46',
       notes: {
         user_id: user.id,
         user_email: user.email || '',
