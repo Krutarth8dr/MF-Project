@@ -73,7 +73,7 @@ export function loadRazorpaySDK() {
 
 /**
  * Initiates Razorpay checkout for Wealthyneers 30-Day Institutional Access (₹30 for 30 days).
- * Full UPI, QR Code, Card, and Netbanking support.
+ * Full UPI & QR Code support.
  *
  * @param {Object} params
  * @param {Object} params.user - Authenticated Supabase user object { id, email, user_metadata }
