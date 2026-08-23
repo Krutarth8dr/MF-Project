@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getClientIp, checkRateLimit, rateLimitExceededResponse } from '@/lib/rateLimit';
 import { sendEmail } from '@/lib/email';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 // Rate Limiting Policy: 3 submissions per 60 minutes per user & per IP
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -160,7 +161,7 @@ function buildGoogleFormData(profile) {
   return params;
 }
 
-async function syncToGoogleForms(profile, syncRecordId, client) {
+async function syncToGoogleForms(profile, syncRecordId) {
   try {
     const formData = buildGoogleFormData(profile);
 
@@ -174,8 +175,8 @@ async function syncToGoogleForms(profile, syncRecordId, client) {
 
     const isSuccess = response.ok || response.status === 200 || response.status === 302 || response.status === 303;
 
-    if (syncRecordId && client) {
-      await client
+    if (syncRecordId) {
+      await supabaseAdmin
         .from('investor_profile_google_sync')
         .update({
           status: isSuccess ? 'submitted' : 'failed',
@@ -192,8 +193,8 @@ async function syncToGoogleForms(profile, syncRecordId, client) {
     return { success: isSuccess, status: response.status };
   } catch (err) {
     console.error('Google Form sync network error:', err?.message || err);
-    if (syncRecordId && client) {
-      await client
+    if (syncRecordId) {
+      await supabaseAdmin
         .from('investor_profile_google_sync')
         .update({
           status: 'failed',
@@ -888,10 +889,10 @@ export async function POST(request) {
       );
     }
 
-    // 8. Downstream Google Form Synchronization Tracking
+    // 8. Downstream Google Form Synchronization Tracking (Server-Side Service Role Only)
     let syncRecordId = null;
     try {
-      const { data: syncData } = await userClient
+      const { data: syncData } = await supabaseAdmin
         .from('investor_profile_google_sync')
         .insert({
           investor_profile_id: newProfile.id,
@@ -910,7 +911,7 @@ export async function POST(request) {
     }
 
     // 9. Dispatch Server-Side POST to Google Forms
-    await syncToGoogleForms(profilePayload, syncRecordId, userClient);
+    await syncToGoogleForms(profilePayload, syncRecordId);
 
     // 10. Dispatch Dual Email Notifications (Executed ONLY after successful database insertion)
     const verifiedUserEmail = (user.email || '').trim().toLowerCase();
