@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getClientIp, checkRateLimit, rateLimitExceededResponse } from '@/lib/rateLimit';
+import { sendEmail } from '@/lib/email';
 
 // Rate Limiting Policy: 3 submissions per 60 minutes per user & per IP
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
@@ -43,6 +44,47 @@ const REQUIRED_DECLARATIONS = [
   'I understand that this assessment is based on the information provided by me.',
   'I consent to my information being processed for preparing and maintaining my Mutual Fund investor profile.',
 ];
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatCurrency(val) {
+  if (!val || val === '0') return 'Not specified';
+  const num = Number(String(val).replace(/[^0-9.]/g, ''));
+  if (isNaN(num) || num === 0) return String(val);
+  return `₹${num.toLocaleString('en-IN')}`;
+}
+
+function renderFieldHtml(val) {
+  if (Array.isArray(val)) {
+    if (val.length === 0) return '<span style="color:#94a3b8;">Not specified</span>';
+    return `<ul style="margin:4px 0 0 0;padding-left:18px;color:#cbd5e1;line-height:1.5;">${val
+      .map((item) => `<li style="margin-bottom:3px;">${escapeHtml(String(item))}</li>`)
+      .join('')}</ul>`;
+  }
+  if (val === null || val === undefined || val === '') {
+    return '<span style="color:#94a3b8;">Not specified</span>';
+  }
+  return `<span style="color:#ffffff;font-weight:500;">${escapeHtml(String(val))}</span>`;
+}
+
+function renderFieldText(val) {
+  if (Array.isArray(val)) {
+    if (val.length === 0) return 'Not specified';
+    return val.map((item) => `  • ${item}`).join('\n');
+  }
+  if (val === null || val === undefined || val === '') {
+    return 'Not specified';
+  }
+  return String(val);
+}
 
 function getSupabaseClient(authToken) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -162,13 +204,398 @@ async function syncToGoogleForms(profile, syncRecordId, client) {
         })
         .eq('id', syncRecordId);
     }
-    return { success: false, error: err?.message };
+    return { success: false, status: 0 };
   }
+}
+
+/**
+ * Builds HTML confirmation email for the submitting user.
+ */
+function buildUserConfirmationHtml({ profile }) {
+  const displayName = profile.full_name ? profile.full_name.split(' ')[0] : 'Investor';
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thank you for submitting your Investor Profile — Wealthyneers</title>
+</head>
+<body style="margin:0;padding:0;background-color:#061A23;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e2e8f0;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;padding:30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:600px;background-color:#0A2635;border-radius:12px;border:1px solid #14425A;padding:32px 28px;text-align:left;">
+          <tr>
+            <td align="center" style="padding-bottom:20px;">
+              <div style="font-size:22px;font-weight:800;letter-spacing:1px;color:#05BFDB;">
+                WEALTHYNEERS
+              </div>
+              <div style="font-size:11px;letter-spacing:2px;color:#94a3b8;text-transform:uppercase;margin-top:3px;">
+                Mutual Fund Suitability Assessment &bull; ARN-310735
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:20px;">
+              <h2 style="margin:0 0 10px 0;font-size:19px;font-weight:700;color:#ffffff;">
+                Investor Profile Submitted Successfully
+              </h2>
+              <p style="margin:0 0 12px 0;font-size:14px;line-height:1.6;color:#cbd5e1;">
+                Hello ${displayName},
+              </p>
+              <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#cbd5e1;">
+                Thank you for completing your Mutual Fund Investor Profile and Suitability Assessment on Wealthyneers. Your profile has been recorded in our system.
+              </p>
+              <p style="margin:0 0 16px 0;font-size:14px;line-height:1.6;color:#cbd5e1;">
+                Here is a summary of the investment details and preferences you submitted:
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:24px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:8px;border:1px solid #14425A;padding:16px 18px;font-size:13px;">
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;width:40%;">Full Name:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.full_name)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Primary Goal:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.primary_goal)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Target Goal Amount:</td>
+                  <td style="padding:6px 0;color:#05BFDB;font-weight:700;">${formatCurrency(profile.primary_goal_amount)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Investment Horizon:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.primary_goal_timeline)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Planned Lump Sum:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${formatCurrency(profile.lump_sum_amount)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Planned Monthly SIP:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${formatCurrency(profile.monthly_sip_amount)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Emergency Reserves:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.emergency_reserve_duration)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Fixed Obligations:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.fixed_obligations_percentage)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;vertical-align:top;">Income Stability:</td>
+                  <td style="padding:6px 0;">${renderFieldHtml(profile.income_stability)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;vertical-align:top;">Investment Experience:</td>
+                  <td style="padding:6px 0;">${renderFieldHtml(profile.investment_experience)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Self-Assessed Risk Profile:</td>
+                  <td style="padding:6px 0;color:#05BFDB;font-weight:700;">${escapeHtml(profile.risk_profile_self_assessment)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;color:#94a3b8;">Tolerable Drawdown:</td>
+                  <td style="padding:6px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.tolerable_drawdown)}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:20px;">
+              <p style="margin:0 0 12px 0;font-size:14px;line-height:1.6;color:#cbd5e1;">
+                Our advisory desk will review your profile to help align mutual fund research with your suitability parameters.
+              </p>
+              <p style="margin:0 0 4px 0;font-size:14px;line-height:1.6;color:#cbd5e1;">
+                If you have questions or wish to discuss portfolio allocations, please contact us at <a href="mailto:support@wealthyneers.com" style="color:#05BFDB;text-decoration:none;">support@wealthyneers.com</a>.
+              </p>
+              <p style="margin:16px 0 0 0;font-size:14px;line-height:1.6;color:#94a3b8;font-weight:600;">
+                &mdash; Team Wealthyneers
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="border-top:1px solid #14425A;padding-top:18px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#64748b;line-height:1.5;">
+                Wealthyneers &bull; AMFI Registered Mutual Fund Distributor (ARN-310735)<br>
+                Mutual Fund investments are subject to market risks. Read all scheme related documents carefully.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Builds plain text confirmation email for the submitting user.
+ */
+function buildUserConfirmationText({ profile }) {
+  const displayName = profile.full_name ? profile.full_name.split(' ')[0] : 'Investor';
+
+  return `
+WEALTHYNEERS - Mutual Fund Suitability Assessment (ARN-310735)
+
+Hello ${displayName},
+
+Thank you for completing your Mutual Fund Investor Profile and Suitability Assessment on Wealthyneers. Your profile has been recorded in our system.
+
+SUMMARY OF SUBMITTED DETAILS:
+--------------------------------------------------
+• Full Name: ${profile.full_name}
+• Primary Goal: ${profile.primary_goal}
+• Target Goal Amount: ${formatCurrency(profile.primary_goal_amount)}
+• Investment Horizon: ${profile.primary_goal_timeline}
+• Planned Lump Sum: ${formatCurrency(profile.lump_sum_amount)}
+• Planned Monthly SIP: ${formatCurrency(profile.monthly_sip_amount)}
+• Emergency Reserves: ${profile.emergency_reserve_duration}
+• Fixed Obligations: ${profile.fixed_obligations_percentage}
+• Income Stability:
+${renderFieldText(profile.income_stability)}
+• Investment Experience:
+${renderFieldText(profile.investment_experience)}
+• Self-Assessed Risk Profile: ${profile.risk_profile_self_assessment}
+• Tolerable Drawdown: ${profile.tolerable_drawdown}
+--------------------------------------------------
+
+Our advisory desk will review your profile to help align mutual fund research with your suitability parameters.
+
+Need assistance or have questions? Contact support@wealthyneers.com.
+
+— Team Wealthyneers
+AMFI Registered Mutual Fund Distributor (ARN-310735)
+  `.trim();
+}
+
+/**
+ * Builds HTML notification email for the administrator.
+ */
+function buildAdminNotificationHtml({ profile, verifiedEmail, submittedAt }) {
+  const formattedDate = new Date(submittedAt || Date.now()).toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata',
+  });
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Investor Profile Submission — ${escapeHtml(profile.full_name)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#061A23;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e2e8f0;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;padding:30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width:640px;background-color:#0A2635;border-radius:12px;border:1px solid #14425A;padding:32px 28px;text-align:left;">
+          <tr>
+            <td style="padding-bottom:16px;">
+              <div style="font-size:20px;font-weight:800;letter-spacing:1px;color:#05BFDB;">
+                WEALTHYNEERS ADMIN
+              </div>
+              <h2 style="margin:6px 0 0 0;font-size:18px;font-weight:700;color:#ffffff;">
+                New Investor Profile Submitted
+              </h2>
+            </td>
+          </tr>
+
+          <!-- Submitter Metadata Card -->
+          <tr>
+            <td style="padding-bottom:20px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:8px;border:1px solid #05BFDB;padding:14px 16px;font-size:13px;">
+                <tr>
+                  <td style="padding:4px 0;color:#94a3b8;width:35%;">Full Name:</td>
+                  <td style="padding:4px 0;color:#ffffff;font-weight:700;font-size:14px;">${escapeHtml(profile.full_name)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;color:#94a3b8;">Verified Email:</td>
+                  <td style="padding:4px 0;color:#05BFDB;font-weight:600;">${escapeHtml(verifiedEmail)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;color:#94a3b8;">Mobile Number:</td>
+                  <td style="padding:4px 0;color:#ffffff;font-weight:600;">${escapeHtml(profile.mobile_number)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;color:#94a3b8;">Submitted At:</td>
+                  <td style="padding:4px 0;color:#cbd5e1;">${formattedDate} IST</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section 1 -->
+          <tr>
+            <td style="padding-bottom:16px;">
+              <h3 style="margin:0 0 8px 0;font-size:14px;color:#05BFDB;text-transform:uppercase;letter-spacing:1px;">
+                Section 1 &mdash; Personal Information
+              </h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:6px;border:1px solid #14425A;padding:10px 14px;font-size:13px;">
+                <tr><td style="padding:4px 0;color:#94a3b8;width:40%;">Full Name:</td><td style="padding:4px 0;">${renderFieldHtml(profile.full_name)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Mobile Number:</td><td style="padding:4px 0;">${renderFieldHtml(profile.mobile_number)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Email Address (Form):</td><td style="padding:4px 0;">${renderFieldHtml(profile.email_address)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Age Group:</td><td style="padding:4px 0;">${renderFieldHtml(profile.age_group)}</td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section 2 -->
+          <tr>
+            <td style="padding-bottom:16px;">
+              <h3 style="margin:0 0 8px 0;font-size:14px;color:#05BFDB;text-transform:uppercase;letter-spacing:1px;">
+                Section 2 &mdash; Investment Goals &amp; Horizon
+              </h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:6px;border:1px solid #14425A;padding:10px 14px;font-size:13px;">
+                <tr><td style="padding:4px 0;color:#94a3b8;width:40%;vertical-align:top;">Investing For:</td><td style="padding:4px 0;">${renderFieldHtml(profile.investing_for)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Primary Goal:</td><td style="padding:4px 0;">${renderFieldHtml(profile.primary_goal)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Goal Amount:</td><td style="padding:4px 0;color:#05BFDB;font-weight:700;">${formatCurrency(profile.primary_goal_amount)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Timeline:</td><td style="padding:4px 0;">${renderFieldHtml(profile.primary_goal_timeline)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Importance:</td><td style="padding:4px 0;">${renderFieldHtml(profile.primary_goal_importance)}</td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section 3 -->
+          <tr>
+            <td style="padding-bottom:16px;">
+              <h3 style="margin:0 0 8px 0;font-size:14px;color:#05BFDB;text-transform:uppercase;letter-spacing:1px;">
+                Section 3 &mdash; Financial Situation &amp; Liquidity
+              </h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:6px;border:1px solid #14425A;padding:10px 14px;font-size:13px;">
+                <tr><td style="padding:4px 0;color:#94a3b8;width:40%;vertical-align:top;">Available Funds Sources:</td><td style="padding:4px 0;">${renderFieldHtml(profile.available_funds_sources)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Lump Sum Amount:</td><td style="padding:4px 0;color:#05BFDB;font-weight:700;">${formatCurrency(profile.lump_sum_amount)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Monthly SIP Amount:</td><td style="padding:4px 0;color:#05BFDB;font-weight:700;">${formatCurrency(profile.monthly_sip_amount)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Emergency Reserve:</td><td style="padding:4px 0;">${renderFieldHtml(profile.emergency_reserve_duration)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Fixed Obligations %:</td><td style="padding:4px 0;">${renderFieldHtml(profile.fixed_obligations_percentage)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;vertical-align:top;">Income Stability:</td><td style="padding:4px 0;">${renderFieldHtml(profile.income_stability)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Unexpected Need Likelihood:</td><td style="padding:4px 0;">${renderFieldHtml(profile.unexpected_need_likelihood)}</td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section 4 -->
+          <tr>
+            <td style="padding-bottom:16px;">
+              <h3 style="margin:0 0 8px 0;font-size:14px;color:#05BFDB;text-transform:uppercase;letter-spacing:1px;">
+                Section 4 &mdash; Risk Tolerance &amp; Investment Experience
+              </h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:6px;border:1px solid #14425A;padding:10px 14px;font-size:13px;">
+                <tr><td style="padding:4px 0;color:#94a3b8;width:40%;vertical-align:top;">Investment Experience:</td><td style="padding:4px 0;">${renderFieldHtml(profile.investment_experience)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;vertical-align:top;">Market Reaction:</td><td style="padding:4px 0;">${renderFieldHtml(profile.market_reaction_scenario)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Tolerable Drawdown:</td><td style="padding:4px 0;color:#05BFDB;font-weight:700;">${renderFieldHtml(profile.tolerable_drawdown)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;vertical-align:top;">Risk Attitude:</td><td style="padding:4px 0;">${renderFieldHtml(profile.risk_attitude_statements)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Self-Assessed Risk:</td><td style="padding:4px 0;color:#05BFDB;font-weight:700;">${renderFieldHtml(profile.risk_profile_self_assessment)}</td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section 5 -->
+          <tr>
+            <td style="padding-bottom:20px;">
+              <h3 style="margin:0 0 8px 0;font-size:14px;color:#05BFDB;text-transform:uppercase;letter-spacing:1px;">
+                Section 5 &mdash; Statutory Declarations &amp; Consent
+              </h3>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;border-radius:6px;border:1px solid #14425A;padding:10px 14px;font-size:13px;">
+                <tr><td style="padding:4px 0;color:#94a3b8;width:40%;vertical-align:top;">Declarations Confirmed:</td><td style="padding:4px 0;">${renderFieldHtml(profile.declaration_confirmations)}</td></tr>
+                <tr><td style="padding:4px 0;color:#94a3b8;">Consent Accepted:</td><td style="padding:4px 0;color:#22c55e;font-weight:700;">Yes (Confirmed)</td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-top:1px solid #14425A;padding-top:16px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#64748b;line-height:1.5;">
+                Wealthyneers Internal System Notification &bull; Confidential
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Builds plain text notification email for the administrator.
+ */
+function buildAdminNotificationText({ profile, verifiedEmail, submittedAt }) {
+  return `
+WEALTHYNEERS - NEW INVESTOR PROFILE SUBMISSION
+==================================================
+Submitter Name:   ${profile.full_name}
+Verified Email:   ${verifiedEmail}
+Contact Mobile:   ${profile.mobile_number}
+Submission Time:  ${submittedAt}
+==================================================
+
+SECTION 1 — PERSONAL INFORMATION
+--------------------------------------------------
+• Full Name: ${profile.full_name}
+• Mobile Number: ${profile.mobile_number}
+• Email Address (Form): ${profile.email_address}
+• Age Group: ${profile.age_group}
+
+SECTION 2 — INVESTMENT GOALS & HORIZON
+--------------------------------------------------
+• Investing For:
+${renderFieldText(profile.investing_for)}
+• Primary Goal: ${profile.primary_goal}
+• Primary Goal Amount: ${formatCurrency(profile.primary_goal_amount)}
+• Primary Goal Timeline: ${profile.primary_goal_timeline}
+• Primary Goal Importance: ${profile.primary_goal_importance}
+
+SECTION 3 — FINANCIAL SITUATION & LIQUIDITY
+--------------------------------------------------
+• Available Funds Sources:
+${renderFieldText(profile.available_funds_sources)}
+• Lump Sum Amount: ${formatCurrency(profile.lump_sum_amount)}
+• Monthly SIP Amount: ${formatCurrency(profile.monthly_sip_amount)}
+• Emergency Reserve Duration: ${profile.emergency_reserve_duration}
+• Fixed Obligations Percentage: ${profile.fixed_obligations_percentage}
+• Income Stability:
+${renderFieldText(profile.income_stability)}
+• Unexpected Need Likelihood: ${profile.unexpected_need_likelihood}
+
+SECTION 4 — RISK TOLERANCE & INVESTMENT EXPERIENCE
+--------------------------------------------------
+• Investment Experience:
+${renderFieldText(profile.investment_experience)}
+• Market Reaction Scenario:
+${renderFieldText(profile.market_reaction_scenario)}
+• Tolerable Drawdown: ${profile.tolerable_drawdown}
+• Risk Attitude Statements:
+${renderFieldText(profile.risk_attitude_statements)}
+• Risk Profile Self Assessment: ${profile.risk_profile_self_assessment}
+
+SECTION 5 — STATUTORY DECLARATIONS & CONSENT
+--------------------------------------------------
+• Declarations Confirmed:
+${renderFieldText(profile.declaration_confirmations)}
+• Consent Accepted: Yes (Confirmed)
+==================================================
+  `.trim();
 }
 
 export async function POST(request) {
   try {
-    // 1. Extract Authorization Token
+    // 1. Authenticate Request via Supabase Bearer Token
     const authHeader = request.headers.get('authorization') || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
 
@@ -179,7 +606,6 @@ export async function POST(request) {
       );
     }
 
-    // 2. Verify Authenticated User via Supabase
     const userClient = getSupabaseClient(token);
     const {
       data: { user },
@@ -195,26 +621,32 @@ export async function POST(request) {
 
     const userId = user.id;
 
-    // 3. Server-Side Rate Limiting (Dual Dimension: User UUID + Client IP)
+    // 2. Server-Side Rate Limiting (User UUID + Client IP)
     const clientIp = getClientIp(request);
     const userLimit = checkRateLimit(`profile:user:${userId}`, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS);
     if (!userLimit.allowed) {
       return rateLimitExceededResponse(
         userLimit.resetInMs,
-        'Too many profile submission attempts. Please wait before submitting again.'
+        'Too many profile submissions. Please wait before attempting again.'
       );
     }
 
-    const ipLimit = checkRateLimit(`profile:ip:${clientIp}`, RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_MS);
+    const ipLimit = checkRateLimit(`profile:ip:${clientIp}`, RATE_LIMIT_MAX_REQUESTS * 2, RATE_LIMIT_WINDOW_MS);
     if (!ipLimit.allowed) {
       return rateLimitExceededResponse(
         ipLimit.resetInMs,
-        'Too many profile submission requests from this network. Please wait.'
+        'Too many submissions from your connection. Please wait.'
       );
     }
 
-    // 4. Parse Request Body
-    const body = await request.json();
+    // 3. Parse and Sanitize Request Body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON request payload.' }, { status: 400 });
+    }
+
     const {
       full_name,
       mobile_number,
@@ -241,14 +673,14 @@ export async function POST(request) {
       consent_accepted,
     } = body;
 
-    // 4. Server-side Validation of All Required Fields
-    if (!full_name || typeof full_name !== 'string' || full_name.trim().length < 2) {
-      return NextResponse.json({ error: 'Please provide a valid full name.' }, { status: 400 });
+    // 4. Validate All Required Fields (Server-Side Enforcement)
+    if (!full_name || typeof full_name !== 'string' || full_name.trim().length === 0) {
+      return NextResponse.json({ error: 'Full name is required.' }, { status: 400 });
     }
 
-    if (!mobile_number || !/^\+?[0-9]{10,13}$/.test(mobile_number.replace(/[\s-]/g, ''))) {
+    if (!mobile_number || typeof mobile_number !== 'string' || mobile_number.trim().length < 10) {
       return NextResponse.json(
-        { error: 'Please provide a valid 10-digit mobile number.' },
+        { error: 'A valid 10-digit mobile number is required.' },
         { status: 400 }
       );
     }
@@ -259,88 +691,88 @@ export async function POST(request) {
 
     if (!Array.isArray(investing_for) || investing_for.length === 0) {
       return NextResponse.json(
-        { error: 'Please select at least one investment goal.' },
+        { error: 'Please select at least one investment objective.' },
         { status: 400 }
       );
     }
 
     if (!primary_goal) {
-      return NextResponse.json({ error: 'Please select your primary goal.' }, { status: 400 });
+      return NextResponse.json({ error: 'Please select your primary investment goal.' }, { status: 400 });
     }
 
-    if (!primary_goal_amount || primary_goal_amount.trim().length === 0) {
+    if (!primary_goal_amount || String(primary_goal_amount).trim().length === 0) {
       return NextResponse.json(
-        { error: 'Please specify the approximate amount required for your primary goal.' },
+        { error: 'Please enter your estimated target amount for your primary goal.' },
         { status: 400 }
       );
     }
 
     if (!primary_goal_timeline) {
       return NextResponse.json(
-        { error: 'Please select your primary goal time horizon.' },
+        { error: 'Please select your timeline to achieve your primary goal.' },
         { status: 400 }
       );
     }
 
     if (!primary_goal_importance) {
       return NextResponse.json(
-        { error: 'Please select the importance of your primary goal.' },
+        { error: 'Please select the importance level of this goal.' },
         { status: 400 }
       );
     }
 
     if (!Array.isArray(available_funds_sources) || available_funds_sources.length === 0) {
       return NextResponse.json(
-        { error: 'Please select the sources of funds available for investment.' },
+        { error: 'Please select at least one source of investable funds.' },
         { status: 400 }
       );
     }
 
-    if (!lump_sum_amount || lump_sum_amount.trim().length === 0) {
+    if (!lump_sum_amount || String(lump_sum_amount).trim().length === 0) {
       return NextResponse.json(
-        { error: 'Please specify the lump sum available (enter 0 if none).' },
+        { error: 'Please enter the initial lump-sum amount (or 0 if none).' },
         { status: 400 }
       );
     }
 
-    if (!monthly_sip_amount || monthly_sip_amount.trim().length === 0) {
+    if (!monthly_sip_amount || String(monthly_sip_amount).trim().length === 0) {
       return NextResponse.json(
-        { error: 'Please specify the monthly SIP capacity (enter 0 if none).' },
+        { error: 'Please enter the monthly SIP amount (or 0 if none).' },
         { status: 400 }
       );
     }
 
     if (!emergency_reserve_duration) {
       return NextResponse.json(
-        { error: 'Please select your emergency reserve duration.' },
+        { error: 'Please select your emergency reserve fund duration.' },
         { status: 400 }
       );
     }
 
     if (!fixed_obligations_percentage) {
       return NextResponse.json(
-        { error: 'Please select your monthly fixed obligations percentage.' },
+        { error: 'Please select your fixed monthly obligations level.' },
         { status: 400 }
       );
     }
 
     if (!Array.isArray(income_stability) || income_stability.length === 0) {
       return NextResponse.json(
-        { error: 'Please describe your income situation.' },
+        { error: 'Please select statements describing your income stability.' },
         { status: 400 }
       );
     }
 
     if (!unexpected_need_likelihood) {
       return NextResponse.json(
-        { error: 'Please indicate how likely you may need these funds unexpectedly.' },
+        { error: 'Please select the likelihood of needing invested funds unexpectedly.' },
         { status: 400 }
       );
     }
 
     if (!Array.isArray(investment_experience) || investment_experience.length === 0) {
       return NextResponse.json(
-        { error: 'Please select your investment experience.' },
+        { error: 'Please select your past investment experience.' },
         { status: 400 }
       );
     }
@@ -480,7 +912,61 @@ export async function POST(request) {
     // 9. Dispatch Server-Side POST to Google Forms
     await syncToGoogleForms(profilePayload, syncRecordId, userClient);
 
-    // 10. Return HTTP 201 Success Response
+    // 10. Dispatch Dual Email Notifications (Executed ONLY after successful database insertion)
+    const verifiedUserEmail = (user.email || '').trim().toLowerCase();
+    const adminEmail = (process.env.ADMIN_NOTIFICATION_EMAIL || '').trim().toLowerCase();
+
+    // 10a. Dispatch Submitting User Confirmation Email
+    if (verifiedUserEmail) {
+      try {
+        const userSubject = 'Thank you for submitting your Investor Profile — Wealthyneers';
+        const userHtml = buildUserConfirmationHtml({
+          profile: profilePayload,
+        });
+        const userText = buildUserConfirmationText({
+          profile: profilePayload,
+        });
+
+        await sendEmail({
+          to: verifiedUserEmail,
+          subject: userSubject,
+          html: userHtml,
+          text: userText,
+        });
+      } catch (userEmailErr) {
+        console.error('[submit-investor-profile] Failed to send user confirmation email:', userEmailErr?.message || 'SMTP error');
+      }
+    }
+
+    // 10b. Dispatch Admin Notification Email
+    if (adminEmail) {
+      try {
+        const adminSubject = `New Investor Profile Submission — ${profilePayload.full_name || 'Investor'}`;
+        const adminHtml = buildAdminNotificationHtml({
+          profile: profilePayload,
+          verifiedEmail: verifiedUserEmail,
+          submittedAt: profilePayload.submitted_at,
+        });
+        const adminText = buildAdminNotificationText({
+          profile: profilePayload,
+          verifiedEmail: verifiedUserEmail,
+          submittedAt: profilePayload.submitted_at,
+        });
+
+        await sendEmail({
+          to: adminEmail,
+          subject: adminSubject,
+          html: adminHtml,
+          text: adminText,
+        });
+      } catch (adminEmailErr) {
+        console.error('[submit-investor-profile] Failed to send admin notification email:', adminEmailErr?.message || 'SMTP error');
+      }
+    } else {
+      console.warn('[submit-investor-profile] ADMIN_NOTIFICATION_EMAIL is not configured. Admin notification email skipped.');
+    }
+
+    // 11. Return HTTP 201 Success Response
     return NextResponse.json(
       {
         success: true,
