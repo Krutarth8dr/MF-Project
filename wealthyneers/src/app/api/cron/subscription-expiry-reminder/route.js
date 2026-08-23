@@ -33,26 +33,9 @@ function isAuthorized(request) {
 }
 
 /**
- * Formats a Date into Indian Standard Time friendly display (e.g. "25 August 2026").
+ * Generates the HTML email body for expired subscription notification.
  */
-function formatExpiryDate(dateString) {
-  try {
-    const d = new Date(dateString);
-    return d.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'Asia/Kolkata',
-    });
-  } catch {
-    return dateString;
-  }
-}
-
-/**
- * Generates the HTML email body for subscription expiry reminder.
- */
-function buildExpiryEmailHtml({ fullName, expiryDateFormatted, renewUrl }) {
+function buildExpiredEmailHtml({ fullName, renewUrl }) {
   const displayName = fullName ? fullName.split(' ')[0] : 'Investor';
 
   return `
@@ -61,7 +44,7 @@ function buildExpiryEmailHtml({ fullName, expiryDateFormatted, renewUrl }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Wealthyneers access expires in 2 days</title>
+  <title>Your Wealthyneers access has expired</title>
 </head>
 <body style="margin:0;padding:0;background-color:#061A23;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e2e8f0;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;padding:40px 15px;">
@@ -81,29 +64,40 @@ function buildExpiryEmailHtml({ fullName, expiryDateFormatted, renewUrl }) {
           <tr>
             <td style="padding-bottom:20px;">
               <h2 style="margin:0 0 12px 0;font-size:20px;font-weight:700;color:#ffffff;">
-                Your Access Expires in 2 Days
+                Your Access Has Expired
               </h2>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
                 Hello ${displayName},
               </p>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                This is a friendly reminder that your current 30-day Wealthyneers research access is scheduled to expire on <strong style="color:#ffffff;">${expiryDateFormatted}</strong>.
+                Your Wealthyneers Premium access has now expired.
               </p>
-              <div style="background-color:#061A23;border-left:4px solid #05BFDB;border-radius:4px;padding:14px 16px;margin:20px 0;">
-                <p style="margin:0;font-size:14px;line-height:1.5;color:#94a3b8;">
-                  <strong style="color:#ffffff;">Important:</strong> Wealthyneers does <strong style="color:#ffffff;">not</strong> automatically renew or charge your account. All payments are strictly one-time.
-                </p>
-              </div>
+              <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
+                We hope you found Wealthyneers useful and that our research helped you gain better insights into institutional activity, mutual fund holdings, and market trends.
+              </p>
+              <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
+                Your account is still active, but access to the premium research reports and interactive dashboard is currently locked.
+              </p>
               <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                To maintain uninterrupted access to all 6 proprietary institutional research reports and interactive dashboards, simply make a one-time ₹30 payment for your next 30 days.
+                If you would like to continue using Wealthyneers, you can renew your access for ₹30 and get another 30 days of premium access.
               </p>
             </td>
           </tr>
           <tr>
             <td align="center" style="padding-bottom:28px;">
               <a href="${renewUrl}" target="_blank" style="display:inline-block;background-color:#05BFDB;color:#061A23;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:8px;letter-spacing:0.3px;">
-                Renew Access for ₹30 &rarr;
+                Renew for ₹30 &rarr;
               </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:24px;">
+              <p style="margin:0 0 4px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
+                We&apos;d be happy to have you back.
+              </p>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#94a3b8;font-weight:600;">
+                &mdash; Team Wealthyneers
+              </p>
             </td>
           </tr>
           <tr>
@@ -124,9 +118,9 @@ function buildExpiryEmailHtml({ fullName, expiryDateFormatted, renewUrl }) {
 }
 
 /**
- * Generates the plain text email fallback.
+ * Generates the plain text email fallback for expired subscription notification.
  */
-function buildExpiryEmailText({ fullName, expiryDateFormatted, renewUrl }) {
+function buildExpiredEmailText({ fullName, renewUrl }) {
   const displayName = fullName ? fullName.split(' ')[0] : 'Investor';
 
   return `
@@ -134,16 +128,20 @@ WEALTHYNEERS - Institutional Mutual Fund Research
 
 Hello ${displayName},
 
-This is a reminder that your 30-day Wealthyneers research access will expire in 2 days on ${expiryDateFormatted}.
+Your Wealthyneers Premium access has now expired.
 
-IMPORTANT: Wealthyneers does NOT automatically renew or recharge your account.
+We hope you found Wealthyneers useful and that our research helped you gain better insights into institutional activity, mutual fund holdings, and market trends.
 
-To maintain uninterrupted access to all 6 institutional reports and interactive dashboards, renew with a one-time ₹30 payment:
+Your account is still active, but access to the premium research reports and interactive dashboard is currently locked.
+
+If you would like to continue using Wealthyneers, you can renew your access for ₹30 and get another 30 days of premium access:
 ${renewUrl}
 
-Need assistance? Contact support@wealthyneers.com
+We'd be happy to have you back.
 
-Wealthyneers Team
+— Team Wealthyneers
+
+Need assistance? Contact support@wealthyneers.com
   `.trim();
 }
 
@@ -179,19 +177,14 @@ async function handleExpiryCron(request) {
   };
 
   try {
-    // 2. Define Time Window for Subscriptions Expiring ~2 Days (48 Hours) from Now
-    // Window: between 24 hours and 72 hours from current execution
-    const now = new Date();
-    const windowStart = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-    const windowEnd = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
 
-    // 3. Query Active Paid Subscriptions within the 48-Hour Expiry Window
+    // 2. Query Subscriptions that have ALREADY EXPIRED (subscription_end_date < NOW)
     let subQuery = supabaseAdmin
       .from('subscriptions')
       .select('id, user_id, full_name, subscription_end_date, payment_status')
       .eq('payment_status', 'completed')
-      .gte('subscription_end_date', windowStart)
-      .lte('subscription_end_date', windowEnd);
+      .lt('subscription_end_date', now);
 
     // If Test Mode is active, restrict query strictly to the specified test user ID
     if (isTestMode) {
@@ -206,17 +199,17 @@ async function handleExpiryCron(request) {
       subQuery = subQuery.eq('user_id', testUserId);
     }
 
-    const { data: expiringSubs, error: subError } = await subQuery;
+    const { data: expiredSubs, error: subError } = await subQuery;
 
     if (subError) {
-      console.error('[cron/subscription-expiry] Failed to query subscriptions:', subError.message);
+      console.error('[cron/subscription-expiry] Failed to query expired subscriptions:', subError.message);
       return NextResponse.json(
         { success: false, error: 'Database query failed.', ...counts },
         { status: 500 }
       );
     }
 
-    if (!expiringSubs || expiringSubs.length === 0) {
+    if (!expiredSubs || expiredSubs.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No subscriptions pending expiry reminder.',
@@ -224,8 +217,8 @@ async function handleExpiryCron(request) {
       });
     }
 
-    // 4. Process Each Expiring Subscription
-    for (const sub of expiringSubs) {
+    // 3. Process Each Expired Subscription
+    for (const sub of expiredSubs) {
       counts.processed += 1;
 
       // In test mode, strictly ensure no other user is processed
@@ -234,13 +227,14 @@ async function handleExpiryCron(request) {
         continue;
       }
 
+      let recipientEmail = '';
       try {
-        // 4a. Check public.email_logs for existing reminder for this specific subscription ID
+        // 3a. Check public.email_logs for existing notification for this specific subscription ID
         const { data: existingLog, error: logCheckError } = await supabaseAdmin
           .from('email_logs')
           .select('id, status')
           .eq('user_id', sub.user_id)
-          .eq('email_type', 'subscription_expiry_reminder')
+          .eq('email_type', 'subscription_expired')
           .eq('reference_id', sub.id)
           .eq('status', 'sent')
           .maybeSingle();
@@ -250,12 +244,12 @@ async function handleExpiryCron(request) {
         }
 
         if (existingLog) {
-          // Already sent for this subscription cycle
+          // Already sent for this subscription cycle — skip to prevent repeated emails
           counts.skipped += 1;
           continue;
         }
 
-        // 4b. Verify user email and email confirmation status from Supabase Auth
+        // 3b. Verify user email and email confirmation status from Supabase Auth
         const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(sub.user_id);
 
         if (authUserError || !authUserData?.user) {
@@ -265,7 +259,7 @@ async function handleExpiryCron(request) {
         }
 
         const authUser = authUserData.user;
-        const recipientEmail = authUser.email;
+        recipientEmail = authUser.email || '';
         const isEmailConfirmed = !!authUser.email_confirmed_at;
 
         // Strictly send ONLY to verified email accounts
@@ -275,35 +269,32 @@ async function handleExpiryCron(request) {
         }
 
         const fullName = sub.full_name || authUser.user_metadata?.full_name || '';
-        const expiryFormatted = formatExpiryDate(sub.subscription_end_date);
 
-        const html = buildExpiryEmailHtml({
+        const html = buildExpiredEmailHtml({
           fullName,
-          expiryDateFormatted: expiryFormatted,
           renewUrl,
         });
 
-        const text = buildExpiryEmailText({
+        const text = buildExpiredEmailText({
           fullName,
-          expiryDateFormatted: expiryFormatted,
           renewUrl,
         });
 
-        // 4c. Dispatch Email via SMTP
+        // 3c. Dispatch Email via SMTP
         await sendEmail({
           to: recipientEmail,
-          subject: 'Your Wealthyneers access expires in 2 days',
+          subject: 'Your Wealthyneers access has expired',
           html,
           text,
         });
 
-        // 4d. Record Successful Dispatch in public.email_logs
+        // 3d. Record Successful Dispatch in public.email_logs
         await supabaseAdmin
           .from('email_logs')
           .upsert(
             {
               user_id: sub.user_id,
-              email_type: 'subscription_expiry_reminder',
+              email_type: 'subscription_expired',
               reference_id: sub.id,
               recipient_email: recipientEmail,
               status: 'sent',
@@ -317,7 +308,7 @@ async function handleExpiryCron(request) {
       } catch (sendErr) {
         counts.failed += 1;
         const errMsg = sendErr?.message || 'SMTP dispatch error';
-        console.error(`[cron/subscription-expiry] Failed to send reminder for subscription ${sub.id}:`, errMsg);
+        console.error(`[cron/subscription-expiry] Failed to send expired notice for subscription ${sub.id}:`, errMsg);
 
         // Record failed attempt in email_logs without blocking or altering subscriptions
         try {
@@ -326,9 +317,9 @@ async function handleExpiryCron(request) {
             .upsert(
               {
                 user_id: sub.user_id,
-                email_type: 'subscription_expiry_reminder',
+                email_type: 'subscription_expired',
                 reference_id: sub.id,
-                recipient_email: sub.user_id,
+                recipient_email: recipientEmail || 'unknown',
                 status: 'failed',
                 error_message: errMsg.substring(0, 500),
                 sent_at: new Date().toISOString(),
