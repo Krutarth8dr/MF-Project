@@ -238,6 +238,94 @@ a {
   padding: 5rem 0;
 }
 
+/* Reports Teaser Section for Non-Subscribers */
+.reports-teaser-box {
+  background: linear-gradient(180deg, rgba(10, 77, 104, 0.03) 0%, rgba(5, 191, 219, 0.05) 100%);
+  border: 1px solid rgba(10, 77, 104, 0.12);
+  border-radius: 0.85rem;
+  padding: 1.5rem 1.75rem;
+  margin: 0 auto 3.5rem auto;
+  max-width: 1080px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(10, 77, 104, 0.04);
+}
+
+.reports-teaser-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.85rem;
+  letter-spacing: -0.01em;
+}
+
+.reports-teaser-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  margin-bottom: 0.9rem;
+}
+
+.teaser-sec {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.teaser-sep {
+  color: rgba(10, 77, 104, 0.35);
+  font-weight: 400;
+  user-select: none;
+}
+
+.reports-teaser-cta-wrap {
+  margin-top: 0.25rem;
+}
+
+.reports-teaser-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.reports-teaser-cta:hover {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+@media (max-width: 768px) {
+  .reports-teaser-box {
+    padding: 1.25rem 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .reports-teaser-title {
+    font-size: 1.15rem;
+  }
+  .reports-teaser-list {
+    gap: 0.45rem 0.6rem;
+  }
+  .teaser-sec {
+    font-size: 0.88rem;
+    white-space: normal;
+    background-color: rgba(10, 77, 104, 0.05);
+    border: 1px solid rgba(10, 77, 104, 0.1);
+    padding: 0.25rem 0.65rem;
+    border-radius: 0.35rem;
+  }
+  .teaser-sep {
+    display: none;
+  }
+}
+
 .section-title {
   text-align: center;
   font-size: 2.5rem;

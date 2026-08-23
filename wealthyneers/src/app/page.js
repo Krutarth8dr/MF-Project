@@ -194,6 +194,30 @@ export default function Home() {
 
       <section id="reports" className="reports">
         <div className="container">
+          {!loading && !isSubscribed && (
+            <div className="reports-teaser-box">
+              <h3 className="reports-teaser-title">
+                Top 5 Most Bought Securities Last Month
+              </h3>
+              <div className="reports-teaser-list">
+                <span className="teaser-sec">Adani Enterprises Ltd.</span>
+                <span className="teaser-sep" aria-hidden="true">|</span>
+                <span className="teaser-sec">Torrent Pharmaceuticals Ltd.</span>
+                <span className="teaser-sep" aria-hidden="true">|</span>
+                <span className="teaser-sec">PB Fintech Ltd.</span>
+                <span className="teaser-sep" aria-hidden="true">|</span>
+                <span className="teaser-sec">SBI Funds Management Ltd.</span>
+                <span className="teaser-sep" aria-hidden="true">|</span>
+                <span className="teaser-sec">Indo-MIM Ltd.</span>
+              </div>
+              <div className="reports-teaser-cta-wrap">
+                <Link href="#pricing" className="reports-teaser-cta">
+                  Subscribe for more →
+                </Link>
+              </div>
+            </div>
+          )}
+
           <h2 className="section-title">Our Premium Research Reports</h2>
 
           {!loading && user && isSubscribed && (
