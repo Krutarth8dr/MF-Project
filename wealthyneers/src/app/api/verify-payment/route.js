@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getClientIp, checkRateLimit, rateLimitExceededResponse } from '@/lib/rateLimit';
 import { getRazorpayCredentials } from '@/lib/envHelper';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const EXPECTED_AMOUNT_PAISE = 3000; // ₹30.00 = 3000 paise (Fixed Server-Side)
 const EXPECTED_CURRENCY = 'INR';
@@ -17,14 +18,6 @@ function getSupabaseUserClient(authToken) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   return createClient(url, anonKey, {
     global: { headers: { Authorization: `Bearer ${authToken}` } },
-    auth: { persistSession: false },
-  });
-}
-
-function getSupabaseAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return createClient(url, serviceKey, {
     auth: { persistSession: false },
   });
 }
@@ -179,7 +172,6 @@ export async function POST(request) {
     }
 
     // 7. Check Duplicate / Replay Protection
-    const supabaseAdmin = getSupabaseAdminClient();
     const { data: existingSub } = await supabaseAdmin
       .from('subscriptions')
       .select('id, user_id, payment_status')
@@ -230,7 +222,7 @@ export async function POST(request) {
           auto_renew: false, // Strictly ONE-TIME (no recurring billing)
         },
       ])
-      .select()
+      .select('id, plan_type, subscription_start_date, subscription_end_date')
       .single();
 
     if (error) {

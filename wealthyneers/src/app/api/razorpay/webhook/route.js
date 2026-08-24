@@ -37,33 +37,40 @@ function isEventProcessed(eventId) {
  */
 export async function POST(request) {
   try {
+    const { webhookSecret } = getRazorpayCredentials();
+
+    // 1. Webhook Secret Configuration Check (Fail Closed)
+    if (!webhookSecret) {
+      console.error('[razorpay-webhook] RAZORPAY_WEBHOOK_SECRET is not configured on the server.');
+      return NextResponse.json(
+        { error: 'Webhook secret not configured' },
+        { status: 500 }
+      );
+    }
+
     const rawBody = await request.text();
     const signature = request.headers.get('x-razorpay-signature');
 
-    const { webhookSecret } = getRazorpayCredentials();
+    // 2. Verify Webhook Signature
+    if (!signature) {
+      console.warn('[razorpay-webhook] Missing x-razorpay-signature header');
+      return NextResponse.json({ error: 'Signature required' }, { status: 400 });
+    }
 
-    // 1. Verify Webhook Signature (If secret is configured)
-    if (webhookSecret) {
-      if (!signature) {
-        console.warn('[razorpay-webhook] Missing x-razorpay-signature header');
-        return NextResponse.json({ error: 'Signature required' }, { status: 400 });
-      }
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(rawBody)
+      .digest('hex');
 
-      const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(rawBody)
-        .digest('hex');
+    const expectedBuf = Buffer.from(expectedSignature, 'utf8');
+    const signatureBuf = Buffer.from(signature, 'utf8');
 
-      const expectedBuf = Buffer.from(expectedSignature, 'utf8');
-      const signatureBuf = Buffer.from(signature, 'utf8');
-
-      if (
-        expectedBuf.length !== signatureBuf.length ||
-        !crypto.timingSafeEqual(expectedBuf, signatureBuf)
-      ) {
-        console.warn('[razorpay-webhook] Invalid signature received');
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
-      }
+    if (
+      expectedBuf.length !== signatureBuf.length ||
+      !crypto.timingSafeEqual(expectedBuf, signatureBuf)
+    ) {
+      console.warn('[razorpay-webhook] Invalid signature received');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     // 2. Parse Event Payload

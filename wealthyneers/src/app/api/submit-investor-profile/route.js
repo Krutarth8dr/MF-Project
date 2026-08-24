@@ -88,24 +88,15 @@ function renderFieldText(val) {
 }
 
 function getSupabaseClient(authToken) {
+  if (!authToken || typeof authToken !== 'string') {
+    throw new Error('Authentication token is required to create a Supabase user client.');
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (authToken) {
-    return createClient(url, anonKey, {
-      global: { headers: { Authorization: `Bearer ${authToken}` } },
-      auth: { persistSession: false },
-    });
-  }
-
-  if (serviceKey) {
-    return createClient(url, serviceKey, {
-      auth: { persistSession: false },
-    });
-  }
 
   return createClient(url, anonKey, {
+    global: { headers: { Authorization: `Bearer ${authToken}` } },
     auth: { persistSession: false },
   });
 }
