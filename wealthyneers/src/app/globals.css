@@ -7034,6 +7034,143 @@ a {
     position: relative !important;
   }
 
+  /* Profile Page Mobile Single-Column Layout (<= 768px) */
+  .profile-page {
+    padding: 0 1rem !important;
+    margin: 1.5rem auto 3rem !important;
+    max-width: 100% !important;
+  }
+
+  .profile-hero {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 1.5rem 1.25rem !important;
+    gap: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .profile-hero-left {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    width: 100% !important;
+  }
+
+  .profile-avatar-large {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 1.4rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .profile-hero-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .profile-hero-info h1 {
+    font-size: 1.35rem !important;
+    word-break: break-word !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .profile-hero-email {
+    font-size: 0.88rem !important;
+    word-break: break-all !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .profile-hero-badges {
+    gap: 0.4rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  .profile-badge-pill {
+    font-size: 0.74rem !important;
+    padding: 0.2rem 0.6rem !important;
+    white-space: normal !important;
+  }
+
+  .profile-hero-right {
+    width: 100% !important;
+  }
+
+  .profile-hero-right .btn {
+    width: 100% !important;
+    min-height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+    width: 100% !important;
+  }
+
+  .profile-card {
+    width: 100% !important;
+    grid-column: 1 / -1 !important;
+    padding: 1.5rem 1.25rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .profile-history-card {
+    width: 100% !important;
+    grid-column: 1 / -1 !important;
+    padding: 1.5rem 1.25rem !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .profile-card-header {
+    margin-bottom: 1.25rem !important;
+    padding-bottom: 0.75rem !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .profile-card-title {
+    font-size: 1.05rem !important;
+  }
+
+  .profile-info-list {
+    gap: 1rem !important;
+  }
+
+  .profile-info-item {
+    gap: 0.15rem !important;
+  }
+
+  .profile-info-label {
+    font-size: 0.74rem !important;
+  }
+
+  .profile-info-value {
+    font-size: 0.9rem !important;
+    word-break: break-word !important;
+  }
+
+  .profile-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    margin-top: 0.75rem !important;
+  }
+
+  .profile-table {
+    min-width: 520px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .profile-table th,
+  .profile-table td {
+    padding: 0.65rem 0.75rem !important;
+    white-space: nowrap !important;
+  }
+
   /* Footer */
   .footer-top {
     grid-template-columns: 1fr 1fr;
@@ -7218,6 +7355,44 @@ a {
     flex-shrink: 0 !important;
     width: 1.25rem !important;
     height: 1.25rem !important;
+  }
+
+  /* Profile Page Compact Mobile Adjustments (<= 480px) */
+  .profile-page {
+    padding: 0 0.75rem !important;
+    margin: 1rem auto 2.5rem !important;
+  }
+
+  .profile-hero {
+    padding: 1.25rem 1rem !important;
+    border-radius: 0.75rem !important;
+    gap: 1rem !important;
+  }
+
+  .profile-hero-left {
+    gap: 0.75rem !important;
+  }
+
+  .profile-avatar-large {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 1.25rem !important;
+  }
+
+  .profile-hero-info h1 {
+    font-size: 1.2rem !important;
+  }
+
+  .profile-card,
+  .profile-history-card {
+    padding: 1.25rem 1rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .profile-table th,
+  .profile-table td {
+    padding: 0.55rem 0.65rem !important;
+    font-size: 0.78rem !important;
   }
 
   /* Footer */
