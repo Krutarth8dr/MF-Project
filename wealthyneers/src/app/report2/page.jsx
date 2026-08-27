@@ -519,17 +519,16 @@ export default function Report2Page() {
       <div className="r2-header">
         <div className="r2-header-top">
           <div className="r2-badges">
-            <div className="report-badge-row">
-              <span className="report-badge">Report 2</span>
-              <button
-                type="button"
-                className="report-desc-btn"
-                onClick={() => setShowGuide(true)}
-                title="View comprehensive report documentation & guide"
-              >
-                📖 Report Description
-              </button>
-            </div>
+            <span className="report-badge">Report 2</span>
+            <button
+              type="button"
+              className="report-desc-btn"
+              onClick={() => setShowGuide(true)}
+              title="View comprehensive report documentation & guide"
+              aria-label="How To Use Guide"
+            >
+              📖 How To Use
+            </button>
             <span className="r2-live-tag">⚡ Activity Scanner</span>
           </div>
           {datesMeta.latest_date && datesMeta.prev_date && (

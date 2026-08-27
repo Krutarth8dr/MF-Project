@@ -281,8 +281,9 @@ export default function Report6Page() {
               className="report-desc-btn"
               onClick={() => setShowGuide(true)}
               title="View comprehensive report documentation & guide"
+              aria-label="How To Use Guide"
             >
-              📖 Report Description
+              📖 How To Use
             </button>
           </div>
           <h1 className="r6-title">7-Month Institutional Holding Direction</h1>

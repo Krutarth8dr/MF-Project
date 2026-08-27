@@ -483,13 +483,6 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            <div className="profile-info-item">
-              <span className="profile-info-label">Auto Renewal</span>
-              <span className="profile-info-value">
-                {currentSub?.auto_renew === true ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
-
             {currentSub && (
               <div className="profile-info-item">
                 <span className="profile-info-label">Amount Paid</span>

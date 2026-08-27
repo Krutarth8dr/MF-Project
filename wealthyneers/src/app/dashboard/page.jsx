@@ -193,9 +193,9 @@ export default function DashboardPage() {
                           whiteSpace: 'nowrap',
                           letterSpacing: '0.01em',
                         }}
-                        title={`View ${r.tag} Description & Visual Preview`}
+                        title={`View ${r.tag} How To Use Guide`}
                       >
-                        Report Description
+                        How To Use
                       </Link>
                       <span
                         className="dash-tile-badge dash-badge-live"

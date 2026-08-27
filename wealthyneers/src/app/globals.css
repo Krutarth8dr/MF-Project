@@ -1957,17 +1957,23 @@ a {
 .r2-badges {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .r2-live-tag {
-  font-size: 0.75rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--primary);
   background: rgba(10, 77, 104, 0.08);
-  border: 1px solid rgba(10, 77, 104, 0.2);
-  padding: 0.2rem 0.6rem;
-  border-radius: 2rem;
+  border: 1px solid rgba(10, 77, 104, 0.22);
+  padding: 0.28rem 0.72rem;
+  border-radius: 9999px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
 }
 
 .r2-period-pill {
@@ -2781,21 +2787,26 @@ a {
   border-bottom: 1px solid var(--border);
 }
 
-.r3-header-top {
+.r3-badges {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .r3-live-tag {
-  font-size: 0.75rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--primary);
   background: rgba(10, 77, 104, 0.08);
-  border: 1px solid rgba(10, 77, 104, 0.2);
-  padding: 0.2rem 0.65rem;
-  border-radius: 2rem;
+  border: 1px solid rgba(10, 77, 104, 0.22);
+  padding: 0.28rem 0.72rem;
+  border-radius: 9999px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
 }
 
 .r3-title {
@@ -3439,17 +3450,23 @@ a {
 .r4-badges {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .r4-live-tag {
-  font-size: 0.75rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--primary);
   background: rgba(10, 77, 104, 0.08);
-  border: 1px solid rgba(10, 77, 104, 0.2);
-  padding: 0.2rem 0.65rem;
-  border-radius: 2rem;
+  border: 1px solid rgba(10, 77, 104, 0.22);
+  padding: 0.28rem 0.72rem;
+  border-radius: 9999px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
 }
 
 .r4-period-pill {
@@ -4139,17 +4156,23 @@ a {
 .r5-badges {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  flex-wrap: wrap;
+  gap: 0.65rem;
 }
 
 .r5-live-tag {
-  font-size: 0.75rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: #d97706;
   background: rgba(217, 119, 6, 0.08);
   border: 1px solid rgba(217, 119, 6, 0.25);
-  padding: 0.2rem 0.65rem;
-  border-radius: 2rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 9999px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
 }
 
 .r5-period-pill {
@@ -6425,7 +6448,7 @@ a {
   background-color: rgba(10, 77, 104, 0.08);
   color: var(--primary);
   border: 1px solid rgba(10, 77, 104, 0.22);
-  padding: 0.32rem 0.75rem;
+  padding: 0.28rem 0.72rem;
   border-radius: 9999px;
   font-size: 0.78rem;
   font-weight: 600;
@@ -6433,6 +6456,7 @@ a {
   transition: all 0.2s ease;
   font-family: inherit;
   letter-spacing: 0.02em;
+  line-height: 1.3;
 }
 
 .report-desc-btn:hover {
@@ -6995,6 +7019,17 @@ a {
     padding: 0.4rem 0.7rem;
     font-size: 0.8rem;
     min-height: 38px;
+  }
+
+  /* Hero */
+  .hero h1 {
+    font-size: 2.25rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 1.15rem !important;
+  }
+  .hero p {
+    font-size: 1.05rem !important;
+    margin-bottom: 2.25rem !important;
   }
 
   /* Dashboard */

@@ -470,17 +470,16 @@ function Report3Content() {
       {/* ── Page Header ── */}
       <div className="r3-header">
         <div className="r3-badges">
-          <div className="report-badge-row">
-            <span className="report-badge">Report 3</span>
-            <button
-              type="button"
-              className="report-desc-btn"
-              onClick={() => setShowGuide(true)}
-              title="View comprehensive report documentation & guide"
-            >
-              📖 Report Description
-            </button>
-          </div>
+          <span className="report-badge">Report 3</span>
+          <button
+            type="button"
+            className="report-desc-btn"
+            onClick={() => setShowGuide(true)}
+            title="View comprehensive report documentation & guide"
+            aria-label="How To Use Guide"
+          >
+            📖 How To Use
+          </button>
           <span className="r3-live-tag">🏢 AMC Holding Trend</span>
         </div>
         <h1 className="r3-title">AMC-wise Stock Intelligence</h1>

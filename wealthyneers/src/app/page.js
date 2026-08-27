@@ -172,7 +172,7 @@ export default function Home() {
       {!loading && !user && (
         <section className="hero">
           <div className="container">
-            <h1>Navigate Markets with Precision</h1>
+            <h1>See what top DIIs of India doing</h1>
             <p style={{ marginBottom: '0.85rem' }}>
               Get exclusive access to our 6 proprietary institutional research reports, designed for serious investors who demand institutional-grade insights.
             </p>
@@ -260,9 +260,9 @@ export default function Home() {
                           textDecoration: 'none',
                           whiteSpace: 'nowrap',
                         }}
-                        title={`Read ${report.tag} Description & Visual Preview`}
+                        title={`Read ${report.tag} How To Use Guide`}
                       >
-                        Report Description
+                        How To Use
                       </Link>
                     </div>
                 </div>

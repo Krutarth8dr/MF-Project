@@ -411,17 +411,16 @@ function Report4Content() {
       <div className="r4-header">
         <div className="r4-header-top">
           <div className="r4-badges">
-            <div className="report-badge-row">
-              <span className="report-badge">Report 4</span>
-              <button
-                type="button"
-                className="report-desc-btn"
-                onClick={() => setShowGuide(true)}
-                title="View comprehensive report documentation & guide"
-              >
-                📖 Report Description
-              </button>
-            </div>
+            <span className="report-badge">Report 4</span>
+            <button
+              type="button"
+              className="report-desc-btn"
+              onClick={() => setShowGuide(true)}
+              title="View comprehensive report documentation & guide"
+              aria-label="How To Use Guide"
+            >
+              📖 How To Use
+            </button>
             <span className="r4-live-tag">🧭 AMC Direction Matrix</span>
           </div>
           {datesMeta.latest_date && datesMeta.prev_date && (
