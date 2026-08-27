@@ -77,7 +77,7 @@ export default function PrivacyPage() {
           <h2>5. Data Security &amp; Retention</h2>
           <p>
             We implement strict security measures, including HTTPS/TLS 1.3 encryption across all website routes, strict HTTP security headers
-            (anti-clickjacking, MIME protection), and server-side cryptographic signature verification for all payment webhooks.
+            (anti-clickjacking, MIME protection), and server-side cryptographic signature verification for payment transactions.
           </p>
           <p>
             We retain account data for as long as your account is active or as necessary to comply with applicable statutory accounting and tax regulations.

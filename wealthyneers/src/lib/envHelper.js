@@ -8,7 +8,6 @@ import path from 'path';
 export function getRazorpayCredentials() {
   let keyId = (process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '').trim().replace(/['"]/g, '');
   let keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim().replace(/['"]/g, '');
-  let webhookSecret = (process.env.RAZORPAY_WEBHOOK_SECRET || '').trim().replace(/['"]/g, '');
 
   if (process.env.NODE_ENV !== 'production') {
     try {
@@ -17,14 +16,12 @@ export function getRazorpayCredentials() {
         const content = fs.readFileSync(envPath, 'utf8');
         const keyMatch = content.match(/^RAZORPAY_KEY_ID\s*=\s*([^\r\n]+)/m);
         const secretMatch = content.match(/^RAZORPAY_KEY_SECRET\s*=\s*([^\r\n]+)/m);
-        const webhookMatch = content.match(/^RAZORPAY_WEBHOOK_SECRET\s*=\s*([^\r\n]+)/m);
 
         if (keyMatch) keyId = keyMatch[1].trim().replace(/['"]/g, '');
         if (secretMatch) keySecret = secretMatch[1].trim().replace(/['"]/g, '');
-        if (webhookMatch) webhookSecret = webhookMatch[1].trim().replace(/['"]/g, '');
       }
     } catch (_) {}
   }
 
-  return { keyId, keySecret, webhookSecret };
+  return { keyId, keySecret };
 }
