@@ -1,11 +1,16 @@
-﻿import argparse
+import argparse
 import calendar
 import re
-import requests
+import time
 from pathlib import Path
 from urllib.parse import urlparse
+import requests
 
-from playwright.sync_api import sync_playwright
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 RAW_FOLDER = PROJECT_ROOT / "01_raw_files" / "JIO_BLACKROCK"
@@ -15,9 +20,6 @@ DISCLOSURE_URL = (
     "https://www.jioblackrockamc.com/"
     "statutory-disclosure/disclosures/monthly-portfolio-disclosure"
 )
-
-TARGET_TITLE = "Jio BlackRock Mutual Fund-Monthly-Portfolio-31-07-2025"
-TARGET_FILE_HINT = "Jio BlackRock Mutual Fund-Monthly-Portfolio-31-07-2025"
 
 # Some months are published on the Jio site under a visible link title that
 # doesn't match our standard "Jio BlackRock Mutual Fund-Monthly-Portfolio-
@@ -43,11 +45,12 @@ MONTH_NAMES = {
     "12": "December",
 }
 
+MONTH_NUMBERS = {name.lower(): num for num, name in MONTH_NAMES.items()}
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/140.0.0.0 Safari/537.36"
     )
 }
@@ -75,57 +78,7 @@ def resolve_url(url: str) -> str:
 
 
 def title_key(title: str) -> str:
-    return re.sub(r"\s+", "", title).strip().lower()
-
-
-def find_doc_links(page, target_title: str, search_title: str = None) -> list:
-    """
-    Parse workstation-rendered hrefs after the month filter has been selected.
-    The docs appear in the body of the page and are anchor elements with direct file URLs.
-
-    `search_title` is the text to look for among the page's anchor titles
-    (defaults to `target_title`). `target_title` is always what the saved
-    filename is derived from, even when the two differ (see
-    TARGET_TITLE_OVERRIDES) -- so a differently-titled page link still gets
-    saved under our standard dated filename.
-    """
-
-    target_key = title_key(search_title if search_title else target_title)
-    links = []
-    anchors = page.locator("a[href]")
-    for i in range(anchors.count()):
-        anchor = anchors.nth(i)
-        title = anchor.inner_text().strip()
-        href = anchor.get_attribute("href")
-        if not href:
-            continue
-        href = href.strip()
-        lowered = href.lower()
-        if any(
-            ext in lowered for ext in [".xlsx", ".xls", ".xlsm", ".csv", ".pdf", ".zip"]
-        ):
-            if title_key(title) != target_key:
-                continue
-            if not href.startswith("http"):
-                href = resolve_url(href)
-            file_name = Path(urlparse(href).path).name
-            ext = Path(file_name).suffix
-            display_filename = clean_filename(target_title) + ext
-            links.append(
-                {
-                    "title": target_title,
-                    "url": href,
-                    "filename": display_filename,
-                }
-            )
-    # dedupe
-    seen = set()
-    unique = []
-    for link in links:
-        if link["title"] not in seen:
-            seen.add(link["title"])
-            unique.append(link)
-    return unique
+    return re.sub(r"[\s\-_]+", "", title).strip().lower()
 
 
 def parse_target_month(target_title: str) -> str:
@@ -146,7 +99,6 @@ def parse_month_spec(month_spec: str) -> tuple[int, int]:
     Accepts strings like 2026-06, 2026/06, or 06-2026.
     Returns (year, month_number).
     """
-
     text = month_spec.strip()
     if re.fullmatch(r"\d{4}-\d{1,2}", text):
         year_str, month_str = text.split("-", 1)
@@ -175,7 +127,7 @@ def build_target_titles(start_month: str, end_month: str) -> list[str]:
         month_padded = f"{current_month:02d}"
         last_day = calendar.monthrange(current_year, current_month)[1]
         target_titles.append(
-            f"Jio BlackRock Mutual Fund-Monthly-Portfolio-{last_day}-{month_padded}-{current_year}"
+            f"Jio BlackRock Mutual Fund-Monthly-Portfolio-{last_day:02d}-{month_padded}-{current_year}"
         )
         current_month += 1
         if current_month == 13:
@@ -191,7 +143,6 @@ def year_selector_for_target(target_title: str) -> str:
     in the browser UI. Indian mutual fund financial years run April -> March,
     so this is computed generically instead of hardcoded per calendar year.
     """
-
     match = re.search(r"Monthly-Portfolio-\d{2}-(\d{2})-(\d{4})", target_title)
     if not match:
         raise ValueError(
@@ -213,10 +164,8 @@ def search_title_for_target(target_title: str) -> str:
     Returns the title text to search for on the page for a given canonical
     target_title. Normally identical to target_title, but a handful of
     months are published under a different visible title on the Jio site
-    (see TARGET_TITLE_OVERRIDES) even though we still want to save the file
-    under our standard dated name.
+    (see TARGET_TITLE_OVERRIDES).
     """
-
     match = re.search(r"Monthly-Portfolio-\d{2}-(\d{2})-(\d{4})", target_title)
     if match:
         month_number, year_number = match.group(1), match.group(2)
@@ -226,85 +175,152 @@ def search_title_for_target(target_title: str) -> str:
     return target_title
 
 
-def download_target(page, target_title: str, state: dict) -> int:
+def select_ant_dropdown_option(driver, selector_index: int, target_text: str) -> bool:
+    """
+    Safely clicks an Ant Design dropdown and selects an option, handling
+    virtual scrolling (rc-virtual-list) across long lists.
+    """
+    selectors = driver.find_elements(By.CSS_SELECTOR, "div.ant-select-selector")
+    if len(selectors) <= selector_index:
+        return False
+
+    target_clean = title_key(target_text)
+
+    # Click to open dropdown
+    selectors[selector_index].click()
+    time.sleep(0.4)
+
+    vholders = driver.find_elements(By.CSS_SELECTOR, ".rc-virtual-list-holder")
+    scroll_positions = [0.0, 0.5, 1.0] if vholders else [0.0]
+
+    for pos in scroll_positions:
+        if vholders:
+            driver.execute_script(
+                "arguments[0].scrollTop = arguments[0].scrollHeight * arguments[1];",
+                vholders[0],
+                pos,
+            )
+            time.sleep(0.2)
+
+        options = driver.find_elements(
+            By.CSS_SELECTOR, "div.ant-select-item-option-content"
+        )
+        for opt in options:
+            opt_text = opt.text.strip()
+            if not opt_text:
+                continue
+            if title_key(opt_text) == target_clean or opt_text.lower() == target_text.lower():
+                opt.click()
+                time.sleep(0.4)
+                ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+                time.sleep(0.2)
+                return True
+
+    ActionChains(driver).send_keys(Keys.ESCAPE).perform()
+    time.sleep(0.2)
+    return False
+
+
+def find_doc_links(driver, target_title: str, search_title: str = None) -> list:
+    """
+    Finds the matching master monthly portfolio file link on the rendered page.
+    """
+    search_key = title_key(search_title if search_title else target_title)
+    target_key = title_key(target_title)
+
+    anchors = driver.find_elements(By.CSS_SELECTOR, "a[href]")
+    links = []
+
+    for anchor in anchors:
+        title = anchor.text.strip()
+        href = anchor.get_attribute("href")
+        if not href:
+            continue
+        href = href.strip()
+        lowered = href.lower()
+        if any(ext in lowered for ext in [".xlsx", ".xls", ".xlsm", ".csv"]):
+            clean_t = title_key(title)
+            clean_h = title_key(href)
+
+            # Match exact search key OR standard mutual fund monthly portfolio patterns
+            is_match = (
+                clean_t == search_key
+                or clean_t == target_key
+                or "jioblackrockmutualfundmonthlyportfolio" in clean_t
+                or "jioblackrockmutualfund" in clean_t
+                or "jioblackrock-mutual-fund-monthly-portfolio" in lowered
+            )
+
+            # Avoid matching single-scheme specific files if looking for the combined file
+            if is_match and search_key == target_key and "mutualfund" not in clean_t and "mutualfund" not in clean_h:
+                is_match = False
+
+            if not is_match:
+                continue
+
+            if not href.startswith("http"):
+                href = resolve_url(href)
+            file_name = Path(urlparse(href).path).name
+            ext = Path(file_name).suffix or ".xlsx"
+            display_filename = clean_filename(target_title) + ext
+            links.append(
+                {
+                    "title": target_title,
+                    "url": href,
+                    "filename": display_filename,
+                }
+            )
+
+    # Deduplicate
+    seen = set()
+    unique = []
+    for link in links:
+        if link["filename"] not in seen:
+            seen.add(link["filename"])
+            unique.append(link)
+    return unique
+
+
+def download_target(driver, target_title: str, state: dict) -> int:
     target_month_name = parse_target_month(target_title)
     target_year_selector = year_selector_for_target(target_title)
     search_title = search_title_for_target(target_title)
 
     print("=" * 100)
-    print(f"Target title : {target_title}")
-    print(f"Target month : {target_month_name}")
+    print(f"Target title         : {target_title}")
+    print(f"Target month         : {target_month_name}")
     print(f"Target selector year : {target_year_selector}")
     if search_title != target_title:
-        print(f"Search title override : {search_title}")
+        print(f"Search title override: {search_title}")
 
-    selectors = page.locator("div.ant-select-selector")
-    if selectors.count() < 2:
-        raise RuntimeError("Expected a year and month selector on the Jio page.")
-
-    if not target_year_selector:
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(300)
-    else:
-        # Always click through the year selector, even if it's already
-        # showing the right FY. The site's month list isn't a static set
-        # fetched once per year -- it only reflects whatever was last
-        # actually selected, so skipping this on later iterations (as a
-        # prior version did, to dodge an Ant Design "already selected"
-        # dropdown-stuck-open bug) left the month list stale and silently
-        # missing months that hadn't been in view yet (e.g. Jan-Mar when
-        # a run started earlier in the same FY).
-        selectors.nth(0).click()
-        page.wait_for_timeout(500)
-        year_options = page.locator("div.ant-select-item-option-content")
-        found_year = False
-        for i in range(year_options.count()):
-            opt_text = year_options.nth(i).inner_text().strip().lower()
-            if opt_text == target_year_selector.lower():
-                year_options.nth(i).click()
-                found_year = True
-                break
-        if not found_year:
+    # Select Year
+    if state.get("year") != target_year_selector:
+        success = select_ant_dropdown_option(driver, 0, target_year_selector)
+        if not success:
             print(f"Year selector not available in DOM: {target_year_selector}")
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(300)
             return 0
-        # The click above may not close the dropdown if the value didn't
-        # change (no "change" event fires), so force it closed regardless.
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(1500)
         state["year"] = target_year_selector
+        time.sleep(1.0)
 
-    selectors.nth(1).click()
-    page.wait_for_timeout(500)
-
-    month_options = page.locator("div.ant-select-item-option-content")
-    found_month = False
-    for i in range(month_options.count()):
-        option_text = month_options.nth(i).inner_text().strip().lower()
-        if option_text == target_month_name.lower():
-            month_options.nth(i).click()
-            found_month = True
-            break
-
-    if not found_month:
+    # Select Month
+    success = select_ant_dropdown_option(driver, 1, target_month_name)
+    if not success:
         print(
             f"Skip {target_title}: month {target_month_name} is not visible in the current Jio selector."
         )
         return 0
 
-    page.wait_for_timeout(2000)
+    time.sleep(2.0)
 
-    doc_links = find_doc_links(page, target_title, search_title)
+    doc_links = find_doc_links(driver, target_title, search_title)
     if not doc_links:
         print(
             f"No document links found for '{search_title}' ({target_month_name} / "
-            f"{target_year_selector}). The page is still unavailable or the filter "
-            "is not returning rows."
+            f"{target_year_selector}). The disclosure may not be published yet."
         )
         return 0
 
-    print(f"Found {len(doc_links)} Jio portfolio workbook links for {target_title}.")
+    print(f"Found {len(doc_links)} Jio portfolio workbook link(s) for {target_title}.")
 
     downloaded = 0
     skipped = 0
@@ -319,16 +335,23 @@ def download_target(page, target_title: str, state: dict) -> int:
         try:
             download_file(doc["url"], output_path)
             downloaded += 1
-            print("      Complete")
+            print(f"      Complete ({output_path.stat().st_size} bytes)")
         except Exception as exc:
             print(f'      Failed : {doc["url"]} -> {exc}')
 
-    print("\n" + "=" * 100)
-    print(f"Downloaded : {downloaded}")
-    print(f"Skipped     : {skipped}")
-    print(f"Folder      : {RAW_FOLDER}")
-    print("=" * 100)
+    print(f"Downloaded : {downloaded}, Skipped : {skipped}")
     return downloaded
+
+
+def create_driver():
+    chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument(f"user-agent={HEADERS['User-Agent']}")
+    return webdriver.Chrome(options=chrome_options)
 
 
 def main():
@@ -342,8 +365,8 @@ def main():
     )
     parser.add_argument(
         "--end",
-        default="2026-03",
-        help="Inclusive end month in YYYY-MM format, e.g. 2026-07",
+        default="2026-08",
+        help="Inclusive end month in YYYY-MM format, e.g. 2026-08",
     )
     parser.add_argument(
         "--target-title",
@@ -363,25 +386,31 @@ def main():
     print(f"Requested range : {args.start} -> {args.end}")
     print(f"Total target titles : {len(target_titles)}")
 
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        page = browser.new_page(viewport={"width": 1280, "height": 900})
+    driver = create_driver()
+    try:
+        print("Opening Jio BlackRock disclosure page...")
+        driver.get(DISCLOSURE_URL)
+        time.sleep(4)
 
-        try:
-            print("Opening Jio BlackRock disclosure page...")
-            page.goto(DISCLOSURE_URL, wait_until="networkidle", timeout=60000)
-            page.wait_for_timeout(1000)
+        state = {"year": None}
+        total_downloaded = 0
+        for target_title in target_titles:
+            try:
+                dl = download_target(driver, target_title, state)
+                total_downloaded += dl
+            except Exception as exc:
+                print(f"Downloader error for {target_title}: {exc}")
+                continue
 
-            state = {"year": None}
-            for target_title in target_titles:
-                try:
-                    download_target(page, target_title, state)
-                except Exception as exc:
-                    print(f"Downloader failed for {target_title}: {exc}")
-                    continue
+        print("\n" + "=" * 100)
+        print("Jio BlackRock Download Summary")
+        print("=" * 100)
+        print(f"Total downloaded : {total_downloaded}")
+        print(f"Destination      : {RAW_FOLDER}")
+        print("=" * 100)
 
-        finally:
-            browser.close()
+    finally:
+        driver.quit()
 
 
 if __name__ == "__main__":

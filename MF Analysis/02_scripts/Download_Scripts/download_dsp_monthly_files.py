@@ -15,7 +15,7 @@ RAW_FOLDER.mkdir(parents=True, exist_ok=True)
 
 DISCLOSURE_URL = "https://www.dspim.com/mandatory-disclosures/portfolio-disclosures"
 
-START_DATE = datetime(2026, 6, 30)
+START_DATE = datetime(2026, 7, 30)
 
 HEADERS = {
     "User-Agent": (

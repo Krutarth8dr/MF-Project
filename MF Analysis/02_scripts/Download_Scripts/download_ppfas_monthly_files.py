@@ -98,30 +98,15 @@ def build_save_path(year: int, month: int, href: str) -> Path:
     # Remove any URL query parameters so extension remains correct
     parsed = href.split('/')[-1].split('?')[0]
     filename = sanitize_filename(parsed)
-
-    save_path = folder / filename
-
-    # If the cleaned filename already exists, append a numeric suffix before the extension
-    if save_path.exists():
-        stem = save_path.stem
-        suffix = save_path.suffix
-        counter = 1
-        while True:
-            candidate = folder / f"{stem}_{counter}{suffix}"
-            if not candidate.exists():
-                save_path = candidate
-                break
-            counter += 1
-
-    return save_path
+    return folder / filename
 
 
 def download_file(url: str, save_path: Path) -> bool:
     if save_path.exists():
-        print(f"Skipping existing: {save_path}")
+        print(f"Skipping existing: {save_path.name}")
         return False
     full_url = urljoin(BASE_URL, url)
-    print(f"Downloading {full_url} -> {save_path}")
+    print(f"Downloading {full_url} -> {save_path.name}")
     r = requests.get(full_url, headers=HEADERS, timeout=TIMEOUT, stream=True)
     r.raise_for_status()
     with open(save_path, 'wb') as f:

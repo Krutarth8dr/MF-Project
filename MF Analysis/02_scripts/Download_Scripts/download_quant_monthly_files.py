@@ -251,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--end-month",
         type=int,
-        default=7,
+        default=8,
         help="End month for download range (1-12)",
     )
     parser.add_argument(

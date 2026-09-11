@@ -68,7 +68,7 @@ def get_monthly_portfolio_links():
     TARGET_START = pd.Timestamp("2024-10-01")
 
     month_pattern = re.compile(
-        r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})",
+        r"(January|Jan|February|Feb|March|Mar|April|Apr|May|June|Jun|July|Jul|August|Aug|September|Sep|Sept|October|Oct|November|Nov|December|Dec)\s+(\d{4})",
         re.IGNORECASE,
     )
 
@@ -81,7 +81,8 @@ def get_monthly_portfolio_links():
         if not title:
             continue
 
-        title_upper = title.upper()
+        title_clean = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", title).strip()
+        title_upper = title_clean.upper()
 
         # ------------------------------------------------------------
         # Ignore unwanted disclosures
@@ -93,7 +94,7 @@ def get_monthly_portfolio_links():
         if "MONTHLY PORTFOLIO" not in title_upper:
             continue
 
-        match = month_pattern.search(title)
+        match = month_pattern.search(title_clean)
 
         if not match:
             continue
@@ -121,15 +122,15 @@ def get_monthly_portfolio_links():
 
         link = rhs_label.find(
             "a",
-            class_="xls",
-        )
+            href=lambda h: h and any(ext in h.lower() for ext in [".xls", ".xlsx", ".csv"]),
+        ) or rhs_label.find("a")
 
         if link is None:
             continue
 
         href = link.get("href")
 
-        if not href:
+        if not href or not any(ext in href.lower() for ext in [".xls", ".xlsx", ".csv"]):
             continue
 
         file_url = urljoin(
