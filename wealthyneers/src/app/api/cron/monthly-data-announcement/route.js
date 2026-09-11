@@ -35,11 +35,19 @@ function isAuthorized(request) {
   return crypto.timingSafeEqual(expectedBuf, providedBuf);
 }
 
+function formatMonthYear(dateStr) {
+  if (!dateStr) return 'Latest';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d || 1));
+  return date.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
 /**
  * Generates the HTML email body for monthly data announcement.
  */
-function buildMonthlyAnnouncementHtml({ fullName, exploreUrl }) {
+function buildMonthlyAnnouncementHtml({ fullName, exploreUrl, monthName }) {
   const displayName = fullName ? fullName.split(' ')[0] : 'Investor';
+  const monthDisplay = monthName || 'Monthly';
 
   return `
 <!DOCTYPE html>
@@ -47,7 +55,7 @@ function buildMonthlyAnnouncementHtml({ fullName, exploreUrl }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Wealthyneers Research Data Is Now Available</title>
+  <title>New ${monthDisplay} Wealthyneers Research Data Is Now Available</title>
 </head>
 <body style="margin:0;padding:0;background-color:#061A23;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e2e8f0;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;padding:40px 15px;">
@@ -67,19 +75,19 @@ function buildMonthlyAnnouncementHtml({ fullName, exploreUrl }) {
           <tr>
             <td style="padding-bottom:20px;">
               <h2 style="margin:0 0 12px 0;font-size:20px;font-weight:700;color:#ffffff;">
-                New Monthly Research Data Is Now Available
+                New ${monthDisplay} Research Data Is Now Available
               </h2>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
                 Hi ${displayName},
               </p>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                New monthly mutual fund data is now available on Wealthyneers.
+                New monthly mutual fund data for <strong style="color:#ffffff;">${monthDisplay}</strong> is now available on Wealthyneers.
               </p>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                Our latest institutional portfolio data has been added to the research platform, giving you access to the newest monthly insights across mutual funds and AMCs.
+                Our latest institutional portfolio data for ${monthDisplay} has been added to the research platform, giving you access to the newest monthly insights across mutual funds and AMCs.
               </p>
               <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                Log in to explore the latest data and research reports.
+                Log in to explore the latest ${monthDisplay} trends and research reports.
               </p>
             </td>
           </tr>
@@ -123,19 +131,20 @@ function buildMonthlyAnnouncementHtml({ fullName, exploreUrl }) {
 /**
  * Generates the plain text email fallback for monthly data announcement.
  */
-function buildMonthlyAnnouncementText({ fullName, exploreUrl }) {
+function buildMonthlyAnnouncementText({ fullName, exploreUrl, monthName }) {
   const displayName = fullName ? fullName.split(' ')[0] : 'Investor';
+  const monthDisplay = monthName || 'Monthly';
 
   return `
 WEALTHYNEERS - Institutional Mutual Fund Research
 
 Hi ${displayName},
 
-New monthly mutual fund data is now available on Wealthyneers.
+New monthly mutual fund data for ${monthDisplay} is now available on Wealthyneers.
 
-Our latest institutional portfolio data has been added to the research platform, giving you access to the newest monthly insights across mutual funds and AMCs.
+Our latest institutional portfolio data for ${monthDisplay} has been added to the research platform, giving you access to the newest monthly insights across mutual funds and AMCs.
 
-Log in to explore the latest data and research reports:
+Log in to explore the latest ${monthDisplay} data and research reports:
 ${exploreUrl}
 
 Regards,
@@ -235,8 +244,9 @@ async function handleMonthlyAnnouncementCron(request) {
       });
     }
 
-    // 4. Generate the Monthly Reference ID in YYYY-MM format
+    // 4. Generate the Monthly Reference ID in YYYY-MM format and formatted Month Name
     const referenceId = latestPortfolioDate.substring(0, 7);
+    const monthName = formatMonthYear(latestPortfolioDate);
 
     // 5. Query Verified Target Users
     let targetUsers = [];
@@ -345,17 +355,19 @@ async function handleMonthlyAnnouncementCron(request) {
         const html = buildMonthlyAnnouncementHtml({
           fullName,
           exploreUrl,
+          monthName,
         });
 
         const text = buildMonthlyAnnouncementText({
           fullName,
           exploreUrl,
+          monthName,
         });
 
         // 6b. Dispatch Email via GoDaddy SMTP
         await sendEmail({
           to: recipientEmail,
-          subject: 'New Wealthyneers Research Data Is Now Available',
+          subject: `New ${monthName} Wealthyneers Research Data Is Now Available`,
           html,
           text,
         });
