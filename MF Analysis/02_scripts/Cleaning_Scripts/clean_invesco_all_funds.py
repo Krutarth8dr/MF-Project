@@ -42,10 +42,19 @@ def extract_portfolio_date_from_filename(workbook_path):
     return pd.Timestamp(year=int(year), month=int(month), day=1)
 
 
+SCHEME_NAME_MAP = {
+    "Invesco India Multi Cap Fund": "Invesco India Multicap Fund",
+    "Invesco India Small Cap Fund": "Invesco India Smallcap Fund",
+    "Invesco India Large Cap Fund": "Invesco India Largecap Fund",
+    "Invesco India Mid Cap Fund": "Invesco India Midcap Fund",
+}
+
+
 def extract_fund_name_from_filename(workbook_path):
     file_name = Path(workbook_path).stem
     fund_name = re.sub(r"\s*-\s*\d{4}-\d{2}$", "", file_name)
-    return fund_name.strip()
+    fund_name = fund_name.strip()
+    return SCHEME_NAME_MAP.get(fund_name, fund_name)
 
 
 def find_header_row(excel):

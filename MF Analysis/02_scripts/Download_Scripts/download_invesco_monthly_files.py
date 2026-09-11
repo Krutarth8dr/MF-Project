@@ -113,10 +113,19 @@ def build_save_path(year: int, month: int, fund_name: str, url: str) -> Path:
     return folder / filename
 
 
+SCHEME_NAME_MAP = {
+    "Invesco India Multi Cap Fund": "Invesco India Multicap Fund",
+    "Invesco India Small Cap Fund": "Invesco India Smallcap Fund",
+    "Invesco India Large Cap Fund": "Invesco India Largecap Fund",
+    "Invesco India Mid Cap Fund": "Invesco India Midcap Fund",
+}
+
+
 def get_file_entries(year: int, fund_record: dict):
     entries = []
     fund_name = fund_record.get("Name") or "Unknown Fund"
     fund_name = re.sub(r"\s+", " ", fund_name).strip()
+    fund_name = SCHEME_NAME_MAP.get(fund_name, fund_name)
     for _, url_key, name_key, month_number in MONTH_FIELDS:
         file_url = fund_record.get(url_key, "")
         month_name = fund_record.get(name_key, "")

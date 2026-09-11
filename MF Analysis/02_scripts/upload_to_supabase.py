@@ -253,18 +253,75 @@ def upload_table_records(
     return True
 
 
-def upload_fund_holdings(session: requests.Session, batch_size: int = 2500) -> bool:
+def get_latest_db_portfolio_date(session: requests.Session) -> str:
+    """Fetch the latest portfolio_date currently stored in Supabase fund_holdings table."""
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+    url = f"{API_URL}/fund_holdings?select=portfolio_date&order=portfolio_date.desc&limit=1"
+    try:
+        resp = session.get(url, headers=headers, timeout=15)
+        if resp.status_code == 200 and resp.json():
+            latest = resp.json()[0].get("portfolio_date")
+            return str(latest).strip() if latest else None
+    except Exception as e:
+        print(f"⚠️ Could not fetch latest database date: {e}")
+    return None
+
+
+def upload_fund_holdings(
+    session: requests.Session,
+    batch_size: int = 2500,
+    only_new: bool = False,
+    since_date: str = None,
+    month_filter: str = None
+) -> bool:
     """Upload fund holdings matrix to Supabase fund_holdings table.
 
-    Uses upsert with conflict key (amc, fund_name, isin, portfolio_date).
-    Existing rows are updated in place; only genuinely new rows are inserted.
-    Requires the UNIQUE constraint on fund_holdings to exist (see REPORT1_DEDUPE.sql).
+    Supports incremental uploads to prevent redundant records:
+    - only_new: queries Supabase for the latest portfolio_date and only uploads subsequent months.
+    - since_date: only uploads rows with portfolio_date >= since_date.
+    - month_filter: only uploads rows matching a specific month (e.g. 'Aug-2026').
     """
     if not MATRIX_FILE.exists():
         print(f"❌ ERROR: Matrix file not found at: {MATRIX_FILE}")
         return False
 
     df = load_and_prepare_fund_holdings(MATRIX_FILE)
+
+    if only_new:
+        latest_date = get_latest_db_portfolio_date(session)
+        if latest_date:
+            print(f"\n🔍 Database latest portfolio_date: {latest_date}")
+            initial_count = len(df)
+            df = df[df["portfolio_date"] > latest_date].copy()
+            print(f"   Filtered to {len(df):,} new records (portfolio_date > {latest_date}) from {initial_count:,} total")
+            if df.empty:
+                print("   ✨ Database is already fully up-to-date. No new records to upload.")
+                return True
+        else:
+            print("   ⚠️ Could not determine latest DB date; proceeding with full dataset.")
+
+    elif since_date:
+        initial_count = len(df)
+        df = df[df["portfolio_date"] >= since_date].copy()
+        print(f"\n🔍 Filtered to {len(df):,} records on or after {since_date} (from {initial_count:,} total)")
+        if df.empty:
+            print(f"   ⚠️ No records found on or after {since_date}.")
+            return True
+
+    elif month_filter:
+        initial_count = len(df)
+        # Normalize non-breaking hyphens
+        m_norm = month_filter.replace("-", "").replace("\u2011", "").lower()
+        df = df[df["month"].astype(str).str.replace("-", "").str.replace("\u2011", "").str.lower() == m_norm].copy()
+        print(f"\n🔍 Filtered to {len(df):,} records for month '{month_filter}' (from {initial_count:,} total)")
+        if df.empty:
+            print(f"   ⚠️ No records found matching month '{month_filter}'.")
+            return True
+
     records = df.to_dict("records")
     return upload_table_records(
         session, "fund_holdings", records,
@@ -292,12 +349,26 @@ def upload_security_master(session: requests.Session, batch_size: int = 1000) ->
     )
 
 
-def upload_data(table: str = "all", batch_size: int = 2500) -> bool:
+def upload_data(
+    table: str = "all",
+    batch_size: int = 2500,
+    only_new: bool = False,
+    since_date: str = None,
+    month_filter: str = None
+) -> bool:
     """Upload specified table(s) to Supabase."""
     print("=" * 80)
     print("🚀 SUPABASE DATA UPLOAD (High-Throughput Direct HTTP API)")
     print(f"   Target URL: https://{SUPABASE_HOST}")
     print(f"   Target:     {table.upper()}")
+    if only_new:
+        print("   Mode:       INCREMENTAL (--only-new: only subsequent months)")
+    elif since_date:
+        print(f"   Mode:       SINCE DATE (--since-date {since_date})")
+    elif month_filter:
+        print(f"   Mode:       SPECIFIC MONTH (--month {month_filter})")
+    else:
+        print("   Mode:       FULL DATASET (All historical months)")
     print("=" * 80)
 
     session = create_http_session()
@@ -306,7 +377,13 @@ def upload_data(table: str = "all", batch_size: int = 2500) -> bool:
 
     if table in ["all", "fund_holdings"]:
         print("\n--- 1. FUND HOLDINGS TABLE ---")
-        if not upload_fund_holdings(session, batch_size=batch_size):
+        if not upload_fund_holdings(
+            session,
+            batch_size=batch_size,
+            only_new=only_new,
+            since_date=since_date,
+            month_filter=month_filter
+        ):
             success = False
 
     if table in ["all", "security_master"]:
@@ -340,9 +417,32 @@ def main():
         default=2500,
         help="Batch size for fund_holdings upload (default: 2500)"
     )
+    parser.add_argument(
+        "--only-new",
+        action="store_true",
+        help="Upload only new records with portfolio_date newer than the latest date currently in Supabase."
+    )
+    parser.add_argument(
+        "--since-date",
+        type=str,
+        default=None,
+        help="Upload only records with portfolio_date >= YYYY-MM-DD (e.g. '2026-08-01')"
+    )
+    parser.add_argument(
+        "--month",
+        type=str,
+        default=None,
+        help="Upload only records matching month (e.g. 'Aug-2026' or 'August 2026')"
+    )
 
     args = parser.parse_args()
-    success = upload_data(table=args.table, batch_size=args.batch_size)
+    success = upload_data(
+        table=args.table,
+        batch_size=args.batch_size,
+        only_new=args.only_new,
+        since_date=args.since_date,
+        month_filter=args.month
+    )
     if not success:
         sys.exit(1)
 
