@@ -117,92 +117,74 @@ def is_valid_isin(value):
 
 def parse_date_from_filename(file_path):
     """
-    Try all filename formats previously supported by the AXIS cleaner.
+    Try all filename formats supported by the AXIS cleaner.
     Returns None if no supported filename date exists.
     """
-
     name = file_path.stem
 
-    # ------------------------------------------------------------------
-    # New format:
-    # Monthly_Portfolio_31_05_26
-    # ------------------------------------------------------------------
-    match = re.search(
-        r"(\d{2})_(\d{2})_(\d{2})$",
-        name,
-    )
-
-    if match:
-        day = int(match.group(1))
-        month = int(match.group(2))
-        year = 2000 + int(match.group(3))
-
-        return pd.Timestamp(datetime(year, month, 1))
-
-    # ------------------------------------------------------------------
-    # Old format:
-    # monthly_20portfolio-31_2005_2025
-    # ------------------------------------------------------------------
-    match = re.search(
-        r"(\d{2})_20(\d{2})_(\d{4})$",
-        name,
-    )
-
-    if match:
-        day = int(match.group(1))
-        month = int(match.group(2))
-        year = int(match.group(3))
-
-        return pd.Timestamp(datetime(year, month, 1))
-
-    # ------------------------------------------------------------------
-    # Old text-month format:
-    # monthly_20portfolio-30_20june_202024_20
-    # ------------------------------------------------------------------
-    match = re.search(
-        r"(\d{2})_20([A-Za-z]+)_20(\d{4})_20$",
-        name,
-        re.IGNORECASE,
-    )
-
-    if match:
-        month_lookup = {
-            "january": 1,
-            "february": 2,
-            "march": 3,
-            "april": 4,
-            "may": 5,
-            "june": 6,
-            "july": 7,
-            "august": 8,
-            "september": 9,
-            "october": 10,
-            "november": 11,
-            "december": 12,
-        }
-
-        month_name = match.group(2).lower()
-
-        if month_name in month_lookup:
-            month = month_lookup[month_name]
-            year = int(match.group(3))
-
+    # Pattern: Monthly_Portfolio_DD_MM_YYYY (with optional trailing hash)
+    m = re.search(r"(\d{2})_(\d{2})_(\d{4})(?:_[a-z0-9]+)?$", name, re.IGNORECASE)
+    if m:
+        day = int(m.group(1))
+        month = int(m.group(2))
+        year = int(m.group(3))
+        if 1 <= month <= 12 and 1990 <= year <= 2050:
             return pd.Timestamp(datetime(year, month, 1))
 
-    # ------------------------------------------------------------------
-    # monthly_20portfolio_2031-10-2025
-    # ------------------------------------------------------------------
-    match = re.search(
-        r"20(\d{2})-(\d{2})-(\d{4})$",
-        name,
-    )
+    # Pattern: Monthly_Portfolio_DD_MM_YY
+    m = re.search(r"(\d{2})_(\d{2})_(\d{2})$", name)
+    if m:
+        day = int(m.group(1))
+        month = int(m.group(2))
+        year = 2000 + int(m.group(3))
+        if 1 <= month <= 12:
+            return pd.Timestamp(datetime(year, month, 1))
 
-    if match:
-        day = int(match.group(1))
-        month = int(match.group(2))
-        year = int(match.group(3))
+    # Pattern: monthly_20portfolio-DD_20MM_20YYYY
+    m = re.search(r"(\d{2})_20(\d{2})_(\d{4})$", name)
+    if m:
+        day = int(m.group(1))
+        month = int(m.group(2))
+        year = int(m.group(3))
+        if 1 <= month <= 12:
+            return pd.Timestamp(datetime(year, month, 1))
 
-        return pd.Timestamp(datetime(year, month, 1))
+    # Pattern: monthly_20portfolio_20DD-MM-YYYY
+    m = re.search(r"20(\d{2})-(\d{2})-(\d{4})$", name)
+    if m:
+        day = int(m.group(1))
+        month = int(m.group(2))
+        year = int(m.group(3))
+        if 1 <= month <= 12:
+            return pd.Timestamp(datetime(year, month, 1))
+
+    # Pattern: monthly_20portfolio_20as_20on_20MMM_20DD_20_20YYYY
+    m = re.search(r"as_20on_20([A-Za-z]+)_20(\d{1,2})_20(?:_20)?(\d{4})", name, re.IGNORECASE)
+    if m:
+        month_str = m.group(1).lower()
+        year = int(m.group(3))
+        month_lookup = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+            "january": 1, "february": 2, "march": 3, "april": 4, "june": 6,
+            "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12
+        }
+        if month_str in month_lookup:
+            return pd.Timestamp(datetime(year, month_lookup[month_str], 1))
+
+    # Pattern: monthly_20portfolio-DD_20month_20YYYY_20
+    m = re.search(r"(\d{2})_20([A-Za-z]+)_20(\d{4})_20$", name, re.IGNORECASE)
+    if m:
+        month_str = m.group(2).lower()
+        year = int(m.group(3))
+        month_lookup = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+            "january": 1, "february": 2, "march": 3, "april": 4, "june": 6,
+            "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12
+        }
+        if month_str in month_lookup:
+            return pd.Timestamp(datetime(year, month_lookup[month_str], 1))
 
     return None
 
@@ -667,7 +649,7 @@ def main():
         raise FileNotFoundError("No Axis workbooks found.")
 
     all_data = []
-
+    processed_keys = set()
     total_workbooks = 0
 
     for workbook_path in workbook_files:
@@ -706,6 +688,10 @@ def main():
                 sheet,
             )
 
+            if (fund_name, portfolio_date) in processed_keys:
+                print(f"Skipping already processed : {sheet} ({portfolio_date.strftime('%b-%Y')})")
+                continue
+
             try:
 
                 cleaned = clean_sheet(
@@ -717,6 +703,7 @@ def main():
 
                 if not cleaned.empty:
                     all_data.append(cleaned)
+                    processed_keys.add((fund_name, portfolio_date))
 
             except Exception as error:
 

@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
   LabelList,
 } from 'recharts';
-import { supabase } from '@/lib/supabase';
+import { supabase, getValidSession, formatFriendlyErrorMessage } from '@/lib/supabase';
 import { getCachedSubscription, checkUserSubscription } from '@/lib/subscriptionCache';
 import ReportGuideModal from '@/app/components/ReportGuideModal';
 
@@ -206,7 +206,7 @@ function Report1Content() {
 
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getValidSession();
         if (!session) {
           if (mounted) router.push('/login');
           return;
@@ -351,7 +351,7 @@ function Report1Content() {
         );
       } catch (err) {
         console.error('Report 1 chart error:', err?.message || err);
-        setChartError(err?.message || 'Failed to load chart data.');
+        setChartError(formatFriendlyErrorMessage(err, 'Failed to load chart data.'));
         setChartData([]);
       } finally {
         setChartLoading(false);

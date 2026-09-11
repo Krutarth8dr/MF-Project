@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, getValidSession } from '@/lib/supabase';
 import { clearSubscriptionCache } from '@/lib/subscriptionCache';
 
 function getInitials(name, email) {
@@ -64,12 +64,14 @@ export default function AuthNav() {
       setInitialized(true);
     };
 
-    // 1. Initial Session Check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      syncUser(session?.user ?? null);
-    }).catch(() => {
-      if (mounted) setInitialized(true);
-    });
+    // 1. Initial Session Check using proactive getValidSession
+    getValidSession()
+      .then((session) => {
+        syncUser(session?.user ?? null);
+      })
+      .catch(() => {
+        if (mounted) setInitialized(true);
+      });
 
     // 2. Auth State Listener
     const {
@@ -78,9 +80,23 @@ export default function AuthNav() {
       syncUser(session?.user ?? null);
     });
 
+    // 3. Tab Visibility & Focus Listener to refresh tokens when waking up
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        getValidSession().then((session) => {
+          syncUser(session?.user ?? null);
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
     return () => {
       mounted = false;
       subscription?.unsubscribe();
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
     };
   }, []);
 

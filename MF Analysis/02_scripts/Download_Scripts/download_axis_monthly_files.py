@@ -42,11 +42,11 @@ YEARS = [
     2026,
 ]
 
-START_YEAR = 2026
-START_MONTH = 7  # July
+START_YEAR = 2024
+START_MONTH = 1  # January
 
 END_YEAR = 2026
-END_MONTH = 7  # July
+END_MONTH = 8  # August
 TIMEOUT = 60
 # ==============================================================================
 # HELPER FUNCTIONS
