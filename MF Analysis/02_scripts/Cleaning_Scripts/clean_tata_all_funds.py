@@ -52,7 +52,6 @@ TARGET_FUNDS_CONFIG = {
     "TISF": "TATA INFRASTRUCTURE FUND",
     "TEOF": "TATA LARGE & MID CAP FUND",
     "TTOFE": "TATA LARGE CAP FUND",
-    "TFRSTF": "TATA LIQUID FUND",
     "TINR": "TATA MID CAP FUND",
     "TMAOF": "TATA MULTI ASSET ALLOCATION FUND",
     "TMULTICF": "TATA MULTICAP FUND",
@@ -97,9 +96,22 @@ def clean_tata_data():
 
     print(f"\n[Step 1/3] Found {len(excel_files)} monthly workbooks to process.")
 
+    stop_triggers = [
+        "EQUITY & EQUITY RELATED TOTAL",
+        "EQUITY AND EQUITY RELATED TOTAL",
+        "COMMODITIES & COMMODITIES RELATED",
+        "COMMODITIES AND COMMODITIES RELATED",
+        "B) UNLISTED",
+        "B)UNLISTED",
+        "UNLISTED",
+    ]
+
     all_rows = []
 
     for fpath in excel_files:
+        if fpath.name.startswith("~$"):
+            continue
+
         yr = int(fpath.parent.parent.name)
         mo = int(fpath.parent.name)
 
@@ -160,9 +172,10 @@ def clean_tata_data():
                     continue
 
                 inst_val = clean_text(row[col_instrument]) if col_instrument < len(row) else ""
+                inst_upper = inst_val.upper()
 
-                # Stop scanning as soon as "UNLISTED" is seen in Name of Instrument column
-                if "unlisted" in inst_val.lower():
+                # Stop scanning as soon as "EQUITY & EQUITY RELATED TOTAL", "COMMODITIES & COMMODITIES RELATED", or "B) UNLISTED" is seen in Name of Instrument column
+                if any(trigger in inst_upper for trigger in stop_triggers):
                     break
 
                 isin_val = clean_text(row[col_isin]) if col_isin < len(row) else ""
