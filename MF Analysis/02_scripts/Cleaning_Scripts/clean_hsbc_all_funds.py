@@ -70,12 +70,12 @@ MONTH_NAME_MAP = {
 
 def is_valid_isin(value):
     """
-    Valid Indian ISIN: starts with INE / INF / IN followed by alphanumeric chars, length 12.
+    Strict equity ISIN: starts with INE, length 12.
     """
     if pd.isna(value):
         return False
     val = str(value).strip().upper()
-    return bool(re.fullmatch(r"IN[A-Z0-9]{10}", val))
+    return val.startswith("INE") and len(val) == 12
 
 
 def match_canonical_fund(text):
@@ -161,6 +161,24 @@ def parse_date_from_workbook(ws, file_path):
     raise ValueError(f"Could not determine portfolio date for {file_path}")
 
 
+STOP_TRIGGERS = [
+    "total",
+    "debt instruments",
+    "fixed rates bonds - corporate",
+    "fixed rate bonds - corporate",
+    "fixed rates bonds",
+    "fixed rate bonds",
+    "securitised debt",
+    "government securities",
+    "money market instruments",
+    "commercial papers",
+    "certificate of deposit",
+    "treps",
+    "net current assets",
+    "total net assets",
+]
+
+
 def parse_hsbc_workbook(file_path):
     """
     Parses an individual HSBC workbook and extracts equity holdings.
@@ -209,6 +227,8 @@ def parse_hsbc_workbook(file_path):
     col_qty = col_map.get("quantity", 4)
 
     rows = []
+    equity_section_started = False
+
     for r in range(header_row_idx + 1, ws.max_row + 1):
         name_val = ws.cell(r, col_sec).value
         isin_val = ws.cell(r, col_isin).value
@@ -218,12 +238,21 @@ def parse_hsbc_workbook(file_path):
         name_str = str(name_val or "").strip()
         isin_str = str(isin_val or "").strip().upper()
         ind_str = str(ind_val or "").strip()
+        name_lower = name_str.lower()
 
-        # Stop conditions if grand total reached
-        if "total" in name_str.lower() and not isin_str:
-            # check if it's grand total / net assets
-            if "net asset" in name_str.lower() or "grand total" in name_str.lower():
-                break
+        # Skip preamble headers before first equity row
+        if not equity_section_started:
+            if is_valid_isin(isin_str):
+                equity_section_started = True
+            else:
+                continue
+
+        # Stop conditions as soon as Total, Debt Instruments, Fixed rates bonds, or subsequent Listed / Awaiting listing is reached
+        if any(trigger in name_lower for trigger in STOP_TRIGGERS):
+            break
+
+        if "listed / awaiting listing on stock exchanges" in name_lower:
+            break
 
         if is_valid_isin(isin_str):
             try:
@@ -240,7 +269,7 @@ def parse_hsbc_workbook(file_path):
                     "Security_Name": name_str,
                     "ISIN": isin_str,
                     "Industry_Rating": ind_str,
-                    "Quantity": qty_num,
+                    "Quantity": int(round(qty_num)),
                 })
 
     wb.close()
@@ -268,6 +297,8 @@ def main():
     error_count = 0
 
     for idx, fpath in enumerate(raw_files, start=1):
+        if fpath.name.startswith("~$"):
+            continue
         try:
             df_file = parse_hsbc_workbook(fpath)
             if not df_file.empty:

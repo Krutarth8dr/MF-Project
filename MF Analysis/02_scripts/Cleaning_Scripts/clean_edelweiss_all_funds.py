@@ -47,7 +47,6 @@ TARGET_FUNDS_CONFIG = {
     "EEMCPF": "Edelweiss Multi Cap Fund",
     "EESMCF": "Edelweiss Mid Cap Fund",
     "EETECF": "Edelweiss Technology Fund",
-    "ELLIQF": "Edelweiss Liquid Fund",
 }
 
 
