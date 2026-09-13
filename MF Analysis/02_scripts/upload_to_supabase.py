@@ -120,11 +120,19 @@ def load_and_prepare_fund_holdings(file_path: Path) -> pd.DataFrame:
             df[str_col] = df[str_col].astype(str).str.strip()
             df[str_col] = df[str_col].replace({"nan": None, "None": None, "": None})
 
-    # Drop exact duplicates
+    # Ensure uniqueness per (amc, fund_name, isin, portfolio_date)
+    # Sum quantity across multiple lots/tranches (e.g. free shares + locked-in shares)
     initial_len = len(df)
-    df = df.drop_duplicates()
+    df = (
+        df.groupby(["amc", "fund_name", "isin", "portfolio_date", "month"], as_index=False)
+        .agg({
+            "security_name": "first",
+            "industry_rating": "first",
+            "quantity": "sum"
+        })
+    )
     if len(df) < initial_len:
-        print(f"   Deduped: removed {initial_len - len(df):,} duplicate rows ({len(df):,} remaining)")
+        print(f"   Aggregated: merged {initial_len - len(df):,} multi-tranche rows ({len(df):,} unique holding records)")
 
     # Replace pandas NaN with None for valid JSON serialization
     df = df.replace({np.nan: None})
@@ -278,7 +286,7 @@ def get_latest_db_portfolio_date(session: requests.Session) -> str:
 
 def upload_fund_holdings(
     session: requests.Session,
-    batch_size: int = 2500,
+    batch_size: int = 1000,
     only_new: bool = False,
     since_date: str = None,
     month_filter: str = None
@@ -356,7 +364,7 @@ def upload_security_master(session: requests.Session, batch_size: int = 1000) ->
 
 def upload_data(
     table: str = "all",
-    batch_size: int = 2500,
+    batch_size: int = 1000,
     only_new: bool = False,
     since_date: str = None,
     month_filter: str = None
@@ -419,8 +427,8 @@ def main():
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=2500,
-        help="Batch size for fund_holdings upload (default: 2500)"
+        default=1000,
+        help="Batch size for fund_holdings upload (default: 1000)"
     )
     parser.add_argument(
         "--only-new",
