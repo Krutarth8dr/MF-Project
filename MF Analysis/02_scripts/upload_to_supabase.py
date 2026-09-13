@@ -238,6 +238,11 @@ def upload_table_records(
                 if "Could not find the table" in response.text:
                     print(f"\n💡 Hint: Table '{table_name}' does not exist in Supabase.")
                     print("   Please execute the SQL commands in 'SUPABASE_SCHEMA.sql' in your Supabase SQL Editor.")
+                elif "42P10" in response.text or "no unique or exclusion constraint" in response.text:
+                    print(f"\n💡 Hint: Table '{table_name}' is missing the unique index required for ON CONFLICT upserts.")
+                    print(f"   Please run the commands in 'DEDUPE_AND_INDEX_FUND_HOLDINGS.sql' in your Supabase SQL Editor:")
+                    print("   CREATE UNIQUE INDEX IF NOT EXISTS idx_fund_holdings_unique_holding")
+                    print("   ON fund_holdings (amc, fund_name, isin, portfolio_date);")
                 return False
 
         except Exception as e:
