@@ -33,6 +33,7 @@ STANDARD_COLUMNS = [
 ]
 
 TARGET_FUNDS = [
+    # Existing 7 funds
     "WhiteOak Capital Large Cap Fund",
     "WhiteOak Capital Flexi Cap Fund",
     "WhiteOak Capital Mid Cap Fund",
@@ -40,6 +41,16 @@ TARGET_FUNDS = [
     "WhiteOak Capital Balanced Advantage Fund",
     "WhiteOak Capital Multi Asset Allocation Fund",
     "WhiteOak Capital Multi Cap Fund",
+    # 9 New funds
+    "WhiteOak Capital Balanced Hybrid Fund",
+    "WhiteOak Capital Large & Mid Cap Fund",
+    "WhiteOak Capital Banking & Financial Services Fund",
+    "WhiteOak Capital Pharma and Healthcare Fund",
+    "WhiteOak Capital Special Opportunities Fund",
+    "WhiteOak Capital Digital Bharat Fund",
+    "WhiteOak Capital Quality Equity Fund",
+    "WhiteOak Capital Equity Savings Fund",
+    "WhiteOak Capital Consumption Opportunities Fund",
 ]
 
 MONTH_MAP = {
@@ -57,6 +68,18 @@ MONTH_MAP = {
     "december": 12, "dec": 12,
 }
 
+STOP_TRIGGERS = [
+    "sub total",
+    "sub-total",
+    "total",
+    "grand total",
+    "debt instruments",
+    "money market",
+    "treps",
+    "net current assets",
+    "total net assets",
+]
+
 
 def clean_text(val):
     if val is None:
@@ -68,10 +91,8 @@ def clean_text(val):
 def get_canonical_fund_name(filename):
     f_lower = re.sub(r"[^a-z0-9]", "", filename.lower())
 
-    if "multiasset" in f_lower:
-        return "WhiteOak Capital Multi Asset Allocation Fund"
-    elif "multicap" in f_lower:
-        return "WhiteOak Capital Multi Cap Fund"
+    if "largeandmid" in f_lower or "largemid" in f_lower:
+        return "WhiteOak Capital Large & Mid Cap Fund"
     elif "largecap" in f_lower:
         return "WhiteOak Capital Large Cap Fund"
     elif "midcap" in f_lower:
@@ -82,6 +103,26 @@ def get_canonical_fund_name(filename):
         return "WhiteOak Capital ELSS Tax Saver Fund"
     elif "balancedadvantage" in f_lower or "baf" in f_lower:
         return "WhiteOak Capital Balanced Advantage Fund"
+    elif "balancedhybrid" in f_lower:
+        return "WhiteOak Capital Balanced Hybrid Fund"
+    elif "multiasset" in f_lower:
+        return "WhiteOak Capital Multi Asset Allocation Fund"
+    elif "multicap" in f_lower:
+        return "WhiteOak Capital Multi Cap Fund"
+    elif "banking" in f_lower or "financialservices" in f_lower or "bfs" in f_lower:
+        return "WhiteOak Capital Banking & Financial Services Fund"
+    elif "pharma" in f_lower or "healthcare" in f_lower:
+        return "WhiteOak Capital Pharma and Healthcare Fund"
+    elif "specialopp" in f_lower or "specialopportunities" in f_lower:
+        return "WhiteOak Capital Special Opportunities Fund"
+    elif "digitalbharat" in f_lower:
+        return "WhiteOak Capital Digital Bharat Fund"
+    elif "qualityequity" in f_lower:
+        return "WhiteOak Capital Quality Equity Fund"
+    elif "equitysavings" in f_lower:
+        return "WhiteOak Capital Equity Savings Fund"
+    elif "consumptionopp" in f_lower or "consumptionopportunities" in f_lower:
+        return "WhiteOak Capital Consumption Opportunities Fund"
     return None
 
 
@@ -132,7 +173,12 @@ def clean_whiteoak_data():
     print(f"Target Date Range: {START_DATE.strftime('%b %Y')} to {END_DATE.strftime('%b %Y')}")
     print("=" * 75)
 
-    excel_files = sorted(list(RAW_FOLDER.rglob("*.xlsx")) + list(RAW_FOLDER.rglob("*.xls")))
+    excel_files = sorted(
+        [
+            f for f in list(RAW_FOLDER.rglob("*.xlsx")) + list(RAW_FOLDER.rglob("*.xls"))
+            if not f.name.startswith("~$")
+        ]
+    )
     if not excel_files:
         print(f"ERROR: No monthly files found in {RAW_FOLDER}")
         sys.exit(1)
@@ -201,16 +247,17 @@ def clean_whiteoak_data():
         for r in range(header_row + 1, ws.max_row + 1):
             inst_raw = ws.cell(r, col_instrument).value
             inst_name = clean_text(inst_raw)
+            inst_lower = inst_name.lower()
 
-            # Stop scanning immediately when Sub Total / Total is detected
-            if inst_name.lower() in ["sub total", "sub-total", "total", "grand total"]:
+            # Stop scanning immediately when Sub Total / Total / Debt / Treps is detected
+            if any(trigger in inst_lower for trigger in STOP_TRIGGERS):
                 break
 
             isin_raw = ws.cell(r, col_isin).value
-            isin = clean_text(isin_raw)
+            isin = clean_text(isin_raw).upper()
 
-            # Filter only ISINs starting with INE
-            if not isin.startswith("INE"):
+            # Filter only valid equity ISINs starting with INE (length 12)
+            if not (isin.startswith("INE") and len(isin) == 12):
                 continue
 
             industry = clean_text(ws.cell(r, col_industry).value) if col_industry else ""
@@ -236,6 +283,8 @@ def clean_whiteoak_data():
                 "Quantity": int(round(qty)),
             })
             file_holdings += 1
+
+        wb.close()
 
     print("\n[Step 2/3] Compiling cleaned dataset...")
     if not all_rows:

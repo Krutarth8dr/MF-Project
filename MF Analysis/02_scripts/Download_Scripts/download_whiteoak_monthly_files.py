@@ -21,6 +21,7 @@ START_DATE = datetime(2024, 10, 1)
 END_DATE = datetime(2026, 8, 31)
 
 TARGET_FUNDS = [
+    # Existing 7 funds
     "WhiteOak Capital Large Cap Fund",
     "WhiteOak Capital Flexi Cap Fund",
     "WhiteOak Capital Mid Cap Fund",
@@ -28,6 +29,16 @@ TARGET_FUNDS = [
     "WhiteOak Capital Balanced Advantage Fund",
     "WhiteOak Capital Multi Asset Allocation Fund",
     "WhiteOak Capital Multi Cap Fund",
+    # 9 New funds
+    "WhiteOak Capital Balanced Hybrid Fund",
+    "WhiteOak Capital Large & Mid Cap Fund",
+    "WhiteOak Capital Banking & Financial Services Fund",
+    "WhiteOak Capital Pharma and Healthcare Fund",
+    "WhiteOak Capital Special Opportunities Fund",
+    "WhiteOak Capital Digital Bharat Fund",
+    "WhiteOak Capital Quality Equity Fund",
+    "WhiteOak Capital Equity Savings Fund",
+    "WhiteOak Capital Consumption Opportunities Fund",
 ]
 
 MONTH_MAP = {
@@ -47,7 +58,7 @@ MONTH_MAP = {
 
 
 def normalize_text(text):
-    return re.sub(r"[^a-z0-9]", "", text.lower())
+    return re.sub(r"[^a-z0-9]", "", str(text).lower())
 
 
 TARGET_NORM_MAP = {normalize_text(f): f for f in TARGET_FUNDS}
@@ -56,9 +67,32 @@ TARGET_NORM_MAP = {normalize_text(f): f for f in TARGET_FUNDS}
 def match_canonical_fund(scheme_name, doc_name):
     norm_scheme = normalize_text(scheme_name or "")
     norm_doc = normalize_text(doc_name or "")
-    for norm_name, orig_name in TARGET_NORM_MAP.items():
-        if norm_name in norm_scheme or norm_name in norm_doc:
-            return orig_name
+
+    # Check more specific names first to avoid collisions
+    ordered_funds = [
+        "WhiteOak Capital Large & Mid Cap Fund",
+        "WhiteOak Capital Large Cap Fund",
+        "WhiteOak Capital Mid Cap Fund",
+        "WhiteOak Capital Flexi Cap Fund",
+        "WhiteOak Capital ELSS Tax Saver Fund",
+        "WhiteOak Capital Balanced Hybrid Fund",
+        "WhiteOak Capital Balanced Advantage Fund",
+        "WhiteOak Capital Multi Asset Allocation Fund",
+        "WhiteOak Capital Multi Cap Fund",
+        "WhiteOak Capital Banking & Financial Services Fund",
+        "WhiteOak Capital Pharma and Healthcare Fund",
+        "WhiteOak Capital Special Opportunities Fund",
+        "WhiteOak Capital Digital Bharat Fund",
+        "WhiteOak Capital Quality Equity Fund",
+        "WhiteOak Capital Equity Savings Fund",
+        "WhiteOak Capital Consumption Opportunities Fund",
+    ]
+
+    for f in ordered_funds:
+        norm_f = normalize_text(f)
+        if norm_f in norm_scheme or norm_f in norm_doc:
+            return f
+
     return None
 
 
