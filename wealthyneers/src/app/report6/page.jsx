@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -85,6 +85,133 @@ function DirFilter({ label, value, onChange }) {
   );
 }
 
+// ─── Searchable Multi-Select Dropdown Component ───────────────────────
+function R6MultiSelect({
+  options = [],
+  selected = [],
+  onChange,
+  placeholder = 'Search...',
+  defaultText = 'All',
+  itemUnitName = 'items',
+  disabled = false,
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return options;
+    return options.filter((item) => String(item).toLowerCase().includes(q));
+  }, [options, search]);
+
+  const toggle = (item) => {
+    if (selected.includes(item)) {
+      onChange(selected.filter((x) => x !== item));
+    } else {
+      onChange([...selected, item]);
+    }
+  };
+
+  const getLabelText = () => {
+    if (!selected || selected.length === 0) return defaultText;
+    if (selected.length === 1) return selected[0];
+    if (selected.length === 2) {
+      const combined = `${selected[0]}, ${selected[1]}`;
+      return combined.length > 28 ? `2 ${itemUnitName} selected` : combined;
+    }
+    return `${selected.length} ${itemUnitName} selected`;
+  };
+
+  return (
+    <div className="r6-multi-wrap" ref={ref}>
+      <button
+        type="button"
+        disabled={disabled}
+        className={`r6-multi-trigger ${selected.length > 0 ? 'has-selection' : ''}`}
+        onClick={() => setOpen((o) => !o)}
+        title={selected.length > 0 ? selected.join('\n') : defaultText}
+      >
+        <span className="r6-multi-label-text">{getLabelText()}</span>
+        {selected.length > 0 && (
+          <span className="r6-multi-badge">{selected.length}</span>
+        )}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="r6-multi-panel">
+          <div className="r6-multi-search-wrap">
+            <input
+              type="text"
+              className="r6-multi-search"
+              placeholder={placeholder}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="r6-multi-panel-actions">
+            <button
+              type="button"
+              className="r6-multi-action-btn"
+              onClick={() => onChange(filtered.length > 0 ? Array.from(new Set([...selected, ...filtered])) : options)}
+            >
+              Select All
+            </button>
+            <button
+              type="button"
+              className="r6-multi-action-btn"
+              onClick={() => onChange([])}
+            >
+              Clear
+            </button>
+          </div>
+          <ul className="r6-multi-list">
+            {filtered.length === 0 ? (
+              <li className="r6-multi-empty">No matching {itemUnitName.toLowerCase()} found</li>
+            ) : (
+              filtered.map((item) => {
+                const isChecked = selected.includes(item);
+                return (
+                  <li
+                    key={item}
+                    className="r6-multi-item"
+                    onClick={() => toggle(item)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggle(item);
+                      }}
+                    />
+                    <span className="r6-multi-item-text" title={item}>{item}</span>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page constants ──────────────────────────────────────────────────
 const PAGE_SIZE = 50;
 const DEBOUNCE_MS = 350;
@@ -98,6 +225,8 @@ export default function Report6Page() {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   // Filter state
+  const [selectedAmcs, setSelectedAmcs] = useState([]);
+  const [selectedFunds, setSelectedFunds] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [dirFilters, setDirFilters] = useState({
     amc_direction: '',
@@ -108,6 +237,14 @@ export default function Report6Page() {
     amc_6_direction: '',
     amc_7_direction: '',
   });
+
+  // Filter options state
+  const [filterOptions, setFilterOptions] = useState({
+    amcs: [],
+    funds: [],
+    amcFundsMap: {},
+  });
+  const [dynamicFunds, setDynamicFunds] = useState([]);
 
   // Data state
   const [rows, setRows] = useState([]);
@@ -159,9 +296,96 @@ export default function Report6Page() {
     };
   }, [router]);
 
-  // ── Fetch data from view ─────────────────────────────────────────
-  // ── Fetch data via secure RPC (with view fallback) ────────────────
-  const fetchData = useCallback(async (currentPage, search, dirs) => {
+  // ── Load filter options ──────────────────────────────────────────
+  const loadFilterOptions = useCallback(async () => {
+    try {
+      // 1. Try dedicated get_report6_filter_options first
+      const { data: r6Opts, error: r6Err } = await supabase.rpc('get_report6_filter_options');
+      if (!r6Err && r6Opts) {
+        setFilterOptions({
+          amcs: r6Opts.amcs || [],
+          funds: r6Opts.funds || [],
+          amcFundsMap: r6Opts.amc_funds_map || {},
+        });
+        setDynamicFunds(r6Opts.funds || []);
+        return;
+      }
+
+      // 2. Fallback to get_report2_filter_options if get_report6_filter_options is not yet deployed
+      const { data: r2Opts, error: r2Err } = await supabase.rpc('get_report2_filter_options');
+      if (!r2Err && r2Opts) {
+        setFilterOptions({
+          amcs: r2Opts.amcs || [],
+          funds: r2Opts.funds || [],
+          amcFundsMap: {},
+        });
+        setDynamicFunds(r2Opts.funds || []);
+      }
+    } catch (err) {
+      console.error('Error loading Report 6 filter options:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || !isSubscribed) return;
+    loadFilterOptions();
+  }, [authLoading, isSubscribed, loadFilterOptions]);
+
+  // ── Derive dynamic funds based on selected AMCs ──────────────────
+  useEffect(() => {
+    let active = true;
+
+    // If no AMC selected, show all funds
+    if (selectedAmcs.length === 0) {
+      setDynamicFunds(filterOptions.funds || []);
+      return;
+    }
+
+    // If client-side mapping is present
+    if (filterOptions.amcFundsMap && Object.keys(filterOptions.amcFundsMap).length > 0) {
+      const fundSet = new Set();
+      selectedAmcs.forEach((amc) => {
+        const list = filterOptions.amcFundsMap[amc] || [];
+        list.forEach((f) => fundSet.add(f));
+      });
+      const sorted = Array.from(fundSet).sort((a, b) => a.localeCompare(b));
+      setDynamicFunds(sorted);
+      return;
+    }
+
+    // Fallback: Query server for funds matching selected AMCs
+    const fetchFundsForAmcs = async () => {
+      try {
+        const { data, error: rpcErr } = await supabase.rpc('get_report6_filter_options', {
+          p_amcs: selectedAmcs,
+        });
+        if (!rpcErr && data && Array.isArray(data.funds) && active) {
+          setDynamicFunds(data.funds);
+        }
+      } catch (err) {
+        console.error('Error fetching filtered funds:', err);
+      }
+    };
+    fetchFundsForAmcs();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedAmcs, filterOptions]);
+
+  // ── Prune incompatible selected funds when dynamicFunds change ────
+  useEffect(() => {
+    if (selectedAmcs.length === 0) return;
+    setSelectedFunds((prev) => {
+      if (prev.length === 0) return prev;
+      const validSet = new Set(dynamicFunds);
+      const filtered = prev.filter((f) => validSet.has(f));
+      return filtered.length === prev.length ? prev : filtered;
+    });
+  }, [selectedAmcs, dynamicFunds]);
+
+  // ── Fetch data via secure RPC with dynamic AMC & Fund filtering ──
+  const fetchData = useCallback(async (currentPage, search, dirs, amcs, funds) => {
     setDataLoading(true);
     setError(null);
     try {
@@ -170,13 +394,43 @@ export default function Report6Page() {
         if (val) activeDirs[col] = val;
       }
 
+      const hasAmc = amcs && amcs.length > 0;
+      const hasFund = funds && funds.length > 0;
+
+      let params;
+      if (hasAmc || hasFund) {
+        // Derive effective AMCs if user selected funds directly without picking AMC
+        let effectiveAmcs = hasAmc ? amcs : null;
+        if (!effectiveAmcs && hasFund && filterOptions.amcFundsMap) {
+          const derived = new Set();
+          funds.forEach((f) => {
+            for (const [amcName, fundList] of Object.entries(filterOptions.amcFundsMap)) {
+              if (fundList.includes(f)) derived.add(amcName);
+            }
+          });
+          if (derived.size > 0) effectiveAmcs = Array.from(derived);
+        }
+
+        params = {
+          p_search: search.trim() || null,
+          p_dirs: Object.keys(activeDirs).length > 0 ? activeDirs : null,
+          p_limit: PAGE_SIZE,
+          p_offset: currentPage * PAGE_SIZE,
+          p_amcs: effectiveAmcs,
+          p_funds: hasFund ? funds : null,
+        };
+      } else {
+        // Default view: 4 parameters (uses fast baseline consensus)
+        params = {
+          p_search: search.trim() || null,
+          p_dirs: Object.keys(activeDirs).length > 0 ? activeDirs : null,
+          p_limit: PAGE_SIZE,
+          p_offset: currentPage * PAGE_SIZE,
+        };
+      }
+
       // Call secure get_report6_data RPC
-      const { data, error: rpcError } = await supabase.rpc('get_report6_data', {
-        p_search: search.trim() || null,
-        p_dirs: Object.keys(activeDirs).length > 0 ? activeDirs : null,
-        p_limit: PAGE_SIZE,
-        p_offset: currentPage * PAGE_SIZE,
-      });
+      const { data, error: rpcError } = await supabase.rpc('get_report6_data', params);
 
       if (rpcError) throw rpcError;
 
@@ -185,13 +439,18 @@ export default function Report6Page() {
       setTotalCount(total);
     } catch (err) {
       console.error('Report 6 fetch error:', err);
-      setError(err?.message || 'Failed to load report data.');
+      const msg = err?.message || 'Failed to load report data.';
+      if (msg.includes('schema cache') && ((amcs && amcs.length > 0) || (funds && funds.length > 0))) {
+        setError('To enable multi-select AMC & Fund filtering, please execute UPDATE_REPORT6_MULTISELECT_RPC.sql in your Supabase SQL Editor.');
+      } else {
+        setError(msg);
+      }
       setRows([]);
       setTotalCount(0);
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [filterOptions.amcFundsMap]);
 
   // ── Trigger fetch when filters or page change ────────────────────
   useEffect(() => {
@@ -199,11 +458,11 @@ export default function Report6Page() {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchData(page, searchText, dirFilters);
+      fetchData(page, searchText, dirFilters, selectedAmcs, selectedFunds);
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(debounceRef.current);
-  }, [authLoading, isSubscribed, page, searchText, dirFilters, fetchData]);
+  }, [authLoading, isSubscribed, page, searchText, dirFilters, selectedAmcs, selectedFunds, fetchData]);
 
   // ── Reset page when filters change ──────────────────────────────
   const handleSearchChange = (val) => {
@@ -217,6 +476,8 @@ export default function Report6Page() {
   };
 
   const clearAllFilters = () => {
+    setSelectedAmcs([]);
+    setSelectedFunds([]);
     setSearchText('');
     setDirFilters({
       amc_direction: '',
@@ -229,6 +490,12 @@ export default function Report6Page() {
     });
     setPage(0);
   };
+
+  const hasActiveFilters =
+    selectedAmcs.length > 0 ||
+    selectedFunds.length > 0 ||
+    searchText.trim() !== '' ||
+    Object.values(dirFilters).some(Boolean);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -289,53 +556,159 @@ export default function Report6Page() {
           <h1 className="r6-title">7-Month Institutional Holding Direction</h1>
           <p className="r6-subtitle">
             Tracks the monthly quantity-change direction (increase / decrease / flat) of
-            total institutional holdings for each security across all AMCs — over the
+            institutional holdings for each security across selected AMCs and mutual funds — over the
             latest 7 consecutive months.
           </p>
         </div>
       </div>
 
-      {/* ── Filter bar ── */}
-      <div className="r6-filter-bar">
-        {/* Security search */}
-        <div className="r6-filter-group r6-search-group">
-          <label className="r6-filter-label">Security Name</label>
-          <div className="r6-search-wrap">
-            <svg className="r6-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              type="text"
-              className="r6-search-input"
-              placeholder="Search security…"
-              value={searchText}
-              onChange={(e) => handleSearchChange(e.target.value)}
+      {/* ── Multi-Row Filter Card ── */}
+      <div className="r6-filter-card">
+        {/* ROW 1: AMC | Fund Name | Security Name */}
+        <div className="r6-filter-row-1">
+          <div className="r6-filter-group">
+            <label className="r6-filter-label">AMC</label>
+            <R6MultiSelect
+              options={filterOptions.amcs}
+              selected={selectedAmcs}
+              onChange={(newAmcs) => {
+                setSelectedAmcs(newAmcs);
+                setPage(0);
+              }}
+              placeholder="Search AMC..."
+              defaultText="All AMCs"
+              itemUnitName="AMCs"
             />
-            {searchText && (
-              <button className="r6-search-clear" onClick={() => handleSearchChange('')}>×</button>
-            )}
+          </div>
+
+          <div className="r6-filter-group">
+            <label className="r6-filter-label">
+              Fund Name {selectedAmcs.length > 0 ? `(${dynamicFunds.length})` : ''}
+            </label>
+            <R6MultiSelect
+              options={dynamicFunds}
+              selected={selectedFunds}
+              onChange={(newFunds) => {
+                setSelectedFunds(newFunds);
+                setPage(0);
+              }}
+              placeholder="Search Fund..."
+              defaultText="All Funds"
+              itemUnitName="Funds"
+            />
+          </div>
+
+          <div className="r6-filter-group r6-search-group">
+            <label className="r6-filter-label">Security Name</label>
+            <div className="r6-search-wrap">
+              <svg className="r6-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                type="text"
+                className="r6-search-input"
+                placeholder="Search security or ISIN…"
+                value={searchText}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+              {searchText && (
+                <button className="r6-search-clear" onClick={() => handleSearchChange('')}>×</button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* 7 direction filters */}
-        {[
-          ['1M', 'amc_direction'],
-          ['2M', 'amc_2_direction'],
-          ['3M', 'amc_3_direction'],
-          ['4M', 'amc_4_direction'],
-          ['5M', 'amc_5_direction'],
-          ['6M', 'amc_6_direction'],
-          ['7M', 'amc_7_direction'],
-        ].map(([label, col]) => (
-          <DirFilter
-            key={col}
-            label={`${label} Direction`}
-            value={dirFilters[col]}
-            onChange={(val) => handleDirChange(col, val)}
-          />
-        ))}
+        {/* ROW 2: 1M | 2M | 3M | 4M | 5M | 6M | 7M Directions */}
+        <div className="r6-filter-row-2">
+          {[
+            ['1M', 'amc_direction'],
+            ['2M', 'amc_2_direction'],
+            ['3M', 'amc_3_direction'],
+            ['4M', 'amc_4_direction'],
+            ['5M', 'amc_5_direction'],
+            ['6M', 'amc_6_direction'],
+            ['7M', 'amc_7_direction'],
+          ].map(([label, col]) => (
+            <DirFilter
+              key={col}
+              label={`${label} Direction`}
+              value={dirFilters[col]}
+              onChange={(val) => handleDirChange(col, val)}
+            />
+          ))}
+        </div>
 
-        {/* Clear all */}
-        <div className="r6-filter-group r6-clear-group">
-          <button className="btn btn-outline r6-clear-btn" onClick={clearAllFilters}>
+        {/* ROW 3: Active Filter Badges & Clear Filters Action */}
+        <div className="r6-filter-row-3">
+          <div className="r6-active-filters-summary">
+            {hasActiveFilters ? (
+              <>
+                <span style={{ fontWeight: 600 }}>Active Filters:</span>
+                {selectedAmcs.map((amc) => (
+                  <span key={amc} className="r6-active-tag">
+                    AMC: {amc}
+                    <button
+                      type="button"
+                      className="r6-active-tag-remove"
+                      onClick={() => setSelectedAmcs((prev) => prev.filter((a) => a !== amc))}
+                      title="Remove filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {selectedFunds.map((fund) => (
+                  <span key={fund} className="r6-active-tag">
+                    Fund: {fund}
+                    <button
+                      type="button"
+                      className="r6-active-tag-remove"
+                      onClick={() => setSelectedFunds((prev) => prev.filter((f) => f !== fund))}
+                      title="Remove filter"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {searchText && (
+                  <span className="r6-active-tag">
+                    Search: &quot;{searchText}&quot;
+                    <button
+                      type="button"
+                      className="r6-active-tag-remove"
+                      onClick={() => setSearchText('')}
+                      title="Clear search"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {Object.entries(dirFilters)
+                  .filter(([, v]) => !!v)
+                  .map(([col, v]) => {
+                    const label = col === 'amc_direction' ? '1M' : `${col.replace('amc_', '').replace('_direction', '')}M`;
+                    return (
+                      <span key={col} className="r6-active-tag">
+                        {label}: {DIR_EMOJI[v]} {DIR_LABEL[v]}
+                        <button
+                          type="button"
+                          className="r6-active-tag-remove"
+                          onClick={() => handleDirChange(col, '')}
+                          title="Clear direction"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    );
+                  })}
+              </>
+            ) : (
+              <span>All AMCs &amp; funds included (full institutional universe).</span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline r6-clear-btn"
+            onClick={clearAllFilters}
+          >
             Clear Filters
           </button>
         </div>
@@ -391,7 +764,16 @@ export default function Report6Page() {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={14} className="r6-td-empty">
-                  No securities found matching your filters.
+                  <div className="r6-empty-state">
+                    <p>No securities match the selected AMC, fund and direction filters.</p>
+                    <button
+                      type="button"
+                      className="btn btn-outline r6-empty-clear-btn"
+                      onClick={clearAllFilters}
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
                 </td>
               </tr>
             ) : (

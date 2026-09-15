@@ -383,51 +383,63 @@ export const REPORT_GUIDES = {
     title: '7-Month Institutional Holding Direction',
     subtitle: 'Multi-Month Longitudinal Momentum & Sustained Conviction Matrix',
     summary:
-      'Report 6 tracks the monthly institutional holding direction (Increase / Decrease / Flat) across the latest 7 consecutive monthly disclosure cycles (1M through 7M). It separates short-term monthly noise from sustained multi-quarter institutional accumulation.',
+      'Report 6 shows the direction of mutual fund activity (Increase / Decrease / Flat) for each security across the latest 7 consecutive monthly disclosure cycles (1M through 7M). Filtering by AMC or individual funds dynamically recomputes the entire 7-month consensus solely from that selected universe.',
     interactiveControls: [
       {
-        control: '1M through 7M Direction Dropdowns',
-        action: 'Filter by any specific month\'s directional signal (e.g. set 1M=Green, 2M=Green, 3M=Green to find stocks accumulated consecutively for the last 3 months).',
+        control: 'AMC Multi-Select Filter',
+        action: 'Choose one or more AMCs to view the consensus calculated only from those asset management companies (e.g., selecting HDFC and SBI restricts the report to holdings/activity from those two AMCs).',
       },
       {
-        control: 'Click "View Details" Button on Any Stock Row',
-        action: 'Click the "View Details" button to open an interactive modal displaying the complete 7-month audit trail with exact disclosure dates, holding quantities, and monthly changes.',
+        control: 'Fund Name Multi-Select Filter',
+        action: 'Choose one or more individual funds for a more focused view. The available funds automatically follow the selected AMC(s). Multiple funds may be selected simultaneously.',
+      },
+      {
+        control: 'Security Name Search',
+        action: 'Search for a particular company or security name/ISIN within the active AMC and fund universe.',
+      },
+      {
+        control: '1M through 7M Direction Dropdowns',
+        action: 'Filter securities according to their direction in any of the seven monthly periods (e.g. set 1M=Green, 2M=Green, 3M=Green to find stocks accumulated consecutively for the last 3 months).',
       },
       {
         control: 'Hover Over Any 1M–7M Signal Badge (🟢, 🔴, ⚪)',
         action: 'Hover over any badge in the table to view the comparison period, current quantity, previous quantity, and net share change.',
       },
       {
-        control: 'Click "Clear Filters" Button',
-        action: 'Resets all 7 monthly direction dropdowns and security search inputs back to the default full view.',
+        control: 'Clear Filters Button',
+        action: 'Returns AMC, Fund Name, Security Name and all monthly direction filters back to the default All state.',
       },
       {
         control: 'Pagination Controls',
-        action: 'Navigate across all 20+ pages of tracked institutional securities using the Prev / Next page controls.',
+        action: 'Navigate across pages of tracked institutional securities using the Prev / Next page controls.',
       },
     ],
     keyFeatures: [
       {
-        title: '7-Month Consecutive Direction Sequence',
-        desc: 'Displays monthly directional signals (1M = Latest month, 2M = Month −1, ..., 7M = Month −6) for each security.',
+        title: 'Dynamic AMC & Fund Consensus Recalculation',
+        desc: 'Selecting specific AMCs or funds automatically recomputes monthly quantities, directions, counts, and NET score solely from the chosen universe, rather than merely hiding rows.',
       },
       {
-        title: 'Cumulative Directional Counters',
-        desc: 'Tracks total Green Months (accumulations), Red Months (reductions), Neutral Months, and the Net 7M Consensus Score.',
+        title: 'Direction Legend: 🟢 Green | 🔴 Red | ⚪ Neutral',
+        desc: 'Green indicates positive / increasing direction (accumulation); Red indicates negative / decreasing direction (reduction); Neutral indicates unchanged or flat holding.',
       },
       {
-        title: 'Independent 7-Month Filter Matrix',
-        desc: 'Filter by exact direction conditions across any individual month (e.g. 1M = Green AND 2M = Green AND 3M = Green).',
+        title: 'Directional Counters (🟢 Green / 🔴 Red / ⚪ Neutral Counts)',
+        desc: 'These columns count how many of the 7 monthly disclosure periods fall into each respective directional category.',
       },
       {
-        title: 'Comprehensive Detail Modal',
-        desc: 'Click "View Details" on any row to open the complete 7-month breakdown with exact dates, share quantities, and monthly changes.',
+        title: 'NET Score',
+        desc: 'NET summarizes the overall 7-month directional balance (Green Count minus Red Count), providing an instant measure of sustained institutional momentum.',
+      },
+      {
+        title: 'Example Workflow',
+        desc: 'Selecting HDFC + SBI in AMC and then selecting two specific funds will recalculate Report 6 using only records belonging to those selected funds.',
       },
     ],
     howToInterpret: [
       {
         label: 'Consecutive Green Months (e.g. 5M–7M Green)',
-        detail: 'Indicates systematic, long-term institutional accumulation across multiple quarters — prime candidate for sustained uptrends.',
+        detail: 'Indicates systematic, multi-month institutional accumulation across multiple quarters — candidate for sustained momentum.',
       },
       {
         label: 'Turnaround Signal (Red to Green Transition)',
@@ -439,9 +451,9 @@ export const REPORT_GUIDES = {
       },
     ],
     useCases: [
-      'Identify long-term institutional compounders that mutual funds have accumulated month-after-month for over half a year.',
-      'Catch trend reversals early by screening for stocks that turned Green in the latest month after prolonged selling.',
-      'Confirm multi-quarter institutional sponsorship before initiating long-term equity investments.',
+      'Analyze institutional conviction across the entire mutual fund industry or isolate specific AMCs and high-performing flagship funds.',
+      'Construct a focused watchlist of securities being simultaneously accumulated by multiple selected asset managers.',
+      'Spot divergence when a stock is being accumulated by one specific AMC while being sold off across the broader market.',
     ],
   },
 };
