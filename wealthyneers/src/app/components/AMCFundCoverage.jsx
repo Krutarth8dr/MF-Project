@@ -113,8 +113,8 @@ export default function AMCFundCoverage() {
     setExpandedAmcs({});
   };
 
-  const amcCountDisplay = data?.amcCount ?? 24;
-  const fundCountDisplay = data?.fundCount ?? 386;
+  const amcCount = data?.amcCount;
+  const fundCount = data?.fundCount;
 
   return (
     <section className="cov-section" id="coverage" aria-labelledby="cov-heading">
@@ -127,15 +127,15 @@ export default function AMCFundCoverage() {
             </h2>
             <div className="cov-badges" aria-label="Coverage Statistics">
               <span className="cov-badge cov-badge-amc">
-                <strong>{amcCountDisplay}</strong> AMCs
+                <strong>{amcCount ?? '—'}</strong> AMCs
               </span>
               <span className="cov-badge cov-badge-fund">
-                <strong>{fundCountDisplay}</strong> Funds
+                <strong>{fundCount ?? '—'}</strong> Funds
               </span>
             </div>
           </div>
           <p className="cov-subtitle">
-            We currently track {amcCountDisplay} AMCs and {fundCountDisplay} funds. Explore the AMCs and their associated funds below.
+            We currently track {amcCount ?? '—'} AMCs and {fundCount ?? '—'} funds. Explore the AMCs and their associated funds below.
           </p>
         </div>
 
