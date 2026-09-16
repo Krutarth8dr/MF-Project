@@ -7715,3 +7715,380 @@ a {
     gap: 2rem !important;
   }
 }
+
+/* ============================================================ */
+/* AMC & Fund Coverage Section                                  */
+/* ============================================================ */
+
+.cov-section {
+  padding: 3rem 0;
+  margin: 1.5rem 0;
+}
+
+.cov-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cov-header {
+  margin-bottom: 1.75rem;
+}
+
+.cov-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.cov-title {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--foreground, #0f172a);
+  margin: 0;
+}
+
+.cov-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cov-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  letter-spacing: 0.01em;
+}
+
+.cov-badge-amc {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
+  border-color: rgba(2, 132, 199, 0.28);
+}
+
+.cov-badge-fund {
+  background: rgba(5, 191, 219, 0.08);
+  color: #05bfdb;
+  border-color: rgba(5, 191, 219, 0.28);
+}
+
+.cov-subtitle {
+  color: var(--secondary, #64748b);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0;
+}
+
+.cov-content-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 0.85rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  padding: 1.5rem;
+}
+
+.cov-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+}
+
+.cov-search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 480px;
+  min-width: 240px;
+}
+
+.cov-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--secondary, #64748b);
+  pointer-events: none;
+}
+
+.cov-search-input {
+  width: 100%;
+  padding: 0.65rem 2.25rem 0.65rem 2.45rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  background: var(--background, #ffffff);
+  color: var(--foreground, #0f172a);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cov-search-input:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.cov-search-clear {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--secondary, #64748b);
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 1;
+}
+
+.cov-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cov-action-btn {
+  background: none;
+  border: none;
+  color: var(--primary, #0284c7);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  transition: background 0.15s ease;
+}
+
+.cov-action-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+}
+
+.cov-action-sep {
+  color: var(--border, #e2e8f0);
+  font-size: 0.85rem;
+}
+
+.cov-search-meta {
+  font-size: 0.88rem;
+  color: var(--secondary, #64748b);
+  margin-bottom: 1rem;
+}
+
+.cov-no-results {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--secondary, #64748b);
+}
+
+.cov-no-results p {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cov-reset-btn {
+  font-size: 0.88rem;
+  padding: 0.5rem 1.25rem;
+}
+
+.cov-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cov-accordion-item {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 0.5rem;
+  background: var(--card-bg, #ffffff);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cov-accordion-item:hover {
+  border-color: rgba(2, 132, 199, 0.35);
+}
+
+.cov-accordion-item.is-expanded {
+  border-color: rgba(2, 132, 199, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.cov-accordion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.15rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--foreground, #0f172a);
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease;
+}
+
+.cov-accordion-btn:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.cov-amc-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cov-chevron {
+  font-size: 0.72rem;
+  color: var(--secondary, #64748b);
+  display: inline-block;
+  width: 12px;
+}
+
+.cov-amc-name {
+  font-weight: 600;
+}
+
+.cov-fund-count-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary, #64748b);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 0.22rem 0.65rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.cov-accordion-panel {
+  padding: 1rem 1.25rem 1.35rem;
+  background: rgba(248, 250, 252, 0.65);
+  border-top: 1px solid var(--border, #e2e8f0);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.cov-funds-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1.5rem;
+}
+
+.cov-fund-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--foreground, #1e293b);
+}
+
+.cov-fund-bullet {
+  color: #0284c7;
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cov-fund-name {
+  word-break: break-word;
+}
+
+.cov-loading,
+.cov-error {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--secondary, #64748b);
+}
+
+.cov-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(2, 132, 199, 0.2);
+  border-top-color: #0284c7;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 0.75rem;
+}
+
+/* Coverage Statement Banner */
+.cov-statement-line {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0284c7;
+  margin: 0.5rem 0 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cov-statement-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #0284c7;
+  margin-top: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .cov-section {
+    padding: 2rem 0;
+  }
+
+  .cov-title {
+    font-size: 1.45rem;
+  }
+
+  .cov-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .cov-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .cov-search-wrap {
+    max-width: 100%;
+  }
+
+  .cov-funds-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .cov-content-card {
+    padding: 1rem 0.85rem;
+  }
+
+  .cov-accordion-btn {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .cov-accordion-panel {
+    padding: 0.75rem 0.85rem 1rem;
+  }
+}
+

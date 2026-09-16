@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 
 import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
 import { getCachedSubscription, checkUserSubscription, setCachedSubscription } from '@/lib/subscriptionCache';
+import AMCFundCoverage from '@/app/components/AMCFundCoverage';
 
 export default function Home() {
   const router = useRouter();
@@ -172,12 +173,15 @@ export default function Home() {
       {!loading && !user && (
         <section className="hero">
           <div className="container">
-            <h1>See what top DIIs of India doing</h1>
+            <h1>See what top DIIs of India are doing</h1>
             <p style={{ marginBottom: '0.85rem' }}>
               Get exclusive access to our 6 proprietary institutional research reports, designed for serious investors who demand institutional-grade insights.
             </p>
-            <p style={{ marginBottom: '2.5rem' }}>
+            <p style={{ marginBottom: '0.85rem' }}>
               Track what leading AMCs are buying, holding, and selling through interactive reports.
+            </p>
+            <p style={{ marginBottom: '2.5rem', fontWeight: 600, color: 'var(--primary, #0284c7)' }}>
+              Track institutional activity across 24 AMCs and 386 funds.
             </p>
             <div className="hero-cta">
               <Link href="/signup" className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2.5rem' }}>
@@ -220,10 +224,21 @@ export default function Home() {
 
           <h2 className="section-title">Our Premium Research Reports</h2>
 
+          {!loading && user && !isSubscribed && (
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <p style={{ fontSize: '1.05rem', color: 'var(--primary, #0284c7)', fontWeight: 600, margin: 0 }}>
+                Coverage includes data from 24 AMCs and 386 funds.
+              </p>
+            </div>
+          )}
+
           {!loading && user && isSubscribed && (
             <div className="reports-sub-banner" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>
+              <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '0.4rem' }}>
                 You have active premium access to all 6 institutional reports.
+              </p>
+              <p style={{ fontSize: '1.05rem', color: 'var(--primary, #0284c7)', fontWeight: 600, marginBottom: '0.4rem' }}>
+                Coverage includes data from 24 AMCs and 386 funds.
               </p>
               <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '1.5rem' }}>
                 Track what leading AMCs are buying, holding, and selling through interactive reports.
@@ -293,34 +308,37 @@ export default function Home() {
         </div>
       </section>
 
-        <section id="pricing" className="pricing">
-          <div className="container">
-            <div className="pricing-card">
-              <span className="pricing-plan-tag">
-                {isSubscribed ? '● Active Access' : '30-Day Institutional Access'}
-              </span>
-              <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Wealthyneers 30-Day Access</h2>
-              <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
-                {isSubscribed
-                  ? 'Your institutional intelligence access is currently active.'
-                  : 'One simple one-time payment. Complete access to all six institutional research reports for 30 days.'}
-              </p>
-              
-              <div className="price-single-wrap">
-                <span className="price-single-currency">₹</span>
-                <span className="price-single-val">30</span>
-                <span className="price-single-period">for 30 days</span>
-              </div>
-              
-              <ul className="features">
-                <li>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Complete access to <strong>all 6 institutional reports</strong> (Reports 1 to 6)</span>
-                </li>
-                <li>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Comprehensive monthly coverage across <strong>13+ AMCs and 225+ funds</strong></span>
-                </li>
+      {/* ── Reusable Our AMC & Fund Coverage Section ── */}
+      <AMCFundCoverage />
+
+      <section id="pricing" className="pricing">
+        <div className="container">
+          <div className="pricing-card">
+            <span className="pricing-plan-tag">
+              {isSubscribed ? '● Active Access' : '30-Day Institutional Access'}
+            </span>
+            <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Wealthyneers 30-Day Access</h2>
+            <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+              {isSubscribed
+                ? 'Your institutional intelligence access is currently active.'
+                : 'One simple one-time payment. Complete access to all six institutional research reports for 30 days.'}
+            </p>
+            
+            <div className="price-single-wrap">
+              <span className="price-single-currency">₹</span>
+              <span className="price-single-val">30</span>
+              <span className="price-single-period">for 30 days</span>
+            </div>
+            
+            <ul className="features">
+              <li>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Complete access to <strong>all 6 institutional reports</strong> (Reports 1 to 6)</span>
+              </li>
+              <li>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Comprehensive monthly coverage across <strong>24 AMCs and 386 funds</strong></span>
+              </li>
                 <li>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>Historical quantity trends, directional matrices &amp; breadth rankings</span>
