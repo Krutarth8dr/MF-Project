@@ -289,7 +289,8 @@ def upload_fund_holdings(
     batch_size: int = 1000,
     only_new: bool = False,
     since_date: str = None,
-    month_filter: str = None
+    month_filter: str = None,
+    amc_filter: str = None
 ) -> bool:
     """Upload fund holdings matrix to Supabase fund_holdings table.
 
@@ -297,12 +298,21 @@ def upload_fund_holdings(
     - only_new: queries Supabase for the latest portfolio_date and only uploads subsequent months.
     - since_date: only uploads rows with portfolio_date >= since_date.
     - month_filter: only uploads rows matching a specific month (e.g. 'Aug-2026').
+    - amc_filter: only uploads rows for a specific AMC (e.g. 'Trust MF').
     """
     if not MATRIX_FILE.exists():
         print(f"❌ ERROR: Matrix file not found at: {MATRIX_FILE}")
         return False
 
     df = load_and_prepare_fund_holdings(MATRIX_FILE)
+
+    if amc_filter:
+        initial_count = len(df)
+        df = df[df["amc"].astype(str).str.lower() == amc_filter.lower()].copy()
+        print(f"\n🔍 Filtered to {len(df):,} records for AMC '{amc_filter}' (from {initial_count:,} total)")
+        if df.empty:
+            print(f"   ⚠️ No records found matching AMC '{amc_filter}'.")
+            return True
 
     if only_new:
         latest_date = get_latest_db_portfolio_date(session)
@@ -367,13 +377,16 @@ def upload_data(
     batch_size: int = 1000,
     only_new: bool = False,
     since_date: str = None,
-    month_filter: str = None
+    month_filter: str = None,
+    amc_filter: str = None
 ) -> bool:
     """Upload specified table(s) to Supabase."""
     print("=" * 80)
     print("🚀 SUPABASE DATA UPLOAD (High-Throughput Direct HTTP API)")
     print(f"   Target URL: https://{SUPABASE_HOST}")
     print(f"   Target:     {table.upper()}")
+    if amc_filter:
+        print(f"   AMC Filter: {amc_filter}")
     if only_new:
         print("   Mode:       INCREMENTAL (--only-new: only subsequent months)")
     elif since_date:
@@ -395,7 +408,8 @@ def upload_data(
             batch_size=batch_size,
             only_new=only_new,
             since_date=since_date,
-            month_filter=month_filter
+            month_filter=month_filter,
+            amc_filter=amc_filter
         ):
             success = False
 
@@ -447,6 +461,12 @@ def main():
         default=None,
         help="Upload only records matching month (e.g. 'Aug-2026' or 'August 2026')"
     )
+    parser.add_argument(
+        "--amc",
+        type=str,
+        default=None,
+        help="Upload only records matching AMC name (e.g. 'Trust MF')"
+    )
 
     args = parser.parse_args()
     success = upload_data(
@@ -454,7 +474,8 @@ def main():
         batch_size=args.batch_size,
         only_new=args.only_new,
         since_date=args.since_date,
-        month_filter=args.month
+        month_filter=args.month,
+        amc_filter=args.amc
     )
     if not success:
         sys.exit(1)

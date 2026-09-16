@@ -1,6 +1,6 @@
 {
-  "amcCount": 24,
-  "fundCount": 386,
+  "amcCount": 25,
+  "fundCount": 391,
   "amcs": [
     "ABSL",
     "AXIS",
@@ -24,6 +24,7 @@
     "Sundaram MF",
     "TATA MF",
     "Taurus MF",
+    "Trust MF",
     "Union MF",
     "WhiteOak MF"
   ],
@@ -355,6 +356,11 @@
     "TATA RESOURCES & ENERGY FUND",
     "TATA SMALL CAP FUND",
     "TATA VALUE FUND",
+    "TRUSTMF Flexi Cap Fund",
+    "TRUSTMF Large & Mid Cap Fund",
+    "TRUSTMF Mid Cap Fund",
+    "TRUSTMF Multi Cap Fund",
+    "TRUSTMF Small Cap Fund",
     "Taurus Banking and Financial Services",
     "Taurus ELSS Tax Saver Fund",
     "Taurus Ethical Fund",
@@ -811,6 +817,13 @@
       "Taurus Infrastructure Fund",
       "Taurus Large Cap Fund",
       "Taurus Mid Cap Fund"
+    ],
+    "Trust MF": [
+      "TRUSTMF Flexi Cap Fund",
+      "TRUSTMF Large & Mid Cap Fund",
+      "TRUSTMF Mid Cap Fund",
+      "TRUSTMF Multi Cap Fund",
+      "TRUSTMF Small Cap Fund"
     ],
     "Union MF": [
       "Union Active Momentum Fund",

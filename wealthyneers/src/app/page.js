@@ -181,7 +181,7 @@ export default function Home() {
               Track what leading AMCs are buying, holding, and selling through interactive reports.
             </p>
             <p style={{ marginBottom: '2.5rem', fontWeight: 600, color: 'var(--primary, #0284c7)' }}>
-              Track institutional activity across 24 AMCs and 386 funds.
+              Track institutional activity across 25 AMCs and 391 funds.
             </p>
             <div className="hero-cta">
               <Link href="/signup" className="btn btn-primary" style={{ fontSize: '1.25rem', padding: '1rem 2.5rem' }}>
@@ -227,7 +227,7 @@ export default function Home() {
           {!loading && user && !isSubscribed && (
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <p style={{ fontSize: '1.05rem', color: 'var(--primary, #0284c7)', fontWeight: 600, margin: 0 }}>
-                Coverage includes data from 24 AMCs and 386 funds.
+                Coverage includes data from 25 AMCs and 391 funds.
               </p>
             </div>
           )}
@@ -238,7 +238,7 @@ export default function Home() {
                 You have active premium access to all 6 institutional reports.
               </p>
               <p style={{ fontSize: '1.05rem', color: 'var(--primary, #0284c7)', fontWeight: 600, marginBottom: '0.4rem' }}>
-                Coverage includes data from 24 AMCs and 386 funds.
+                Coverage includes data from 25 AMCs and 391 funds.
               </p>
               <p style={{ fontSize: '1.1rem', color: 'var(--secondary)', marginBottom: '1.5rem' }}>
                 Track what leading AMCs are buying, holding, and selling through interactive reports.
@@ -337,7 +337,7 @@ export default function Home() {
               </li>
               <li>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Comprehensive monthly coverage across <strong>24 AMCs and 386 funds</strong></span>
+                <span>Comprehensive monthly coverage across <strong>25 AMCs and 391 funds</strong></span>
               </li>
                 <li>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
