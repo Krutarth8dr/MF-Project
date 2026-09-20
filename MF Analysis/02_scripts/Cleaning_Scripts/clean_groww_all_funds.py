@@ -34,7 +34,6 @@ TARGET_CONFIG = {
     "BS": ("BS", "Groww Banking & Financial Services Fund"),
     "NC": ("NC", "Groww Nifty Non-Cyclical Consumer Index Fund"),
     "MU": ("MU", "Groww Multicap Fund"),
-    "MA": ("MA", "Groww Multi Asset Allocation Fund"),
     "SC": ("SC", "Groww Small Cap Fund"),
     # IB codes (used in 2024/2025 workbooks and some 2026 sheets)
     "IB01": ("BC", "Groww Large Cap Fund"),
@@ -44,7 +43,6 @@ TARGET_CONFIG = {
     "IB19": ("BS", "Groww Banking & Financial Services Fund"),
     "IB21": ("NC", "Groww Nifty Non-Cyclical Consumer Index Fund"),
     "IB29": ("MU", "Groww Multicap Fund"),
-    "IB49": ("MA", "Groww Multi Asset Allocation Fund"),
     "IB60": ("SC", "Groww Small Cap Fund"),
 }
 
@@ -57,9 +55,13 @@ MONTH_MAP = {
 
 STOP_TRIGGERS = [
     "sub total",
+    "subtotal",
+    "sub-total",
     "(b) unlisted",
     "b) unlisted",
     "unlisted",
+    "reit",
+    "reits",
     "total",
     "debt instruments",
     "money market",

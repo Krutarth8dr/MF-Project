@@ -29,7 +29,7 @@ TARGET_SHEETS = [
     "EA",
     "QP",
     "SC",
-    "AF",
+    "ES",
     "LC",
 ]
 
@@ -230,27 +230,40 @@ def clean_single_sheet(excel, sheet_name, fund_name):
 
     # --------------------------------------------------------------------------
     # Keep only listed equity holdings
-    # --------------------------------------------------------------------------\
+    # --------------------------------------------------------------------------
 
     instrument_column = "Security_Name"
 
-    subtotal_rows = df[
-        df[instrument_column].fillna("").astype(str).str.strip().str.lower()
-        == "subtotal"
+    # Stop scanning as soon as Subtotal, Total, REIT, or (b) Unlisted is detected
+    s_clean = df[instrument_column].fillna("").astype(str).str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
+
+    is_stop_marker = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+    )
+
+    if is_stop_marker.any():
+        first_stop_pos = is_stop_marker.values.argmax()
+        df = df.iloc[:first_stop_pos]
+
+    df = df[
+        df["ISIN"].str.startswith(
+            VALID_ISIN_PREFIXES,
+            na=False,
+        )
     ]
-
-    if not subtotal_rows.empty:
-
-        subtotal_index = subtotal_rows.index[0]
-
-        df = df.loc[: subtotal_index - 1]
-
-        df = df[
-            df["ISIN"].str.startswith(
-                VALID_ISIN_PREFIXES,
-                na=False,
-            )
-        ]
 
     df = df[df["Quantity"].notna()]
 

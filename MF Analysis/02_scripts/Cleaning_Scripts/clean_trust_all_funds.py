@@ -69,6 +69,47 @@ def normalize_sheet_name(name):
     return clean
 
 
+STOP_MARKERS = [
+    "subtotal",
+    "sub total",
+    "sub-total",
+    "(b) unlisted",
+    "(b) privately placed / unlisted",
+    "b) privately placed/unlisted",
+    "total",
+    "grand total",
+]
+
+
+def is_stop_row(row_vals):
+    """
+    Check if a row signals the end of the listed equity section.
+    Stop scanning after 'Subtotal', '(b) UNLISTED', 'Total', or 'REIT'.
+    """
+    for cell in row_vals:
+        if cell is not None:
+            c_clean = clean_text(cell)
+            c_lower = c_clean.lower()
+            c_upper = c_clean.upper()
+            if (
+                c_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+                or c_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                or c_lower.startswith("sub total")
+                or c_lower.startswith("subtotal")
+                or c_lower.startswith("(b) unlisted")
+                or c_lower.startswith("b) unlisted")
+                or c_lower.startswith("(b) privately placed")
+                or c_lower.startswith("b) privately placed")
+                or c_lower == "unlisted"
+                or c_upper.endswith(" REIT")
+                or c_upper.endswith(" REITS")
+                or c_upper.endswith("(REIT)")
+                or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", c_upper))
+            ):
+                return True
+    return False
+
+
 def parse_row_data(row_vals):
     """
     Given a list of cell values for a row, determine if it represents an equity holding.
@@ -203,6 +244,8 @@ def clean_trust_data():
                 ws = wb[sname]
                 for r in range(1, ws.max_row + 1):
                     row_vals = [ws.cell(r, c).value for c in range(1, ws.max_column + 1)]
+                    if is_stop_row(row_vals):
+                        break
                     item = parse_row_data(row_vals)
                     if item:
                         all_rows.append({
@@ -232,6 +275,8 @@ def clean_trust_data():
                     sh = wb.sheet_by_name(sname)
                     for r in range(sh.nrows):
                         row_vals = [sh.cell_value(r, c) for c in range(sh.ncols)]
+                        if is_stop_row(row_vals):
+                            break
                         item = parse_row_data(row_vals)
                         if item:
                             all_rows.append({

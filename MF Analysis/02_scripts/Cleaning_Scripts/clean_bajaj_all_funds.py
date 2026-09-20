@@ -34,7 +34,6 @@ STANDARD_COLUMNS = [
 
 # Canonical 9 Target Funds
 TARGET_FUNDS_CONFIG = {
-    "BFARB": "Bajaj Finserv Arbitrage Fund",
     "BFBAF": "Bajaj Finserv Balanced Advantage Fund",
     "BFBKFIN": "Bajaj Finserv Banking and Financial Services Fund",
     "BFCON": "Bajaj Finserv Consumption Fund",
@@ -133,8 +132,20 @@ def clean_bajaj_data():
 
                 inst_val = clean_text(row[col_instrument]) if col_instrument < len(row) else ""
 
-                # Stop scanning rows in a sheet after "Sub Total" is detected
-                if "sub total" in inst_val.lower() or "subtotal" in inst_val.lower():
+                # Stop scanning rows in a sheet after Sub Total, Total, REIT, or (b) Unlisted is detected
+                inst_lower = inst_val.lower()
+                inst_upper = inst_val.upper()
+                if (
+                    inst_lower in ["sub total", "subtotal", "sub-total", "total", "grand total", "total:"]
+                    or inst_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                    or inst_upper.endswith(" REIT")
+                    or inst_upper.endswith(" REITS")
+                    or inst_upper.endswith("(REIT)")
+                    or bool(re.search(r"\(REIT\)|\bREITS?\b", inst_upper))
+                    or inst_lower.startswith("(b) unlisted")
+                    or inst_lower.startswith("b) unlisted")
+                    or inst_lower == "unlisted"
+                ):
                     break
 
                 isin_val = clean_text(row[col_isin]) if col_isin < len(row) else ""

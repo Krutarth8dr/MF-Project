@@ -1,3 +1,4 @@
+import sys
 import re
 import pandas as pd
 from pathlib import Path
@@ -247,16 +248,29 @@ def clean_single_sheet(
     df = df[required_columns]
 
     # --------------------------------------------------------------------------
-    # Stop at Total
+    # Stop scanning after Sub Total, Total, REIT, or (b) Unlisted
     # --------------------------------------------------------------------------
+    s_clean = df["Security_Name"].fillna("").astype(str).str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
 
-    total_rows = df[
-        df["Security_Name"].fillna("").astype(str).str.strip().str.upper().eq("TOTAL")
-    ]
+    stop_mask = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+    )
 
-    if not total_rows.empty:
-
-        df = df.iloc[: total_rows.index[0]]
+    if stop_mask.any():
+        df = df.iloc[: stop_mask.values.argmax()]
 
     # --------------------------------------------------------------------------
     # Basic cleanup
@@ -466,8 +480,9 @@ def main():
 
     existing_df = None
     processed_keys = set()
+    force_rebuild = "--rebuild" in sys.argv or "--force" in sys.argv
 
-    if OUTPUT_FILE.exists():
+    if OUTPUT_FILE.exists() and not force_rebuild:
 
         try:
 

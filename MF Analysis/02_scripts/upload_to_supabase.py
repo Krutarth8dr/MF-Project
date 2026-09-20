@@ -120,20 +120,6 @@ def load_and_prepare_fund_holdings(file_path: Path) -> pd.DataFrame:
             df[str_col] = df[str_col].astype(str).str.strip()
             df[str_col] = df[str_col].replace({"nan": None, "None": None, "": None})
 
-    # Ensure uniqueness per (amc, fund_name, isin, portfolio_date)
-    # Sum quantity across multiple lots/tranches (e.g. free shares + locked-in shares)
-    initial_len = len(df)
-    df = (
-        df.groupby(["amc", "fund_name", "isin", "portfolio_date", "month"], as_index=False)
-        .agg({
-            "security_name": "first",
-            "industry_rating": "first",
-            "quantity": "sum"
-        })
-    )
-    if len(df) < initial_len:
-        print(f"   Aggregated: merged {initial_len - len(df):,} multi-tranche rows ({len(df):,} unique holding records)")
-
     # Replace pandas NaN with None for valid JSON serialization
     df = df.replace({np.nan: None})
     return df
@@ -250,7 +236,7 @@ def upload_table_records(
                     print(f"\n💡 Hint: Table '{table_name}' is missing the unique index required for ON CONFLICT upserts.")
                     print(f"   Please run the commands in 'DEDUPE_AND_INDEX_FUND_HOLDINGS.sql' in your Supabase SQL Editor:")
                     print("   CREATE UNIQUE INDEX IF NOT EXISTS idx_fund_holdings_unique_holding")
-                    print("   ON fund_holdings (amc, fund_name, isin, portfolio_date);")
+                    print("   ON fund_holdings (amc, fund_name, isin, portfolio_date, security_name);")
                 return False
 
         except Exception as e:
@@ -349,7 +335,7 @@ def upload_fund_holdings(
     return upload_table_records(
         session, "fund_holdings", records,
         batch_size=batch_size,
-        on_conflict="amc,fund_name,isin,portfolio_date"
+        on_conflict="amc,fund_name,isin,portfolio_date,security_name"
     )
 
 

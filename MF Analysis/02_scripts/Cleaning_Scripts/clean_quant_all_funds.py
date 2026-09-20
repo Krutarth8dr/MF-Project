@@ -135,8 +135,23 @@ def clean_quant_sheet(workbook: pd.ExcelFile, sheet_name: str) -> pd.DataFrame:
 
     end_row = len(df)
     for idx in range(start_row, len(df)):
-        text = str(security.iloc[idx]).strip().upper()
-        if any(marker.upper() == text or marker.upper() in text for marker in STOP_MARKERS):
+        raw_val = str(security.iloc[idx]).strip()
+        t_lower = raw_val.lower()
+        t_upper = raw_val.upper()
+        if (
+            t_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+            or t_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS", "DERIVATIVES", "HOLDINGS"]
+            or t_lower.startswith("sub total")
+            or t_lower.startswith("subtotal")
+            or t_lower.startswith("(b) unlisted")
+            or t_lower.startswith("b) unlisted")
+            or t_lower.startswith("(b) privately placed")
+            or t_lower == "unlisted"
+            or t_upper.endswith(" REIT")
+            or t_upper.endswith(" REITS")
+            or t_upper.endswith("(REIT)")
+            or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", t_upper))
+        ):
             end_row = idx
             break
 

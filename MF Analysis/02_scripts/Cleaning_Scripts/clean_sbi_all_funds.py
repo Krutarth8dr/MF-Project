@@ -31,7 +31,7 @@ TARGET_SHEETS = [
     "SFLEXI",
     "SMIDCAP",
     "SBLUECHIP",
-    "SAOF",
+
     "SIF",
     "SSCF",
     "SBI-AOF",
@@ -207,13 +207,29 @@ def clean_sheet(df, sheet_name, fund_name):
 
     data = data.rename(columns=rename_map)
 
-    # Stop scanning rows once a stop marker appears and keep only rows above it.
+    # Stop scanning rows once Sub Total, Total, REIT, or (b) Unlisted is detected
     def row_contains_stop_marker(row):
         for cell in row.astype(str):
             if pd.isna(cell):
                 continue
-            normalized = str(cell).strip().upper()
-            if any(marker in normalized for marker in STOP_MARKERS):
+            c_clean = str(cell).strip()
+            c_lower = c_clean.lower()
+            c_upper = c_clean.upper()
+            if (
+                c_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+                or c_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS", "FOREIGN SECURITIES AND /OR OVERSEAS ETF"]
+                or c_lower.startswith("sub total")
+                or c_lower.startswith("subtotal")
+                or c_lower.startswith("(b) unlisted")
+                or c_lower.startswith("b) unlisted")
+                or c_lower.startswith("(b) privately placed")
+                or c_lower == "unlisted"
+                or "foreign securities and /or overseas etf" in c_lower
+                or c_upper.endswith(" REIT")
+                or c_upper.endswith(" REITS")
+                or c_upper.endswith("(REIT)")
+                or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", c_upper))
+            ):
                 return True
         return False
 
@@ -302,6 +318,10 @@ def process_workbook(
             fund_name = fund_name_mapping[sheet]
 
             portfolio_date = extract_portfolio_date(df)
+            if pd.notna(portfolio_date) and portfolio_date < pd.Timestamp("2024-10-01"):
+                print(f"{sheet:<12} | Pre-Oct 2024 ({portfolio_date.strftime('%b-%Y')}) | Skipped")
+                continue
+
             month_key = get_month_key(portfolio_date)
 
             if (fund_name, month_key) in processed_keys:
@@ -334,9 +354,10 @@ def process_workbook(
 
 
 def main():
+    import sys
+    rebuild = "--rebuild" in sys.argv
 
-    workbook_files = sorted(RAW_FOLDER.glob("*.xlsx"))
-    workbook_files += list(RAW_FOLDER.glob("*.xlsx"))
+    workbook_files = sorted([f for f in RAW_FOLDER.glob("*.xlsx") if not f.name.startswith("~$")])
 
     if not workbook_files:
         raise FileNotFoundError(f"No SBI workbook found in:\n{RAW_FOLDER}")
@@ -351,7 +372,15 @@ def main():
 
     fund_name_mapping = load_canonical_fund_names()
 
-    if OUTPUT_FILE.exists():
+    if rebuild and OUTPUT_FILE.exists():
+        print(f"Rebuild requested: removing existing {OUTPUT_FILE.name}")
+        try:
+            OUTPUT_FILE.unlink()
+        except Exception:
+            pass
+        existing_df = None
+        processed_keys = set()
+    elif OUTPUT_FILE.exists():
         try:
             existing_df = pd.read_excel(OUTPUT_FILE)
             require_columns = ["Fund_Name", "Portfolio_Date"]
@@ -400,6 +429,8 @@ def main():
     final_df["Portfolio_Date"] = pd.to_datetime(
         final_df["Portfolio_Date"], errors="coerce"
     )
+
+    final_df = final_df[final_df["Portfolio_Date"] >= "2024-10-01"].copy()
 
     final_df = final_df.drop_duplicates()
 

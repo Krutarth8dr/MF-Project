@@ -547,19 +547,27 @@ def clean_sheet(
 
         value = security.iloc[i]
 
-        if not value:
-            continue
+        value_clean = value.strip()
+        value_lower = value_clean.lower()
+        value_upper = value_clean.upper()
 
-        value_upper = value.upper()
+        is_stop = False
+        if value_lower in ["sub total", "subtotal", "sub-total", "total", "grand total", "total:"]:
+            is_stop = True
+        elif value_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]:
+            is_stop = True
+        elif value_upper.endswith(" REIT") or value_upper.endswith(" REITS") or value_upper.endswith("(REIT)") or bool(re.search(r"\(REIT\)|\bREITS?\b", value_upper)):
+            is_stop = True
+        elif value_lower.startswith("(b) unlisted") or value_lower.startswith("b) unlisted") or value_lower == "unlisted":
+            is_stop = True
+        else:
+            for marker in STOP_MARKERS:
+                if marker.upper() in value_upper:
+                    is_stop = True
+                    break
 
-        for marker in STOP_MARKERS:
-
-            if marker.upper() in value_upper:
-
-                end_row = i
-                break
-
-        if end_row != len(data):
+        if is_stop:
+            end_row = i
             break
 
     data = data.iloc[start_row:end_row].copy()
@@ -670,6 +678,10 @@ def main():
                 workbook_path,
                 workbook,
             )
+
+            if portfolio_date < datetime(2024, 10, 1):
+                print(f"Skipping pre-October 2024 workbook: {portfolio_date.strftime('%b-%Y')}")
+                continue
 
             print(f"Portfolio Date : " f"{portfolio_date.strftime('%b-%Y')}")
 

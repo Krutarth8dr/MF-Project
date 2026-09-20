@@ -1,3 +1,4 @@
+import sys
 import re
 import pandas as pd
 from pathlib import Path
@@ -424,11 +425,23 @@ def clean_sheet(df, sheet_name, fund_name):
     # This is deliberately retained from the original ABSL script.
     # --------------------------------------------------------------------------
     name_col = data[security_col].astype(str).str.strip()
+    name_lower = name_col.str.lower()
+    name_upper = name_col.str.upper()
 
-    stop_mask = name_col.str.upper().str.contains(
-        r"\bTOTAL\b",
-        regex=True,
-        na=False,
+    stop_mask = (
+        name_lower.isin(["total", "grand total", "total:"])
+        | name_upper.isin(["TOTAL", "GRAND TOTAL"])
+        | name_lower.isin(["subtotal", "sub total", "sub-total"])
+        | name_lower.str.startswith("sub total")
+        | name_lower.str.startswith("subtotal")
+        | name_lower.str.startswith("(b) unlisted")
+        | name_lower.str.startswith("b) unlisted")
+        | (name_lower == "unlisted")
+        | name_upper.isin(["REIT", "REITS"])
+        | name_upper.str.endswith(" REIT")
+        | name_upper.str.endswith(" REITS")
+        | name_upper.str.endswith("(REIT)")
+        | name_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
     )
 
     if stop_mask.any():
@@ -623,11 +636,12 @@ def main():
     all_data = []
     existing_df = None
     processed_keys = set()
+    force_rebuild = "--rebuild" in sys.argv or "--force" in sys.argv
 
     # --------------------------------------------------------------------------
     # 3. Existing cleaned output.
     # --------------------------------------------------------------------------
-    if OUTPUT_FILE.exists():
+    if OUTPUT_FILE.exists() and not force_rebuild:
         try:
             existing_df = pd.read_excel(OUTPUT_FILE)
 

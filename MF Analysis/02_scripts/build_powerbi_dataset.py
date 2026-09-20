@@ -129,6 +129,7 @@ def load_all_clean_data():
         )
 
         df = df[df["Portfolio_Date"].notna()]
+        df = df[df["Portfolio_Date"] >= "2024-10-01"]
 
         df["Quantity"] = pd.to_numeric(
             df["Quantity"],

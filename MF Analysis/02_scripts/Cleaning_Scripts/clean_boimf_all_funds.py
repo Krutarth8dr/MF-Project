@@ -239,14 +239,27 @@ def find_column_by_keywords(cols, keywords):
 def clean_single_sheet(df, security_col, isin_col, qty_col, rating_col=None):
     out = []
     stop_idx = None
-    # find first row where security contains 'sub total'
-    sec_series = df[security_col].astype(str).fillna('').str.strip()
-    mask = sec_series.str.lower().str.contains('sub total') | sec_series.str.lower().str.contains('subtotal')
+    # find first row where security contains Sub Total, Total, REIT, or (b) Unlisted
+    s_clean = df[security_col].astype(str).fillna('').str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
+    mask = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+    )
     if mask.any():
-        stop_idx = mask.idxmax()
-    # take rows up to stop_idx - 1 (if stop_idx found), else all
-    if stop_idx is not None:
-        df_proc = df.loc[:stop_idx-1]
+        stop_pos = mask.values.argmax()
+        df_proc = df.iloc[:stop_pos]
     else:
         df_proc = df
     for _, r in df_proc.iterrows():

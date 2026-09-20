@@ -207,8 +207,23 @@ def clean_union_data():
             inst_raw = ws.cell(r, col_instrument).value
             inst_name = clean_text(inst_raw)
 
-            # Stop scanning immediately when Total / Sub Total is detected
-            if inst_name.lower() in ["total", "sub total", "sub-total", "grand total"]:
+            # Stop scanning immediately when Sub Total, Total, REIT, or (b) Unlisted is detected
+            inst_lower = inst_name.lower()
+            inst_upper = inst_name.upper()
+            if (
+                inst_lower in ["total", "sub total", "sub-total", "subtotal", "grand total", "total:"]
+                or inst_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                or inst_lower.startswith("sub total")
+                or inst_lower.startswith("subtotal")
+                or inst_lower.startswith("(b) unlisted")
+                or inst_lower.startswith("b) unlisted")
+                or inst_lower.startswith("(b) privately placed")
+                or inst_lower == "unlisted"
+                or inst_upper.endswith(" REIT")
+                or inst_upper.endswith(" REITS")
+                or inst_upper.endswith("(REIT)")
+                or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", inst_upper))
+            ):
                 break
 
             isin_raw = ws.cell(r, col_isin).value

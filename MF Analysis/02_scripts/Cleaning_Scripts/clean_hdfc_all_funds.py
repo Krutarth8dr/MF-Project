@@ -205,18 +205,40 @@ def clean_hdfc_file(workbook_path, fund_name):
 
     df = df[list(rename_map.keys())].rename(columns=rename_map)
 
-    # HDFC files end the equity section with "Sub Total" in the ISIN column.
+    # HDFC files end the equity section with "Sub Total" / REIT / Unlisted markers.
     # Keep only rows above that marker before applying ISIN filters.
-    sub_total_mask = (
-        df["ISIN"]
-        .astype(str)
-        .str.strip()
-        .str.contains(r"^sub\s*total$", case=False, na=False, regex=True)
+    s_clean = df["Security_Name"].fillna("").astype(str).str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
+
+    isin_clean = df["ISIN"].fillna("").astype(str).str.strip()
+    isin_lower = isin_clean.str.lower()
+    isin_upper = isin_clean.str.upper()
+
+    stop_mask = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+        | isin_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | isin_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | isin_lower.str.startswith("sub total")
+        | isin_lower.str.startswith("subtotal")
+        | isin_lower.str.startswith("(b) unlisted")
+        | isin_lower.str.startswith("b) unlisted")
+        | isin_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
     )
 
-    if sub_total_mask.any():
-        first_sub_total_position = sub_total_mask[sub_total_mask].index[0]
-        df = df.loc[:first_sub_total_position].iloc[:-1].copy()
+    if stop_mask.any():
+        df = df.iloc[: stop_mask.values.argmax()].copy()
 
     df["ISIN"] = df["ISIN"].astype(str).str.strip().str.upper()
     df = df[df["ISIN"].apply(is_valid_isin)]

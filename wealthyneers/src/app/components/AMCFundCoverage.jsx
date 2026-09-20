@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo, useId } from 'react';
+import fallbackCoverage from '@/lib/coverageData.json';
 
 export default function AMCFundCoverage() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(fallbackCoverage);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedAmcs, setExpandedAmcs] = useState({});

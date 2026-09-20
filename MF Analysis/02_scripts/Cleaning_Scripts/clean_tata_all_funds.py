@@ -101,6 +101,14 @@ def clean_tata_data():
         "EQUITY AND EQUITY RELATED TOTAL",
         "COMMODITIES & COMMODITIES RELATED",
         "COMMODITIES AND COMMODITIES RELATED",
+        "SUBTOTAL",
+        "SUB TOTAL",
+        "SUB-TOTAL",
+        "TOTAL",
+        "GRAND TOTAL",
+        "REIT",
+        "REITS",
+        "(B) UNLISTED",
         "B) UNLISTED",
         "B)UNLISTED",
         "UNLISTED",
@@ -172,10 +180,25 @@ def clean_tata_data():
                     continue
 
                 inst_val = clean_text(row[col_instrument]) if col_instrument < len(row) else ""
+                inst_lower = inst_val.lower()
                 inst_upper = inst_val.upper()
 
-                # Stop scanning as soon as "EQUITY & EQUITY RELATED TOTAL", "COMMODITIES & COMMODITIES RELATED", or "B) UNLISTED" is seen in Name of Instrument column
-                if any(trigger in inst_upper for trigger in stop_triggers):
+                # Stop scanning as soon as Subtotal, Total, REIT, or (b) Unlisted is seen in Name of Instrument column
+                if (
+                    inst_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+                    or inst_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                    or any(trigger == inst_upper or inst_upper.startswith(trigger) for trigger in stop_triggers)
+                    or inst_lower.startswith("sub total")
+                    or inst_lower.startswith("subtotal")
+                    or inst_lower.startswith("(b) unlisted")
+                    or inst_lower.startswith("b) unlisted")
+                    or inst_lower.startswith("(b) privately placed")
+                    or inst_lower == "unlisted"
+                    or inst_upper.endswith(" REIT")
+                    or inst_upper.endswith(" REITS")
+                    or inst_upper.endswith("(REIT)")
+                    or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", inst_upper))
+                ):
                     break
 
                 isin_val = clean_text(row[col_isin]) if col_isin < len(row) else ""

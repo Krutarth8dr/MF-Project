@@ -1,4 +1,4 @@
-﻿import os
+import os
 import re
 import sys
 import calendar
@@ -158,22 +158,33 @@ def parse_taurus_workbook(file_path):
         if not header_found:
             continue
 
-        # Stop scanning immediately once "Total" is detected
-        is_total_row = False
+        # Stop scanning immediately once Sub Total, Total, REIT, or (b) Unlisted is detected
+        is_stop_row = False
         for cell in row_vals:
-            if cell is not None and clean_text(cell).lower() in ["total", "sub total", "sub-total", "subtotal", "grand total"]:
-                is_total_row = True
-                break
-        if is_total_row:
-            break
-
-        # Check section boundaries (e.g. b) Unlisted, B) Debt Instruments, etc.)
-        first_non_empty = ""
-        for cell in row_vals:
-            if cell is not None and str(cell).strip():
-                first_non_empty = clean_text(cell).lower()
-                break
-        if first_non_empty.startswith("b)") or first_non_empty.startswith("c)") or "debt instruments" in first_non_empty or "money market" in first_non_empty:
+            if cell is not None:
+                c_clean = clean_text(cell)
+                c_lower = c_clean.lower()
+                c_upper = c_clean.upper()
+                if (
+                    c_lower in ["total", "sub total", "sub-total", "subtotal", "grand total", "total:"]
+                    or c_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                    or c_lower.startswith("sub total")
+                    or c_lower.startswith("subtotal")
+                    or c_lower.startswith("(b) unlisted")
+                    or c_lower.startswith("b) unlisted")
+                    or c_lower.startswith("b)")
+                    or c_lower.startswith("c)")
+                    or c_lower == "unlisted"
+                    or "debt instruments" in c_lower
+                    or "money market" in c_lower
+                    or c_upper.endswith(" REIT")
+                    or c_upper.endswith(" REITS")
+                    or c_upper.endswith("(REIT)")
+                    or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", c_upper))
+                ):
+                    is_stop_row = True
+                    break
+        if is_stop_row:
             break
 
         # Search for valid equity ISIN starting with "INE"

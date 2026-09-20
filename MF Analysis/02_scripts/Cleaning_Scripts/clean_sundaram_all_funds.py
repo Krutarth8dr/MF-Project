@@ -190,8 +190,23 @@ def clean_sundaram_data():
                 name_v = ws.cell(r, col_name).value
                 name_str = clean_text(name_v)
 
-                # Stop scanning immediately when Sub Total is detected
-                if name_str.lower() in ["sub total", "sub-total", "subtotal", "total"]:
+                # Stop scanning immediately when Sub Total, Total, REIT, or (b) Unlisted is detected
+                name_lower = name_str.lower()
+                name_upper = name_str.upper()
+                if (
+                    name_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+                    or name_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                    or name_lower.startswith("sub total")
+                    or name_lower.startswith("subtotal")
+                    or name_lower.startswith("(b) unlisted")
+                    or name_lower.startswith("b) unlisted")
+                    or name_lower.startswith("(b) privately placed")
+                    or name_lower == "unlisted"
+                    or name_upper.endswith(" REIT")
+                    or name_upper.endswith(" REITS")
+                    or name_upper.endswith("(REIT)")
+                    or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", name_upper))
+                ):
                     break
 
                 isin_v = ws.cell(r, col_isin).value

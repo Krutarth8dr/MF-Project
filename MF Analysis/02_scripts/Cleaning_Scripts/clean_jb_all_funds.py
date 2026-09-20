@@ -154,16 +154,29 @@ def clean_single_sheet(
     ]
 
     # --------------------------------------------------------------------------
-    # Stop at "Sub Total"
+    # Stop scanning after Sub Total, Total, REIT, or (b) Unlisted
     # --------------------------------------------------------------------------
+    s_clean = df["Name of the Instrument"].fillna("").astype(str).str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
 
-    stop_rows = df[
-        df["Name of the Instrument"].astype(str).str.strip().str.lower() == "sub total"
-    ].index
+    stop_mask = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+    )
 
-    if len(stop_rows):
-
-        df = df.iloc[: stop_rows[0]]
+    if stop_mask.any():
+        df = df.iloc[: stop_mask.values.argmax()]
 
     # --------------------------------------------------------------------------
     # Keep only valid ISINs

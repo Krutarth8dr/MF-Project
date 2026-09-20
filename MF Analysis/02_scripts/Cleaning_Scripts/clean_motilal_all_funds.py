@@ -135,10 +135,31 @@ def parse_holdings(sheet_data, fund_code, fund_name, portfolio_dt):
         if not header_found:
             continue
 
-        # Stop scanning on Sub Total or Unlisted or Debt or Money Market or Grand Total
-        if any(term in str(c).lower().strip() for c in row if c is not None for term in ["sub total", "sub-total", "subtotal", "unlisted", "debt instruments", "money market", "grand total"]):
-            if any(t in row_str for t in ["sub total", "sub-total", "subtotal", "unlisted", "debt instruments", "grand total"]):
-                break
+        # Stop scanning on Sub Total, Total, REIT, (b) Unlisted, or Debt
+        is_stop = False
+        for cell in row:
+            if cell is not None:
+                c_clean = clean_text(cell)
+                c_lower = c_clean.lower()
+                c_upper = c_clean.upper()
+                if (
+                    c_lower in ["total", "sub total", "sub-total", "subtotal", "grand total", "total:"]
+                    or c_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                    or c_lower.startswith("sub total")
+                    or c_lower.startswith("subtotal")
+                    or c_lower.startswith("(b) unlisted")
+                    or c_lower.startswith("b) unlisted")
+                    or c_lower == "unlisted"
+                    or any(t in c_lower for t in ["debt instruments", "money market"])
+                    or c_upper.endswith(" REIT")
+                    or c_upper.endswith(" REITS")
+                    or c_upper.endswith("(REIT)")
+                    or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", c_upper))
+                ):
+                    is_stop = True
+                    break
+        if is_stop:
+            break
 
         # Look for ISIN starting with INE
         isin_idx = None

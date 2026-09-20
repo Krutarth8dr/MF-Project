@@ -22,7 +22,10 @@ AMC_NAME = "ICICI Prudential Mutual Fund"
 
 ICICI_FUNDS = {
     "ICICI Prudential Flexicap Fund": {
-        "search": "ICICI Prudential Flexicap Fund",
+        "search": [
+            "ICICI Prudential Flexicap Fund",
+            "ICICI Prudential Flexi Cap Fund",
+        ],
         "sheet": "FLEXCAP",
     },
     "ICICI Prudential Large Cap Fund": {
@@ -42,19 +45,31 @@ ICICI_FUNDS = {
         "sheet": "CONGLO",
     },
     "ICICI Prudential ELSS Tax Saver Fund": {
-        "search": "ICICI Prudential ELSS Tax Saver Fund",
+        "search": [
+            "ICICI Prudential ELSS Tax Saver Fund",
+            "ICICI Prudential ELSS -Tax Saver Fund",
+        ],
         "sheet": "LTEF",
     },
     "ICICI Prudential Equity & Debt Fund": {
-        "search": "ICICI Prudential Equity & Debt Fund",
+        "search": [
+            "ICICI Prudential Equity & Debt Fund",
+            "ICICI Prudential Aggressive Hybrid Fund",
+        ],
         "sheet": "E&DF",
     },
     "ICICI Prudential Midcap Fund": {
-        "search": "ICICI Prudential Midcap Fund",
+        "search": [
+            "ICICI Prudential Midcap Fund",
+            "ICICI Prudential Mid Cap Fund",
+        ],
         "sheet": "MIDCAP",
     },
     "ICICI Prudential Multicap Fund": {
-        "search": "ICICI Prudential Multicap Fund",
+        "search": [
+            "ICICI Prudential Multicap Fund",
+            "ICICI Prudential Multi Cap Fund",
+        ],
         "sheet": "MULTICAP",
     },
     "ICICI Prudential FMCG Fund": {
@@ -70,7 +85,10 @@ ICICI_FUNDS = {
         "sheet": "VARIANCE",
     },
     "ICICI Prudential Focused Equity Fund": {
-        "search": "ICICI Prudential Focused Equity Fund",
+        "search": [
+            "ICICI Prudential Focused Equity Fund",
+            "ICICI Prudential Focused Fund",
+        ],
         "sheet": "FOCUSED",
     },
     "ICICI Prudential Energy Opportunities Fund": {
@@ -168,14 +186,17 @@ def parse_icici_month_folder(folder_name):
 
 
 def normalize_text(text):
-    return str(text).lower().replace("-", " ").replace("_", " ").strip()
+    text = str(text).lower().replace("-", " ").replace("_", " ")
+    return re.sub(r"\s+", " ", text).strip()
 
 
-def find_fund_file(month_folder_path, fund_search_name):
+def find_fund_file(month_folder_path, fund_search_patterns):
+
+    if isinstance(fund_search_patterns, str):
+        fund_search_patterns = [fund_search_patterns]
 
     matches = []
-
-    search_text = normalize_text(fund_search_name)
+    normalized_searches = [normalize_text(p) for p in fund_search_patterns]
 
     for file in os.listdir(month_folder_path):
 
@@ -196,9 +217,13 @@ def find_fund_file(month_folder_path, fund_search_name):
             continue
 
         file_text = normalize_text(file)
+        file_stem = normalize_text(Path(file).stem)
 
-        if search_text in file_text:
-            matches.append(file_path)
+        for search_text in normalized_searches:
+            if search_text == file_stem or search_text in file_text:
+                if file_path not in matches:
+                    matches.append(file_path)
+                break
 
     return matches
 
@@ -303,8 +328,24 @@ def clean_icici_file(file_path, fund_name, sheet_name, portfolio_date):
     # Stop scanning rows once a stop marker appears and keep only rows above it.
     def row_contains_stop_marker(row):
         for cell in row.astype(str):
-            text = str(cell).strip().upper()
-            if any(marker in text for marker in STOP_MARKERS):
+            text = str(cell).strip()
+            t_lower = text.lower()
+            t_upper = text.upper()
+            if (
+                t_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+                or t_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                or t_lower.startswith("sub total")
+                or t_lower.startswith("subtotal")
+                or t_lower.startswith("(b) unlisted")
+                or t_lower.startswith("b) unlisted")
+                or t_lower.startswith("(b) privately placed")
+                or t_lower == "unlisted"
+                or any(m in t_upper for m in ["UNITS OF REAL ESTATE INVESTMENT TRUST", "PREFERENCE SHARES", "DEBT INSTRUMENTS"])
+                or t_upper.endswith(" REIT")
+                or t_upper.endswith(" REITS")
+                or t_upper.endswith("(REIT)")
+                or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", t_upper))
+            ):
                 return True
         return False
 

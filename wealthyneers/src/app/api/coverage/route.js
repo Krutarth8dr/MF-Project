@@ -7,7 +7,7 @@ export const revalidate = 21600; // 6 hours edge / ISR revalidation
 // In-memory server-side cache for high performance
 let memoryCache = {
   data: fallbackCoverage,
-  lastFetched: 0,
+  lastFetched: Date.now(),
 };
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours

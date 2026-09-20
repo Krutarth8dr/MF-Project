@@ -247,11 +247,23 @@ def parse_hsbc_workbook(file_path):
             else:
                 continue
 
-        # Stop conditions as soon as Total, Debt Instruments, Fixed rates bonds, or subsequent Listed / Awaiting listing is reached
-        if any(trigger in name_lower for trigger in STOP_TRIGGERS):
-            break
-
-        if "listed / awaiting listing on stock exchanges" in name_lower:
+        # Stop scanning as soon as Sub Total, Total, REIT, (b) Unlisted, Debt, etc. is reached
+        name_upper = name_str.upper()
+        if (
+            name_lower in ["total", "subtotal", "sub total", "sub-total", "grand total", "total:"]
+            or name_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+            or name_lower.startswith("sub total")
+            or name_lower.startswith("subtotal")
+            or name_lower.startswith("(b) unlisted")
+            or name_lower.startswith("b) unlisted")
+            or name_lower.startswith("(b) privately placed")
+            or name_lower == "unlisted"
+            or any(t in name_lower for t in ["debt instruments", "fixed rates bonds", "fixed rate bonds", "securitised debt", "government securities", "money market instruments", "commercial papers", "certificate of deposit", "treps", "net current assets", "total net assets", "listed / awaiting listing on stock exchanges"])
+            or name_upper.endswith(" REIT")
+            or name_upper.endswith(" REITS")
+            or name_upper.endswith("(REIT)")
+            or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", name_upper))
+        ):
             break
 
         if is_valid_isin(isin_str):

@@ -143,9 +143,24 @@ def clean_edelweiss_data():
                     continue
 
                 inst_val = clean_text(row[col_instrument]) if col_instrument < len(row) else ""
+                inst_lower = inst_val.lower()
+                inst_upper = inst_val.upper()
 
-                # Stop scanning rows in a sheet after "Sub Total" is detected
-                if "sub total" in inst_val.lower() or "subtotal" in inst_val.lower():
+                # Stop scanning rows in a sheet after Sub Total, Total, REIT, or (b) Unlisted is detected
+                if (
+                    inst_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
+                    or inst_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
+                    or inst_lower.startswith("sub total")
+                    or inst_lower.startswith("subtotal")
+                    or inst_lower.startswith("(b) unlisted")
+                    or inst_lower.startswith("b) unlisted")
+                    or inst_lower.startswith("(b) privately placed")
+                    or inst_lower == "unlisted"
+                    or inst_upper.endswith(" REIT")
+                    or inst_upper.endswith(" REITS")
+                    or inst_upper.endswith("(REIT)")
+                    or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", inst_upper))
+                ):
                     break
 
                 isin_val = clean_text(row[col_isin]) if col_isin < len(row) else ""

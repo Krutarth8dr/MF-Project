@@ -172,10 +172,28 @@ def clean_single_sheet(excel, sheet_name, workbook_path):
 
     df = df[required].copy().reset_index(drop=True)
 
-    # Stop scanning when 'Arbitrage' or 'Sub Total' appears in Security_Name
-    stop_mask = df['Security_Name'].fillna('').astype(str).str.strip().str.lower().str.contains(r'arbitrage|sub total')
+    # Stop scanning when Sub Total, Total, REIT, (b) Unlisted, or Arbitrage appears in Security_Name
+    s_clean = df['Security_Name'].fillna('').astype(str).str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
+
+    stop_mask = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_lower.str.contains("arbitrage")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+    )
     if stop_mask.any():
-        first_idx = stop_mask.idxmax()
+        first_idx = stop_mask.values.argmax()
         df = df.iloc[:first_idx]
 
     # Cleanup fields

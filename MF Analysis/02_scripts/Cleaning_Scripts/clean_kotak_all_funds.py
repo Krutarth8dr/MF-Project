@@ -1,3 +1,4 @@
+import sys
 import re
 import pandas as pd
 from pathlib import Path
@@ -252,20 +253,50 @@ def clean_sheet(df, sheet_name, fund_name):
     # Drop completely empty rows
     data = data.dropna(how="all")
 
-    # Stop scanning rows once "Total" appears in the Industry column, and
-    # keep only the rows above it.
-    #
-    # NOTE: this assumes exactly one "Total" per sheet, which holds for
-    # equity fund sheets (like A50) but NOT for debt fund sheets, which have
-    # a separate Total per asset-class sub-section. Don't add debt-fund
-    # sheet codes to TARGET_SHEETS until this is extended to handle that.
-    industry_col = data[COL_INDUSTRY_RATING].astype(str).str.strip().str.upper()
-    stop_mask = industry_col == "TOTAL"
+    # Stop scanning rows once Sub Total, Total, REIT, or (b) Unlisted is detected
+    s_clean = data[COL_SECURITY_NAME].fillna("").astype(str).str.strip()
+    s_lower = s_clean.str.lower()
+    s_upper = s_clean.str.upper()
+
+    ind_clean = data[COL_INDUSTRY_RATING].fillna("").astype(str).str.strip()
+    ind_lower = ind_clean.str.lower()
+    ind_upper = ind_clean.str.upper()
+
+    col0_clean = data.iloc[:, 0].fillna("").astype(str).str.strip() if data.shape[1] > 0 else pd.Series("", index=data.index)
+    col0_lower = col0_clean.str.lower()
+    col0_upper = col0_clean.str.upper()
+
+    stop_mask = (
+        s_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | s_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | s_lower.str.startswith("sub total")
+        | s_lower.str.startswith("subtotal")
+        | s_lower.str.startswith("(b) unlisted")
+        | s_lower.str.startswith("b) unlisted")
+        | s_lower.str.startswith("(b) privately placed")
+        | (s_lower == "unlisted")
+        | s_upper.str.endswith(" REIT")
+        | s_upper.str.endswith(" REITS")
+        | s_upper.str.endswith("(REIT)")
+        | s_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+        | ind_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | ind_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | ind_lower.str.startswith("sub total")
+        | ind_lower.str.startswith("subtotal")
+        | ind_lower.str.startswith("(b) unlisted")
+        | ind_lower.str.startswith("b) unlisted")
+        | col0_lower.isin(["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"])
+        | col0_upper.isin(["TOTAL", "GRAND TOTAL", "REIT", "REITS"])
+        | col0_lower.str.startswith("sub total")
+        | col0_lower.str.startswith("subtotal")
+        | col0_lower.str.startswith("(b) unlisted")
+        | col0_lower.str.startswith("b) unlisted")
+        | col0_upper.str.contains(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", regex=True)
+    )
 
     if stop_mask.any():
-        stop_index = stop_mask.idxmax()  # first True, by original (pre-reset) label
-        # data was reset_index(drop=True) above, so idxmax gives a positional label too
-        data = data.loc[: stop_index - 1]
+        stop_index = stop_mask.values.argmax()
+        data = data.iloc[: stop_index]
 
     sub = data[[COL_SECURITY_NAME, COL_ISIN, COL_INDUSTRY_RATING, COL_QUANTITY]].copy()
     sub.columns = ["Security_Name", "ISIN", "Industry_Rating", "Quantity"]
@@ -393,7 +424,8 @@ def main():
 
     fund_name_mapping = load_canonical_fund_names(canonical_workbook)
 
-    if OUTPUT_FILE.exists():
+    force_rebuild = "--rebuild" in sys.argv or "--force" in sys.argv
+    if OUTPUT_FILE.exists() and not force_rebuild:
         try:
             existing_df = pd.read_excel(OUTPUT_FILE)
             require_columns = ["Fund_Name", "Portfolio_Date"]
