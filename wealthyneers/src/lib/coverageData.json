@@ -2,7 +2,7 @@
   "amcCount": 28,
   "fundCount": 428,
   "amcs": [
-    "360 One Wam MF",
+    "360 One MF",
     "ABSL",
     "AXIS",
     "BAJAJ Finserv MF",
@@ -462,7 +462,7 @@
     "quant Value Fund"
   ],
   "amcFundsMap": {
-    "360 One Wam MF": [
+    "360 One MF": [
       "360 ONE Balanced Hybrid Fund",
       "360 ONE ELSS Tax Saver Nifty 50 Index Fund",
       "360 ONE Flexicap Fund",

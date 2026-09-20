@@ -33,8 +33,8 @@ RAW_FOLDER = PROJECT_ROOT / "01_raw_files" / "360_ONE"
 OUTPUT_FOLDER = PROJECT_ROOT / "03_clean_data" / "360_ONE"
 OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
-OUTPUT_FILE = OUTPUT_FOLDER / "360_One_Wam_MF_All_Funds_Cleaned.xlsx"
-AMC_NAME = "360 One Wam MF"
+OUTPUT_FILE = OUTPUT_FOLDER / "360_One_MF_All_Funds_Cleaned.xlsx"
+AMC_NAME = "360 One MF"
 
 TARGET_MAP = {
     "FOCUSED": "360 ONE Focused Fund",
