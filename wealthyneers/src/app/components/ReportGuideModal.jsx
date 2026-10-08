@@ -10,7 +10,7 @@ export const REPORT_GUIDES = {
     title: 'Mutual Fund Quantity Trend',
     subtitle: 'Longitudinal Institutional Volume & Historical Position Tracker',
     summary:
-      'Report 1 provides a comprehensive multi-year historical view of aggregate mutual fund shareholdings for any security. It visualizes whether domestic institutions have been steadily accumulating, holding, or distributing positions over monthly regulatory disclosure cycles.',
+      'Report 1 provides a rolling 12-calendar-month view of aggregate mutual fund shareholdings for any security. It visualizes whether domestic institutions have been steadily accumulating, holding, or distributing positions over the latest monthly regulatory disclosure cycles.',
     interactiveControls: [
       {
         control: 'Security Name & Alias Typeahead',
@@ -40,7 +40,7 @@ export const REPORT_GUIDES = {
     keyFeatures: [
       {
         title: 'Interactive Volume Trend Chart',
-        desc: 'Visualizes the total quantity of shares held across all mutual fund schemes over 30+ monthly disclosure cycles with responsive tooltips.',
+        desc: 'Visualizes the total quantity of shares held across all mutual fund schemes over a rolling 12-calendar-month window with responsive tooltips.',
       },
       {
         title: 'Multi-Dimensional Institutional Filtering',

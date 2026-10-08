@@ -54,12 +54,71 @@ function parseLocalDate(dateStr) {
   return new Date(y, m - 1, d);
 }
 
-/** Format a portfolio_date string as "Oct-2024" */
+/** Format a portfolio_date string as "Aug-2026" */
 function fmtMonth(dateStr) {
   const d = parseLocalDate(dateStr);
   if (!d) return dateStr;
   const mon = d.toLocaleString('en-US', { month: 'short' });
   return `${mon}-${d.getFullYear()}`;
+}
+
+/**
+ * Safely compute the rolling 12-calendar-month boundary strings: { startStr, endStr }
+ * Given a latest portfolio_date like "2026-08-01", returns:
+ * startStr: "2025-09-01" (11 calendar months before latest)
+ * endStr:   "2026-08-01"
+ *
+ * Uses strict integer calendar arithmetic:
+ * e.g. for month 8 (Aug) and year 2026:
+ * start month = 8 - 11 = -3 -> month 9 (Sep) of year 2025.
+ * Range: 2025-09-01 through 2026-08-01 (exactly 12 calendar months).
+ */
+function getRolling12MonthBounds(latestDateStr) {
+  if (!latestDateStr) return null;
+  const parts = String(latestDateStr).split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!y || !m || isNaN(y) || isNaN(m)) return null;
+
+  let startY = y;
+  let startM = m - 11;
+  while (startM <= 0) {
+    startM += 12;
+    startY -= 1;
+  }
+  const startStr = `${startY}-${String(startM).padStart(2, '0')}-01`;
+  const endStr = `${y}-${String(m).padStart(2, '0')}-01`;
+  return { startStr, endStr };
+}
+
+/**
+ * Generate an array of the latest 12 calendar month dates ['YYYY-MM-01', ...]
+ * anchored to the global latest portfolio_date (e.g. '2026-08-01').
+ * Returns exactly 12 distinct dates sorted chronologically:
+ * e.g. for '2026-08-01': ['2025-09-01', '2025-10-01', ..., '2026-08-01']
+ */
+function get12CalendarMonths(latestDateStr) {
+  if (!latestDateStr) return [];
+  const parts = String(latestDateStr).split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!y || !m || isNaN(y) || isNaN(m)) return [];
+
+  const months = [];
+  for (let offset = 11; offset >= 0; offset--) {
+    let curY = y;
+    let curM = m - offset;
+    while (curM <= 0) {
+      curM += 12;
+      curY -= 1;
+    }
+    while (curM > 12) {
+      curM -= 12;
+      curY += 1;
+    }
+    months.push(`${curY}-${String(curM).padStart(2, '0')}-01`);
+  }
+  return months;
 }
 
 // ─── Custom recharts tooltip ─────────────────────────────────────────
@@ -71,7 +130,7 @@ function R1Tooltip({ active, payload, label }) {
       <p className="r1-tooltip-date">{fmtMonth(label)}</p>
       <div className="r1-tooltip-row">
         <span>Total Quantity</span>
-        <strong>{qty != null ? qty.toLocaleString('en-US') : '—'}</strong>
+        <strong>{qty != null ? qty.toLocaleString('en-US') : 'Not Reported'}</strong>
       </div>
     </div>
   );
@@ -192,6 +251,10 @@ function Report1Content() {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(null);
 
+  // Global Latest Reporting Month (anchor for rolling 12-month window)
+  const [globalLatestDate, setGlobalLatestDate] = useState(null);
+  const globalLatestDateRef = useRef(null);
+
   // Refs
   const secWrapRef = useRef(null);
   const secDebRef = useRef(null);
@@ -277,23 +340,56 @@ function Report1Content() {
     loadFromQuery();
   }, [queryISIN, selectSecurity]);
 
-  // ── Load filter option values once user is confirmed subscribed ────
+  // ── Load global latest reporting date & filter option values ───────
   useEffect(() => {
     if (authLoading || !isSubscribed) return;
+    let mounted = true;
+
+    const loadGlobalLatest = async () => {
+      try {
+        const { data: latestRow, error: latestErr } = await supabase
+          .from('fund_holdings')
+          .select('portfolio_date')
+          .order('portfolio_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!latestErr && latestRow?.portfolio_date && mounted) {
+          globalLatestDateRef.current = latestRow.portfolio_date;
+          setGlobalLatestDate(latestRow.portfolio_date);
+          return;
+        }
+
+        const { data: meta } = await supabase.rpc('get_report5_metadata');
+        if (meta?.latest_date && mounted) {
+          globalLatestDateRef.current = meta.latest_date;
+          setGlobalLatestDate(meta.latest_date);
+        }
+      } catch (err) {
+        console.error('Error fetching global latest portfolio_date:', err);
+      }
+    };
+    loadGlobalLatest();
+
     const loadOptions = async () => {
       const { data } = await supabase.rpc('get_report1_filter_options');
-      if (!data) return;
+      if (!data || !mounted) return;
       setAmcOptions(data.filter((r) => r.filter_type === 'amc').map((r) => r.value));
       setFundOptions(data.filter((r) => r.filter_type === 'fund_name').map((r) => r.value));
       setRatingOptions(data.filter((r) => r.filter_type === 'industry_rating').map((r) => r.value));
     };
     loadOptions();
+
+    return () => {
+      mounted = false;
+    };
   }, [authLoading, isSubscribed]);
 
   // ── Security name typeahead search ─────────────────────────────────
   useEffect(() => {
     // If a security is already selected, don't search
     if (selectedSec || !secText.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSecResults([]);
       setShowSecDrop(false);
       return;
@@ -336,6 +432,30 @@ function Report1Content() {
       setChartLoading(true);
       setChartError(null);
       try {
+        // Ensure global latest reporting date is available as the window anchor
+        let latestAnchor = globalLatestDateRef.current;
+        if (!latestAnchor) {
+          const { data: latestRow } = await supabase
+            .from('fund_holdings')
+            .select('portfolio_date')
+            .order('portfolio_date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestRow?.portfolio_date) {
+            latestAnchor = latestRow.portfolio_date;
+            globalLatestDateRef.current = latestAnchor;
+            setGlobalLatestDate(latestAnchor);
+          } else {
+            const { data: meta } = await supabase.rpc('get_report5_metadata');
+            if (meta?.latest_date) {
+              latestAnchor = meta.latest_date;
+              globalLatestDateRef.current = latestAnchor;
+              setGlobalLatestDate(latestAnchor);
+            }
+          }
+        }
+
         const { data, error } = await supabase.rpc('get_report1_chart', {
           p_isins: effectiveISINs,
           p_amcs: selectedAMCs.length > 0 ? selectedAMCs : null,
@@ -343,12 +463,36 @@ function Report1Content() {
           p_ratings: selectedRating ? [selectedRating] : null,
         });
         if (error) throw error;
-        setChartData(
-          (data || []).map((row) => ({
-            portfolio_date: row.portfolio_date,
-            total_quantity: Number(row.total_quantity),
-          }))
-        );
+
+        const rawRows = (data || []).map((row) => ({
+          portfolio_date: row.portfolio_date,
+          total_quantity: Number(row.total_quantity),
+        }));
+
+        // Determine rolling 12-calendar-month boundary
+        const anchor = latestAnchor || (rawRows.length > 0 ? rawRows[rawRows.length - 1].portfolio_date : null);
+        const calendarMonths = get12CalendarMonths(anchor);
+
+        // Build a lookup map of reported quantities by date
+        const dataMap = new Map();
+        for (const row of rawRows) {
+          if (row.portfolio_date) {
+            dataMap.set(row.portfolio_date, Number(row.total_quantity));
+          }
+        }
+
+        // Scaffold the exact 12 calendar months to preserve global beginning & ending boundaries.
+        // Missing months are represented with total_quantity: null (preserving gaps without continuous interpolation)
+        const scaffoldedRows = calendarMonths.length > 0
+          ? calendarMonths.map((dateStr) => ({
+              portfolio_date: dateStr,
+              total_quantity: dataMap.has(dateStr) ? dataMap.get(dateStr) : null,
+            }))
+          : rawRows;
+
+        // If no data exists across all 12 months for the selected filters, show empty state
+        const hasData = scaffoldedRows.some((r) => r.total_quantity != null);
+        setChartData(hasData ? scaffoldedRows : []);
       } catch (err) {
         console.error('Report 1 chart error:', err?.message || err);
         setChartError(formatFriendlyErrorMessage(err, 'Failed to load chart data.'));
@@ -377,7 +521,7 @@ function Report1Content() {
     : [];
 
   // ── Y-axis domain ──────────────────────────────────────────────────
-  const qtyValues = chartData.map((d) => d.total_quantity);
+  const qtyValues = chartData.map((d) => d.total_quantity).filter((q) => q != null);
   const yMax = qtyValues.length ? Math.max(...qtyValues) : 0;
   const yMin = qtyValues.length ? Math.min(...qtyValues) : 0;
   const yPad = Math.max((yMax - yMin) * 0.12, yMax * 0.05, 1);
@@ -435,8 +579,7 @@ function Report1Content() {
         </div>
         <h1 className="r1-title">Mutual Fund Quantity Trend</h1>
         <p className="r1-subtitle">
-          Track the total institutional holding quantity for any security across all AMCs,
-          funds, and industry ratings — month by month.
+          Track the total institutional holding quantity for any security across all AMCs, funds, and industry ratings over the latest 12 months of available portfolio data.
         </p>
       </div>
 
@@ -603,7 +746,7 @@ function Report1Content() {
           <h2 className="r1-chart-title">Sum of Quantity by Month</h2>
           {!chartLoading && chartData.length > 0 && (
             <div className="r1-chart-meta">
-              {chartData.length} month{chartData.length !== 1 ? 's' : ''}
+              Last 12 Months
               {selectedSec ? <> · {selectedSec.name_1}</> : <> · All Securities (Total Market Quantity)</>}
               {selectedAMCs.length > 0 && <> · {selectedAMCs.join(', ')}</>}
               {selectedFund && <> · {selectedFund}</>}
@@ -674,6 +817,7 @@ function Report1Content() {
                 dataKey="total_quantity"
                 stroke="var(--primary)"
                 strokeWidth={2.5}
+                connectNulls={false}
                 dot={{ r: 4, fill: 'var(--primary)', stroke: 'white', strokeWidth: 2 }}
                 activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--primary)', strokeWidth: 2 }}
                 isAnimationActive
@@ -689,22 +833,12 @@ function Report1Content() {
         )}
       </div>
 
-      {/* ── Data Notes & Coverage Disclaimers ── */}
+      {/* ── Data Notes ── */}
       <div className="r1-notes-container">
         <div className="r1-help-row">
           <span>
             💡 <strong>Holding Metric:</strong> Quantity reflects the <strong>actual total units held</strong> by all tracked mutual fund schemes in that portfolio filing. Missing months indicate the security was not reported in that period.
           </span>
-        </div>
-
-        <div className="r1-disclaimer-card">
-          <div className="r1-disclaimer-header">
-            <span className="r1-disclaimer-icon">ℹ️</span>
-            <strong>Historical Data Coverage Notice (October 2024 Expansion)</strong>
-          </div>
-          <p className="r1-disclaimer-text">
-            The visible surge in total holding quantity starting from <strong>October 2024</strong> is due to a major platform coverage expansion, where multiple new Asset Management Companies (AMCs) and active schemes were onboarded into our tracking database. Trend lines prior to October 2024 reflect the initial cohort of monitored fund houses.
-          </p>
         </div>
       </div>
 
