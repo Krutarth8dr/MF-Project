@@ -3577,7 +3577,7 @@ a {
 .r3-tooltip-panel {
   position: absolute;
   top: 95px;
-  right: 24px;
+  left: 24px;
   z-index: 50;
   background-color: var(--card-bg, #ffffff);
   border: 1px solid var(--border, #e9ecef);
