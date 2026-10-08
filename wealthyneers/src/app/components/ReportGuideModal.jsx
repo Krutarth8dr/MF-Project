@@ -160,8 +160,12 @@ export const REPORT_GUIDES = {
     title: 'AMC Intelligence & Historical Deep Dive',
     subtitle: 'Asset Manager Breakdown & Institutional Market Share Shifts',
     summary:
-      'Report 3 breaks down the institutional ownership of any single security by individual asset management companies. It reveals which specific fund houses hold the largest stakes and how their respective allocations have evolved over time.',
+      'Report 3 breaks down the institutional ownership of any single security by individual asset management companies over the latest 12 calendar months. It reveals which specific fund houses hold the largest stakes and how their respective allocations have evolved over time.',
     interactiveControls: [
+      {
+        control: 'Hover or Click Months for Scrollable AMC Breakdown',
+        action: 'Hover or click any month on the chart to open a stable, scrollable breakdown panel listing every AMC holding the security that month, sorted descending with exact and compact quantities, pin status, and quick close.',
+      },
       {
         control: 'Click AMC Names in Chart Legend',
         action: 'Click any fund house name (e.g. "HDFC Mutual Fund", "SBI MF", "ICICI Prudential") in the interactive chart legend to toggle that AMC line on or off for clear head-to-head comparison.',
@@ -178,19 +182,15 @@ export const REPORT_GUIDES = {
         control: 'Search Security Name or Enter ISIN',
         action: 'Quickly switch securities using the smart alias typeahead or authoritative ISIN input.',
       },
-      {
-        control: 'Historical Per-AMC Data Table',
-        action: 'Inspect exact historical share counts per AMC across all disclosure dates in a dedicated breakdown table below.',
-      },
     ],
     keyFeatures: [
       {
-        title: 'Per-AMC Historical Allocation Grid',
-        desc: 'Displays the exact share counts held by each individual AMC across all historical monthly portfolio dates.',
+        title: 'Rolling 12 Calendar Month Window',
+        desc: 'Displays the latest 12 calendar months of institutional filings, anchored to the global latest portfolio disclosure date.',
       },
       {
         title: 'Interactive Multi-Line AMC Chart',
-        desc: 'Visualizes the trajectory and volume distribution among top fund houses (e.g. HDFC vs ICICI vs SBI vs Axis).',
+        desc: 'Visualizes the trajectory and volume distribution among top fund houses (e.g. HDFC vs ICICI vs SBI vs Axis) over the latest 12 calendar months.',
       },
       {
         title: 'Canonical Security Identification',

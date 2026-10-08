@@ -14,7 +14,7 @@ import {
   Legend,
   LabelList,
 } from 'recharts';
-import { supabase } from '@/lib/supabase';
+import { supabase, getValidSession } from '@/lib/supabase';
 import { getCachedSubscription, checkUserSubscription } from '@/lib/subscriptionCache';
 import ReportGuideModal from '@/app/components/ReportGuideModal';
 
@@ -66,12 +66,66 @@ function parseLocalDate(dateStr) {
   return new Date(y, m - 1, d || 1);
 }
 
-/** Format date as "Oct-2024" */
+/** Format date as "Aug-2026" */
 function fmtMonthYear(dateStr) {
   const d = parseLocalDate(dateStr);
   if (!d) return dateStr;
   const mon = d.toLocaleString('en-US', { month: 'short' });
   return `${mon}-${d.getFullYear()}`;
+}
+
+/**
+ * Safely compute rolling 12-calendar-month boundary strings: { startStr, endStr }
+ * Given a latest portfolio_date like "2026-08-01", returns:
+ * startStr: "2025-09-01" (11 calendar months before latest)
+ * endStr:   "2026-08-01"
+ */
+function getRolling12MonthBounds(latestDateStr) {
+  if (!latestDateStr) return null;
+  const parts = String(latestDateStr).split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!y || !m || isNaN(y) || isNaN(m)) return null;
+
+  let startY = y;
+  let startM = m - 11;
+  while (startM <= 0) {
+    startM += 12;
+    startY -= 1;
+  }
+  const startStr = `${startY}-${String(startM).padStart(2, '0')}-01`;
+  const endStr = `${y}-${String(m).padStart(2, '0')}-01`;
+  return { startStr, endStr };
+}
+
+/**
+ * Generate an array of the latest 12 calendar month dates ['YYYY-MM-01', ...]
+ * anchored to the global latest portfolio_date (e.g. '2026-08-01').
+ * Returns exactly 12 distinct dates sorted chronologically:
+ * e.g. for '2026-08-01': ['2025-09-01', '2025-10-01', ..., '2026-08-01']
+ */
+function get12CalendarMonths(latestDateStr) {
+  if (!latestDateStr) return [];
+  const parts = String(latestDateStr).split('-');
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!y || !m || isNaN(y) || isNaN(m)) return [];
+
+  const months = [];
+  for (let offset = 11; offset >= 0; offset--) {
+    let curY = y;
+    let curM = m - offset;
+    while (curM <= 0) {
+      curM += 12;
+      curY -= 1;
+    }
+    while (curM > 12) {
+      curM -= 12;
+      curY += 1;
+    }
+    months.push(`${curY}-${String(curM).padStart(2, '0')}-01`);
+  }
+  return months;
 }
 
 // ─── Custom Data Label Component with Halo for Legibility ───────────
@@ -110,34 +164,57 @@ function R3DataLabel({ x, y, value, stroke }) {
   );
 }
 
-// ─── Custom Recharts Tooltip ────────────────────────────────────────
-function R3Tooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-
-  // Sort payload by quantity descending
-  const sortedPayload = [...payload]
-    .filter((p) => p.value != null && p.value > 0)
-    .sort((a, b) => Number(b.value) - Number(a.value));
-
-  const total = sortedPayload.reduce((acc, curr) => acc + Number(curr.value || 0), 0);
+// ─── Controlled Stable AMC Tooltip Panel Component ──────────────────
+function R3TooltipPanel({
+  data,
+  isPinned,
+  onClose,
+  onMouseEnter,
+  onMouseLeave,
+}) {
+  if (!data || !data.sortedPayload?.length) return null;
 
   return (
-    <div className="r3-tooltip">
+    <div
+      className={`r3-tooltip-panel ${isPinned ? 'is-pinned' : ''}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <div className="r3-tooltip-header">
-        <span className="r3-tooltip-month">{fmtMonthYear(label)}</span>
-        <span className="r3-tooltip-total">
-          Total: <strong>{fmtCompactQty(total)}</strong>
-        </span>
+        <div className="r3-tooltip-title-wrap">
+          <span className="r3-tooltip-month">{fmtMonthYear(data.label)}</span>
+          {isPinned ? (
+            <span className="r3-tooltip-pin-badge">📌 Pinned</span>
+          ) : (
+            <span className="r3-tooltip-hover-badge">Click chart to pin</span>
+          )}
+        </div>
+        <div className="r3-tooltip-header-right">
+          <span className="r3-tooltip-total">
+            Total: <strong>{fmtCompactQty(data.total)}</strong>
+          </span>
+          <button
+            type="button"
+            className="r3-tooltip-close-btn"
+            onClick={onClose}
+            title="Close details (or click/hover another month)"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div className="r3-tooltip-list">
-        {sortedPayload.map((entry) => (
+        {data.sortedPayload.map((entry) => (
           <div key={entry.dataKey} className="r3-tooltip-row">
             <div className="r3-tooltip-amc">
               <span
                 className="r3-tooltip-dot"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="r3-tooltip-name">{entry.name}</span>
+              <span className="r3-tooltip-name" title={entry.name}>
+                {entry.name}
+              </span>
             </div>
             <div className="r3-tooltip-values">
               <span className="r3-tooltip-compact">{fmtCompactQty(entry.value)}</span>
@@ -147,6 +224,9 @@ function R3Tooltip({ active, payload, label }) {
             </div>
           </div>
         ))}
+      </div>
+      <div className="r3-tooltip-footer">
+        <span>{data.sortedPayload.length} holding AMCs · Scroll for more</span>
       </div>
     </div>
   );
@@ -173,6 +253,17 @@ function Report3Content() {
   const [selectedISIN, setSelectedISIN] = useState('');
   const [securityInfo, setSecurityInfo] = useState(null);
 
+  // Global Latest Reporting Month (anchor for rolling 12-calendar-month window)
+  const [globalLatestDate, setGlobalLatestDate] = useState(null);
+  const globalLatestDateRef = useRef(null);
+
+  // Controlled Tooltip Panel State & Refs
+  const [activeTooltipData, setActiveTooltipData] = useState(null);
+  const [isTooltipPinned, setIsTooltipPinned] = useState(false);
+  const isMouseOverTooltipRef = useRef(false);
+  const dismissTimerRef = useRef(null);
+  const chartCardRef = useRef(null);
+
   // Chart Data State
   const [rawTrendData, setRawTrendData] = useState([]);
   const [chartLoading, setChartLoading] = useState(false);
@@ -198,7 +289,7 @@ function Report3Content() {
 
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const session = await getValidSession();
         if (!session) {
           if (mounted) router.push('/login');
           return;
@@ -231,7 +322,56 @@ function Report3Content() {
 
   const lastLoadedISINRef = useRef(null);
 
-  // ── 2. Selection & ISIN Change Handlers ───────────────────────────
+  // ── 2. Load Global Latest Reporting Date ─────────────────────────
+  useEffect(() => {
+    if (authLoading || !isSubscribed) return;
+    let mounted = true;
+
+    const loadGlobalLatest = async () => {
+      try {
+        const { data: latestRow, error: latestErr } = await supabase
+          .from('fund_holdings')
+          .select('portfolio_date')
+          .order('portfolio_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!latestErr && latestRow?.portfolio_date && mounted) {
+          globalLatestDateRef.current = latestRow.portfolio_date;
+          setGlobalLatestDate(latestRow.portfolio_date);
+          return;
+        }
+
+        const { data: meta } = await supabase.rpc('get_report5_metadata');
+        if (meta?.latest_date && mounted) {
+          globalLatestDateRef.current = meta.latest_date;
+          setGlobalLatestDate(meta.latest_date);
+        }
+      } catch (err) {
+        console.error('Report 3 global latest date error:', err);
+      }
+    };
+    loadGlobalLatest();
+
+    return () => {
+      mounted = false;
+    };
+  }, [authLoading, isSubscribed]);
+
+  // ── 3. Outside Click Listener (Dismiss Pinned Tooltip) ───────────
+  useEffect(() => {
+    if (!isTooltipPinned) return;
+    const handleOutsideClick = (e) => {
+      if (chartCardRef.current && !chartCardRef.current.contains(e.target)) {
+        setIsTooltipPinned(false);
+        setActiveTooltipData(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isTooltipPinned]);
+
+  // ── 4. Selection & ISIN Change Handlers ───────────────────────────
   const handleSelectSecurity = useCallback((sec) => {
     setSelectedSecurity(sec);
     setSearchText(sec.name_1);
@@ -249,6 +389,9 @@ function Report3Content() {
     setShowSearchDrop(false);
     setRawTrendData([]);
     setSecurityInfo(null);
+    setIsTooltipPinned(false);
+    setActiveTooltipData(null);
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     if (queryISIN) {
       router.replace('/report3', { scroll: false });
     }
@@ -274,7 +417,7 @@ function Report3Content() {
     }
   }, [handleClearSecurity]);
 
-  // ── 3. Auto-load from URL Query Parameter (?isin=...) ─────────────
+  // ── 5. Auto-load from URL Query Parameter (?isin=...) ─────────────
   useEffect(() => {
     if (queryISIN && queryISIN !== lastLoadedISINRef.current) {
       lastLoadedISINRef.current = queryISIN;
@@ -282,9 +425,10 @@ function Report3Content() {
     }
   }, [queryISIN, handleISINChange]);
 
-  // ── 4. Comprehensive Security Name Search ─────────────────────────
+  // ── 6. Comprehensive Security Name Search ─────────────────────────
   useEffect(() => {
     if (selectedSecurity || !searchText.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchResults([]);
       setShowSearchDrop(false);
       return;
@@ -320,7 +464,7 @@ function Report3Content() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── 5. Fetch AMC Holdings Trend when ISIN is Selected ────────────
+  // ── 7. Fetch AMC Holdings Trend when ISIN is Selected ────────────
   const fetchTrendData = useCallback(async (isinToFetch) => {
     if (!isinToFetch) {
       setRawTrendData([]);
@@ -331,8 +475,32 @@ function Report3Content() {
     setChartLoading(true);
     setChartError(null);
     setHiddenAMCs(new Set()); // Reset legend visibility on new security
+    setIsTooltipPinned(false);
+    setActiveTooltipData(null);
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
 
     try {
+      // Ensure global latest reporting date is known
+      if (!globalLatestDateRef.current) {
+        const { data: latestRow } = await supabase
+          .from('fund_holdings')
+          .select('portfolio_date')
+          .order('portfolio_date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (latestRow?.portfolio_date) {
+          globalLatestDateRef.current = latestRow.portfolio_date;
+          setGlobalLatestDate(latestRow.portfolio_date);
+        } else {
+          const { data: meta } = await supabase.rpc('get_report5_metadata');
+          if (meta?.latest_date) {
+            globalLatestDateRef.current = meta.latest_date;
+            setGlobalLatestDate(meta.latest_date);
+          }
+        }
+      }
+
       // 1. Fetch AMC time series
       const { data: trendData, error: trendErr } = await supabase.rpc('get_report3_amc_trend', {
         p_isin: isinToFetch,
@@ -361,46 +529,172 @@ function Report3Content() {
   useEffect(() => {
     if (authLoading || !isSubscribed) return;
     if (selectedISIN) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchTrendData(selectedISIN);
     }
   }, [selectedISIN, authLoading, isSubscribed, fetchTrendData]);
 
-  // ── 5. Transform Raw Data into Recharts Series ────────────────────
+  // ── 8. Transform Raw Data into Rolling 12 Calendar Month Series ──
   const { chartData, amcList } = useMemo(() => {
     if (!rawTrendData || rawTrendData.length === 0) {
       return { chartData: [], amcList: [] };
     }
 
-    // Set of all distinct AMCs holding this security
+    // Determine rolling 12-calendar-month anchor
+    let anchor = globalLatestDate;
+    if (!anchor) {
+      for (const row of rawTrendData) {
+        if (row.portfolio_date && (!anchor || row.portfolio_date > anchor)) {
+          anchor = row.portfolio_date;
+        }
+      }
+    }
+
+    const calendarMonths = get12CalendarMonths(anchor);
+    const validMonthSet = new Set(calendarMonths);
+
+    // Set of all distinct AMCs holding this security within the 12-month window
     const amcsSet = new Set();
     // Map of date -> { portfolio_date, [amc]: quantity }
     const dateMap = new Map();
 
+    // Pre-scaffold all 12 calendar months to guarantee both beginning & ending boundaries are anchored
+    for (const mStr of calendarMonths) {
+      dateMap.set(mStr, { portfolio_date: mStr });
+    }
+
     for (const row of rawTrendData) {
       if (!row.amc || !row.portfolio_date) continue;
+      if (calendarMonths.length > 0 && !validMonthSet.has(row.portfolio_date)) continue;
+
       amcsSet.add(row.amc);
 
-      if (!dateMap.has(row.portfolio_date)) {
-        dateMap.set(row.portfolio_date, { portfolio_date: row.portfolio_date });
+      let point = dateMap.get(row.portfolio_date);
+      if (!point) {
+        point = { portfolio_date: row.portfolio_date };
+        dateMap.set(row.portfolio_date, point);
       }
-
-      const point = dateMap.get(row.portfolio_date);
       point[row.amc] = Number(row.total_quantity || 0);
     }
 
-    // Sort dates chronologically ascending
-    const sortedDates = Array.from(dateMap.keys()).sort((a, b) =>
-      new Date(a).getTime() - new Date(b).getTime()
-    );
+    const formattedChartData = calendarMonths.length > 0
+      ? calendarMonths.map((d) => dateMap.get(d) || { portfolio_date: d })
+      : Array.from(dateMap.keys())
+          .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+          .map((d) => dateMap.get(d));
 
-    const formattedChartData = sortedDates.map((d) => dateMap.get(d));
     const sortedAmcList = Array.from(amcsSet).sort();
 
     return {
       chartData: formattedChartData,
       amcList: sortedAmcList,
     };
-  }, [rawTrendData]);
+  }, [rawTrendData, globalLatestDate]);
+
+  // ── 9. Tooltip Data Builder (Sorted descending by holding quantity) ─
+  const buildTooltipData = useCallback((dateStr) => {
+    if (!dateStr || !chartData || chartData.length === 0) return null;
+    const row = chartData.find((d) => d.portfolio_date === dateStr);
+    if (!row) return null;
+
+    const validEntries = [];
+    let total = 0;
+
+    for (let i = 0; i < amcList.length; i++) {
+      const amc = amcList[i];
+      if (hiddenAMCs.has(amc)) continue;
+      const qty = Number(row[amc]);
+      if (qty != null && !isNaN(qty) && qty > 0) {
+        total += qty;
+        validEntries.push({
+          dataKey: amc,
+          name: amc,
+          value: qty,
+          color: getAmcColor(amc, i),
+        });
+      }
+    }
+
+    if (validEntries.length === 0) {
+      return {
+        label: dateStr,
+        total: 0,
+        sortedPayload: [],
+      };
+    }
+
+    validEntries.sort((a, b) => b.value - a.value);
+
+    return {
+      label: dateStr,
+      total,
+      sortedPayload: validEntries,
+    };
+  }, [chartData, amcList, hiddenAMCs]);
+
+  // ── 10. Chart Mouse & Click Handlers for Stable Tooltip Inspection ─
+  const handleChartMouseMove = useCallback((state) => {
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+    if (isTooltipPinned) return; // Keep pinned month stable while user inspects
+
+    const dateStr = state?.activeLabel || (state?.activeTooltipIndex != null ? chartData[state.activeTooltipIndex]?.portfolio_date : null);
+    if (!dateStr) return;
+
+    const tooltipInfo = buildTooltipData(dateStr);
+    if (tooltipInfo && tooltipInfo.sortedPayload.length > 0) {
+      setActiveTooltipData(tooltipInfo);
+    }
+  }, [isTooltipPinned, chartData, buildTooltipData]);
+
+  const handleChartClick = useCallback((state) => {
+    const dateStr = state?.activeLabel || (state?.activeTooltipIndex != null ? chartData[state.activeTooltipIndex]?.portfolio_date : null);
+    if (!dateStr) return;
+
+    const tooltipInfo = buildTooltipData(dateStr);
+    if (tooltipInfo && tooltipInfo.sortedPayload.length > 0) {
+      setActiveTooltipData(tooltipInfo);
+      setIsTooltipPinned(true);
+    }
+  }, [chartData, buildTooltipData]);
+
+  const handleChartMouseLeave = useCallback(() => {
+    if (isTooltipPinned || isMouseOverTooltipRef.current) return;
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    dismissTimerRef.current = setTimeout(() => {
+      if (!isTooltipPinned && !isMouseOverTooltipRef.current) {
+        setActiveTooltipData(null);
+      }
+    }, 400);
+  }, [isTooltipPinned]);
+
+  const handleTooltipMouseEnter = useCallback(() => {
+    isMouseOverTooltipRef.current = true;
+    if (dismissTimerRef.current) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  }, []);
+
+  const handleTooltipMouseLeave = useCallback(() => {
+    isMouseOverTooltipRef.current = false;
+    if (!isTooltipPinned) {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = setTimeout(() => {
+        if (!isTooltipPinned && !isMouseOverTooltipRef.current) {
+          setActiveTooltipData(null);
+        }
+      }, 350);
+    }
+  }, [isTooltipPinned]);
+
+  const handleCloseTooltip = useCallback(() => {
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    setIsTooltipPinned(false);
+    setActiveTooltipData(null);
+  }, []);
 
   // ── 6. Toggle AMC Visibility in Legend ───────────────────────────
   const toggleAmcVisibility = (amcName) => {
@@ -629,7 +923,7 @@ function Report3Content() {
       )}
 
       {/* ── Line Chart Card ── */}
-      <div className="r3-chart-card">
+      <div className="r3-chart-card" ref={chartCardRef}>
         <div className="r3-chart-header">
           <div className="r3-chart-title-wrap">
             <h2 className="r3-chart-title">Sum of Quantity by Month and AMC</h2>
@@ -645,7 +939,7 @@ function Report3Content() {
                 type="button"
                 className={`r3-ctrl-btn ${isWideCanvas ? 'r3-ctrl-active' : ''}`}
                 onClick={() => setIsWideCanvas(true)}
-                title="Expanded scrollable canvas with maximum breathing room for all 31 months"
+                title="Expanded scrollable canvas with maximum breathing room for all 12 months"
               >
                 ↔ Wide Canvas
               </button>
@@ -673,11 +967,22 @@ function Report3Content() {
 
             {selectedSecurity && amcList.length > 0 && (
               <div className="r3-chart-meta">
-                <span>{chartData.length} Months</span> · <span>{amcList.length} AMCs</span>
+                <span>Last 12 Months</span> · <span>{amcList.length} AMCs</span>
               </div>
             )}
           </div>
         </div>
+
+        {/* Controlled Stable AMC Tooltip Panel */}
+        {activeTooltipData && (
+          <R3TooltipPanel
+            data={activeTooltipData}
+            isPinned={isTooltipPinned}
+            onClose={handleCloseTooltip}
+            onMouseEnter={handleTooltipMouseEnter}
+            onMouseLeave={handleTooltipMouseLeave}
+          />
+        )}
 
         {/* Loading State */}
         {chartLoading && (
@@ -722,7 +1027,7 @@ function Report3Content() {
             <div
               className="r3-chart-inner-canvas"
               style={{
-                minWidth: isWideCanvas ? Math.max(2200, chartData.length * 75) : '100%',
+                minWidth: isWideCanvas ? Math.max(1400, chartData.length * 110) : '100%',
                 height: 780,
               }}
             >
@@ -730,6 +1035,9 @@ function Report3Content() {
                 <LineChart
                   data={chartData}
                   margin={{ top: 45, right: 50, left: 30, bottom: 100 }}
+                  onMouseMove={handleChartMouseMove}
+                  onClick={handleChartClick}
+                  onMouseLeave={handleChartMouseLeave}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -751,7 +1059,14 @@ function Report3Content() {
                     width={110}
                     domain={[yMin, Math.ceil(yMax + yPad)]}
                   />
-                  <Tooltip content={<R3Tooltip />} />
+                  <Tooltip
+                    cursor={{
+                      stroke: 'var(--primary)',
+                      strokeWidth: 1.5,
+                      strokeDasharray: '4 4',
+                    }}
+                    content={() => null}
+                  />
                   <Legend
                     verticalAlign="top"
                     align="left"
