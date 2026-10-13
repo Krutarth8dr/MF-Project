@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase, getValidSession } from '@/lib/supabase';
 import { clearSubscriptionCache } from '@/lib/subscriptionCache';
+import { handleSectionClick } from '@/lib/scrollHelper';
 
 function getInitials(name, email) {
   if (name && typeof name === 'string' && name.trim().length > 0) {
@@ -29,9 +30,11 @@ export default function AuthNav() {
   const pathname = usePathname();
 
   // Close mobile drawer on route change
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
     setIsMobileOpen(false);
-  }, [pathname]);
+  }
 
   // Handle Escape key to close mobile drawer
   useEffect(() => {
@@ -169,8 +172,18 @@ export default function AuthNav() {
           </>
         ) : (
           <>
-            <Link href="/#reports">Reports</Link>
-            <Link href="/#pricing">Pricing</Link>
+            <Link
+              href="/#reports"
+              onClick={(e) => handleSectionClick(e, 'reports', pathname)}
+            >
+              Reports
+            </Link>
+            <Link
+              href="/#pricing"
+              onClick={(e) => handleSectionClick(e, 'pricing', pathname)}
+            >
+              Pricing
+            </Link>
             <Link href="/invest">Build Wealth</Link>
             <Link href="/login" className="btn btn-outline">
               Log In
@@ -272,11 +285,19 @@ export default function AuthNav() {
                 </>
               ) : (
                 <>
-                  <Link href="/#reports" className="mobile-nav-row" onClick={() => setIsMobileOpen(false)}>
+                  <Link
+                    href="/#reports"
+                    className="mobile-nav-row"
+                    onClick={(e) => handleSectionClick(e, 'reports', pathname, () => setIsMobileOpen(false))}
+                  >
                     <span className="mobile-nav-icon">📊</span>
                     <span>Research Reports</span>
                   </Link>
-                  <Link href="/#pricing" className="mobile-nav-row" onClick={() => setIsMobileOpen(false)}>
+                  <Link
+                    href="/#pricing"
+                    className="mobile-nav-row"
+                    onClick={(e) => handleSectionClick(e, 'pricing', pathname, () => setIsMobileOpen(false))}
+                  >
                     <span className="mobile-nav-icon">💎</span>
                     <span>Subscription Plan (₹30/mo)</span>
                   </Link>

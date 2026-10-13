@@ -20,6 +20,16 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -231,6 +241,12 @@ a {
 
 .hero-subtext a:hover {
   color: var(--accent);
+}
+
+/* Reports & Pricing Scroll Offset for Sticky Header */
+#reports,
+#pricing {
+  scroll-margin-top: calc(80px + 1rem);
 }
 
 /* Reports Section */

@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
 import { getCachedSubscription, checkUserSubscription, setCachedSubscription } from '@/lib/subscriptionCache';
 import AMCFundCoverage from '@/app/components/AMCFundCoverage';
+import { scrollToSection, handleSectionClick } from '@/lib/scrollHelper';
 
 export default function Home() {
   const router = useRouter();
@@ -68,6 +69,35 @@ export default function Home() {
     return () => {
       mounted = false;
       subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Handle direct visits with hash (/#reports, /#pricing) and browser Back/Forward (popstate/hashchange)
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'reports' || hash === 'pricing') {
+        scrollToSection(hash);
+      } else if (!hash && window.location.pathname === '/') {
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({
+          top: 0,
+          behavior: prefersReduced ? 'auto' : 'smooth',
+        });
+      }
+    };
+
+    let timer;
+    if (window.location.hash) {
+      timer = setTimeout(handleHash, 120);
+    }
+
+    window.addEventListener('popstate', handleHash);
+    window.addEventListener('hashchange', handleHash);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener('popstate', handleHash);
+      window.removeEventListener('hashchange', handleHash);
     };
   }, []);
 
@@ -215,7 +245,11 @@ export default function Home() {
                 <span className="teaser-sec">Indo-MIM Ltd.</span>
               </div>
               <div className="reports-teaser-cta-wrap">
-                <Link href="#pricing" className="reports-teaser-cta">
+                <Link
+                  href="#pricing"
+                  className="reports-teaser-cta"
+                  onClick={(e) => handleSectionClick(e, 'pricing', '/')}
+                >
                   Subscribe for more →
                 </Link>
               </div>
