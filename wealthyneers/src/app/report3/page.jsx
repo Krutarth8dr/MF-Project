@@ -62,16 +62,76 @@ function fmtCompactQty(n) {
 /** Parse YYYY-MM-DD string safely in local time */
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
-  const [y, m, d] = String(dateStr).split('-').map(Number);
+  const parts = String(dateStr).split('-');
+  if (parts.length < 2) return null;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = parts[2] ? Number(parts[2]) : 1;
+  if (isNaN(y) || isNaN(m)) return null;
   return new Date(y, m - 1, d || 1);
 }
 
-/** Format date as "Aug-2026" */
+/** Format date as "Aug-2026" safely (handles raw ISO dates and pre-formatted strings) */
 function fmtMonthYear(dateStr) {
-  const d = parseLocalDate(dateStr);
-  if (!d) return dateStr;
+  if (!dateStr) return '';
+  const str = String(dateStr).trim();
+  // If already in MMM-YYYY format (e.g. "Dec-2025" or "Aug-2026"), return as-is
+  if (/^[A-Za-z]{3}-\d{4}$/.test(str)) {
+    return str;
+  }
+  const d = parseLocalDate(str);
+  if (!d || isNaN(d.getTime())) return str;
   const mon = d.toLocaleString('en-US', { month: 'short' });
   return `${mon}-${d.getFullYear()}`;
+}
+
+/**
+ * Safely resolve the authoritative chartData row from Recharts event state.
+ * Handles activePayload (most authoritative line series binding), activeTooltipIndex / activeIndex,
+ * raw portfolio_date strings ("2025-12-01"), and formatted month labels ("Dec-2025").
+ */
+function resolveChartRow(state, chartData) {
+  if (!state || !chartData || chartData.length === 0) return null;
+
+  // 1. Direct payload row from activePayload (direct series data bound to chart lines)
+  if (state.activePayload && state.activePayload.length > 0) {
+    const payloadRow = state.activePayload[0]?.payload;
+    if (payloadRow && payloadRow.portfolio_date) {
+      const match = chartData.find((d) => d.portfolio_date === payloadRow.portfolio_date);
+      if (match) return match;
+      return payloadRow;
+    }
+  }
+
+  // 2. Lookup by activeTooltipIndex or activeIndex
+  const rawIdx = state.activeTooltipIndex != null ? state.activeTooltipIndex : state.activeIndex;
+  if (rawIdx != null) {
+    const numIdx = Number(rawIdx);
+    if (!isNaN(numIdx) && numIdx >= 0 && numIdx < chartData.length) {
+      return chartData[numIdx];
+    }
+  }
+
+  // 3. Lookup by activeLabel
+  const rawLabel = state.activeLabel;
+  if (rawLabel != null) {
+    const strLabel = String(rawLabel).trim();
+    // 3a. Exact match on raw portfolio_date (e.g. "2025-12-01")
+    let match = chartData.find((d) => d.portfolio_date === strLabel);
+    if (match) return match;
+
+    // 3b. Match by formatted month (e.g. "Dec-2025")
+    match = chartData.find((d) => fmtMonthYear(d.portfolio_date) === strLabel);
+    if (match) return match;
+
+    // 3c. Match if label is numeric string index (e.g. "2")
+    const num = Number(strLabel);
+    if (!isNaN(num) && num >= 0 && num < chartData.length) {
+      return chartData[num];
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -258,7 +318,7 @@ function Report3Content() {
   const globalLatestDateRef = useRef(null);
 
   // Controlled Tooltip Panel State & Refs
-  const [activeTooltipData, setActiveTooltipData] = useState(null);
+  const [selectedMonthRow, setSelectedMonthRow] = useState(null);
   const [isTooltipPinned, setIsTooltipPinned] = useState(false);
   const isMouseOverTooltipRef = useRef(false);
   const dismissTimerRef = useRef(null);
@@ -364,7 +424,7 @@ function Report3Content() {
     const handleOutsideClick = (e) => {
       if (chartCardRef.current && !chartCardRef.current.contains(e.target)) {
         setIsTooltipPinned(false);
-        setActiveTooltipData(null);
+        setSelectedMonthRow(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -390,7 +450,7 @@ function Report3Content() {
     setRawTrendData([]);
     setSecurityInfo(null);
     setIsTooltipPinned(false);
-    setActiveTooltipData(null);
+    setSelectedMonthRow(null);
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     if (queryISIN) {
       router.replace('/report3', { scroll: false });
@@ -476,7 +536,7 @@ function Report3Content() {
     setChartError(null);
     setHiddenAMCs(new Set()); // Reset legend visibility on new security
     setIsTooltipPinned(false);
-    setActiveTooltipData(null);
+    setSelectedMonthRow(null);
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
 
     try {
@@ -574,7 +634,7 @@ function Report3Content() {
         point = { portfolio_date: row.portfolio_date };
         dateMap.set(row.portfolio_date, point);
       }
-      point[row.amc] = Number(row.total_quantity || 0);
+      point[row.amc] = (point[row.amc] || 0) + Number(row.total_quantity || 0);
     }
 
     const formattedChartData = calendarMonths.length > 0
@@ -592,9 +652,22 @@ function Report3Content() {
   }, [rawTrendData, globalLatestDate]);
 
   // ── 9. Tooltip Data Builder (Sorted descending by holding quantity) ─
-  const buildTooltipData = useCallback((dateStr) => {
-    if (!dateStr || !chartData || chartData.length === 0) return null;
-    const row = chartData.find((d) => d.portfolio_date === dateStr);
+  const buildTooltipData = useCallback((dateOrRow) => {
+    if (!dateOrRow || !chartData || chartData.length === 0) return null;
+
+    let row = null;
+    let labelDate = null;
+
+    if (typeof dateOrRow === 'object' && dateOrRow.portfolio_date) {
+      row = dateOrRow;
+      labelDate = dateOrRow.portfolio_date;
+    } else {
+      const strVal = String(dateOrRow).trim();
+      row = chartData.find((d) => d.portfolio_date === strVal)
+         || chartData.find((d) => fmtMonthYear(d.portfolio_date) === strVal);
+      labelDate = row ? row.portfolio_date : strVal;
+    }
+
     if (!row) return null;
 
     const validEntries = [];
@@ -617,7 +690,7 @@ function Report3Content() {
 
     if (validEntries.length === 0) {
       return {
-        label: dateStr,
+        label: labelDate,
         total: 0,
         sortedPayload: [],
       };
@@ -626,11 +699,17 @@ function Report3Content() {
     validEntries.sort((a, b) => b.value - a.value);
 
     return {
-      label: dateStr,
+      label: labelDate,
       total,
       sortedPayload: validEntries,
     };
   }, [chartData, amcList, hiddenAMCs]);
+
+  // ── Derived Active Tooltip Data: Guaranteed sync with chart lines & legend ──
+  const activeTooltipData = useMemo(() => {
+    if (!selectedMonthRow) return null;
+    return buildTooltipData(selectedMonthRow);
+  }, [selectedMonthRow, buildTooltipData]);
 
   // ── 10. Chart Mouse & Click Handlers for Stable Tooltip Inspection ─
   const handleChartMouseMove = useCallback((state) => {
@@ -640,32 +719,26 @@ function Report3Content() {
     }
     if (isTooltipPinned) return; // Keep pinned month stable while user inspects
 
-    const dateStr = state?.activeLabel || (state?.activeTooltipIndex != null ? chartData[state.activeTooltipIndex]?.portfolio_date : null);
-    if (!dateStr) return;
+    const row = resolveChartRow(state, chartData);
+    if (!row) return;
 
-    const tooltipInfo = buildTooltipData(dateStr);
-    if (tooltipInfo && tooltipInfo.sortedPayload.length > 0) {
-      setActiveTooltipData(tooltipInfo);
-    }
-  }, [isTooltipPinned, chartData, buildTooltipData]);
+    setSelectedMonthRow(row);
+  }, [isTooltipPinned, chartData]);
 
   const handleChartClick = useCallback((state) => {
-    const dateStr = state?.activeLabel || (state?.activeTooltipIndex != null ? chartData[state.activeTooltipIndex]?.portfolio_date : null);
-    if (!dateStr) return;
+    const row = resolveChartRow(state, chartData);
+    if (!row) return;
 
-    const tooltipInfo = buildTooltipData(dateStr);
-    if (tooltipInfo && tooltipInfo.sortedPayload.length > 0) {
-      setActiveTooltipData(tooltipInfo);
-      setIsTooltipPinned(true);
-    }
-  }, [chartData, buildTooltipData]);
+    setSelectedMonthRow(row);
+    setIsTooltipPinned(true);
+  }, [chartData]);
 
   const handleChartMouseLeave = useCallback(() => {
     if (isTooltipPinned || isMouseOverTooltipRef.current) return;
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     dismissTimerRef.current = setTimeout(() => {
       if (!isTooltipPinned && !isMouseOverTooltipRef.current) {
-        setActiveTooltipData(null);
+        setSelectedMonthRow(null);
       }
     }, 400);
   }, [isTooltipPinned]);
@@ -684,7 +757,7 @@ function Report3Content() {
       if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
       dismissTimerRef.current = setTimeout(() => {
         if (!isTooltipPinned && !isMouseOverTooltipRef.current) {
-          setActiveTooltipData(null);
+          setSelectedMonthRow(null);
         }
       }, 350);
     }
@@ -693,7 +766,7 @@ function Report3Content() {
   const handleCloseTooltip = useCallback(() => {
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
     setIsTooltipPinned(false);
-    setActiveTooltipData(null);
+    setSelectedMonthRow(null);
   }, []);
 
   // ── 6. Toggle AMC Visibility in Legend ───────────────────────────
