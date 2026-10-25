@@ -1,6 +1,6 @@
 {
-  "amcCount": 41,
-  "fundCount": 550,
+  "amcCount": 42,
+  "fundCount": 562,
   "amcs": [
     "360 One MF",
     "ABSL",
@@ -34,6 +34,7 @@
     "Navi MF",
     "Nippon India Mutual Fund",
     "Old Bridge MF",
+    "PGIM MF",
     "PPFAS Mutual Fund",
     "QUANT",
     "SBI MF",
@@ -463,6 +464,18 @@
     "Nippon India Vision Large & Mid Cap Fund",
     "Old Bridge Flexi Cap Fund",
     "Old Bridge Focused Fund",
+    "PGIM India Aggressive Hybrid Equity Fund",
+    "PGIM India Balanced Advantage Fund",
+    "PGIM India ELSS Tax Saver Fund",
+    "PGIM India Equity Savings Fund",
+    "PGIM India Flexi Cap Fund",
+    "PGIM India Healthcare Fund",
+    "PGIM India Large Cap Fund",
+    "PGIM India Large and Midcap Fund",
+    "PGIM India Midcap Fund",
+    "PGIM India Multi Asset Allocation Fund",
+    "PGIM India Multi Cap Fund",
+    "PGIM India Small Cap Fund",
     "Parag Parikh ELSS Tax Saver Fund",
     "Parag Parikh Flexi Cap Fund",
     "Parag Parikh Large Cap Fund",
@@ -1228,6 +1241,20 @@
     "Old Bridge MF": [
       "Old Bridge Flexi Cap Fund",
       "Old Bridge Focused Fund"
+    ],
+    "PGIM MF": [
+      "PGIM India Aggressive Hybrid Equity Fund",
+      "PGIM India Balanced Advantage Fund",
+      "PGIM India ELSS Tax Saver Fund",
+      "PGIM India Equity Savings Fund",
+      "PGIM India Flexi Cap Fund",
+      "PGIM India Healthcare Fund",
+      "PGIM India Large Cap Fund",
+      "PGIM India Large and Midcap Fund",
+      "PGIM India Midcap Fund",
+      "PGIM India Multi Asset Allocation Fund",
+      "PGIM India Multi Cap Fund",
+      "PGIM India Small Cap Fund"
     ]
   }
 }
