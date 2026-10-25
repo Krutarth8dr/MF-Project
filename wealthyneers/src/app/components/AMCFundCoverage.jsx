@@ -17,11 +17,20 @@ export default function AMCFundCoverage() {
     async function fetchCoverage() {
       try {
         setLoading(true);
-        const res = await fetch('/api/coverage');
+        const res = await fetch(`/api/coverage?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        });
         if (!res.ok) throw new Error('Coverage fetch failed');
         const json = await res.json();
-        if (mounted) {
-          setData(json);
+        if (mounted && json) {
+          // Guard: Never downgrade to stale or smaller cached coverage data
+          if (!fallbackCoverage?.amcCount || (json.amcCount && json.amcCount >= fallbackCoverage.amcCount)) {
+            setData(json);
+          }
           setError(false);
         }
       } catch (err) {
