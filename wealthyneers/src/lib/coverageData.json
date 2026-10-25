@@ -1,6 +1,6 @@
 {
-  "amcCount": 39,
-  "fundCount": 545,
+  "amcCount": 40,
+  "fundCount": 548,
   "amcs": [
     "360 One MF",
     "Abakkus MF",
@@ -32,6 +32,7 @@
     "Motilal Oswal MF",
     "Navi MF",
     "Nippon India Mutual Fund",
+    "NJ MF",
     "PPFAS Mutual Fund",
     "QUANT",
     "SBI MF",
@@ -448,6 +449,9 @@
     "NIPPON INDIA QUANT FUND",
     "NIPPON INDIA SMALL CAP FUND",
     "NIPPON INDIA VALUE FUND",
+    "NJ Balanced Advantage Fund",
+    "NJ Flexi Cap Fund",
+    "NJ Value Fund",
     "Navi Aggressive Hybrid Fund",
     "Navi Flexi Cap Fund",
     "Navi Large & Midcap Fund",
@@ -1212,6 +1216,11 @@
       "Navi Aggressive Hybrid Fund",
       "Navi Flexi Cap Fund",
       "Navi Large & Midcap Fund"
+    ],
+    "NJ MF": [
+      "NJ Balanced Advantage Fund",
+      "NJ Flexi Cap Fund",
+      "NJ Value Fund"
     ]
   }
 }
