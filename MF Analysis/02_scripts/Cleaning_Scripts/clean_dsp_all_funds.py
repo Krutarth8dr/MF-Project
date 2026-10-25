@@ -35,6 +35,19 @@ TARGET_SHEETS = [
     "Multicap Fund",
     "Business Cycle Fund",
 ]
+
+SHEET_ALIAS_MAP = {
+    "AGGRESSIVE": "Aggressive Hybrid",
+    "FLEXICAP": "Flexi Cap",
+    "LARGE": "Large Cap",
+    "LARGE MIDCAP": "Large & Mid Cap",
+    "ELSS": "TAX",
+    "FOCUSED": "Focused",
+    "MULTIASSET": "Multi Asset",
+    "MULTICAP": "Multicap Fund",
+    "BUSINESS CYCLE": "Business Cycle Fund",
+}
+
 STANDARD_COLUMNS = [
     "AMC",
     "Fund_Name",
@@ -354,17 +367,24 @@ def process_workbook(
 
     for sheet in TARGET_SHEETS:
 
-        if sheet not in excel.sheet_names:
+        actual_sheet = None
+        if sheet in excel.sheet_names:
+            actual_sheet = sheet
+        else:
+            for alias, canonical in SHEET_ALIAS_MAP.items():
+                if canonical == sheet and alias in excel.sheet_names:
+                    actual_sheet = alias
+                    break
 
+        if not actual_sheet:
             print(f"{sheet:<35} | Sheet not found")
-
             continue
 
         try:
 
             _, portfolio_date, _ = read_sheet_metadata(
                 excel,
-                sheet,
+                actual_sheet,
             )
 
             month_key = portfolio_date.strftime("%Y-%m")
@@ -382,7 +402,7 @@ def process_workbook(
 
             cleaned = clean_single_sheet(
                 excel=excel,
-                sheet_name=sheet,
+                sheet_name=actual_sheet,
                 fund_name=fund_name,
             )
 
@@ -489,6 +509,10 @@ def main():
             existing_df = pd.read_excel(
                 OUTPUT_FILE,
             )
+
+            if "--reprocess-latest" in sys.argv or "--reprocess-sep" in sys.argv:
+                existing_df = existing_df[pd.to_datetime(existing_df["Portfolio_Date"], errors="coerce") < "2026-09-01"]
+                print("Reprocessing September 2026 funds.")
 
             processed_keys = get_processed_keys(
                 existing_df,

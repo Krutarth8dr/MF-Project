@@ -64,6 +64,7 @@ MONTH_FOLDER_GUIDS = [
     ("2026-06", "4e8d856a-158b-43a0-bc2f-6e46547ab475"),
     ("2026-07", "5fd732bb-03f5-435c-852b-79218a93d0f3"),
     ("2026-08", "e4709461-3dcd-4a47-8a23-605a090d1eef"),
+    ("2026-09", "6c176971-0dee-4e0a-b355-f1ef43da3cb9"),
 ]
 
 def normalize_text(text):

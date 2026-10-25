@@ -30,7 +30,7 @@ TIMEOUT = 60
 MAX_RETRIES = 3
 
 START_DATE = datetime(2024, 10, 1)
-END_DATE = datetime(2026, 8, 31)
+END_DATE = datetime(2026, 9, 30)
 
 # Canonical 14 Target Funds
 TARGET_FUNDS = [
@@ -282,7 +282,10 @@ def main():
 
     for idx, item in enumerate(deduped_items, start=1):
         ym_folder = RAW_FOLDER / f"{item['year']}" / f"{item['month']:02d}"
-        target_file = ym_folder / item["filename"]
+        fname = item["filename"]
+        if not (fname.lower().endswith(".xlsx") or fname.lower().endswith(".xls")):
+            fname += ".xlsx"
+        target_file = ym_folder / fname
 
         # Check if already downloaded and valid
         if target_file.exists() and target_file.stat().st_size > 1024:

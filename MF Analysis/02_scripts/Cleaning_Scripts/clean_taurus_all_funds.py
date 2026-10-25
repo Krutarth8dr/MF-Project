@@ -19,7 +19,7 @@ OUTPUT_FILE = OUTPUT_FOLDER / "Taurus_All_Funds_Cleaned.xlsx"
 
 AMC_NAME = "Taurus MF"
 START_DATE = pd.Timestamp(year=2024, month=10, day=1)
-END_DATE = pd.Timestamp(year=2026, month=8, day=31)
+END_DATE = pd.Timestamp(year=2026, month=9, day=30)
 
 STANDARD_COLUMNS = [
     "AMC",
@@ -102,7 +102,7 @@ def parse_portfolio_date_from_file(ws, file_path):
         last_day = calendar.monthrange(y, m)[1]
         return datetime(y, m, last_day)
     except Exception:
-        return datetime(2026, 8, 31)
+        return datetime(2026, 9, 30)
 
 
 def parse_taurus_workbook(file_path):

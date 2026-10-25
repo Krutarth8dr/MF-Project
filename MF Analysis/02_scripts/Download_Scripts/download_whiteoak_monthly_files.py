@@ -18,7 +18,7 @@ RAW_FOLDER.mkdir(parents=True, exist_ok=True)
 API_BASE_URL = "https://cms.whiteoakamc.com/api/scheme-portfolios"
 
 START_DATE = datetime(2024, 10, 1)
-END_DATE = datetime(2026, 8, 31)
+END_DATE = datetime(2026, 9, 30)
 
 TARGET_FUNDS = [
     # Existing 7 funds

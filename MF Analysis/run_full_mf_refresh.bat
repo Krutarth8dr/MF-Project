@@ -32,8 +32,15 @@ echo ############################################################
 
 set STEP=0
 
+call :run_step "Abakkus Download"       "02_scripts\Download_Scripts\download_abakkus_monthly_files.py"
 call :run_step "Aditya Birla Download"  "02_scripts\Download_Scripts\download_aditya_monthly_files.py"
+call :run_step "AlphaGrep Download"      "02_scripts\Download_Scripts\download_alphagrep_monthly_files.py"
 call :run_step "Axis Download"          "02_scripts\Download_Scripts\download_axis_monthly_files.py"
+call :run_step "BNP Download"           "02_scripts\Download_Scripts\download_bnp_monthly_files.py"
+call :run_step "Canara Download"        "02_scripts\Download_Scripts\download_canara_monthly_files.py"
+call :run_step "Capital Mind Download" "02_scripts\Download_Scripts\download_capitalmind_monthly_files.py"
+call :run_step "ITI Download"          "02_scripts\Download_Scripts\download_iti_monthly_files.py"
+call :run_step "JM Financial Download" "02_scripts\Download_Scripts\download_jm_monthly_files.py"
 call :run_step "BOI Download"           "02_scripts\Download_Scripts\download_boimf_enumerate_monthly.py"
 call :run_step "DSP Download"           "02_scripts\Download_Scripts\download_dsp_monthly_files.py"
 call :run_step "HDFC Download"          "02_scripts\Download_Scripts\download_hdfc_monthly_files.py"
@@ -56,8 +63,15 @@ echo ############################################################
 echo   PHASE 2: CLEANING DATA
 echo ############################################################
 
-call :run_step "Aditya Birla Clean" "02_scripts\Cleaning_Scripts\clean_absl_all_funds.py"
+call :run_step "Abakkus Clean"        "02_scripts\Cleaning_Scripts\clean_abakkus_all_funds.py"
+call :run_step "Aditya Birla Clean"   "02_scripts\Cleaning_Scripts\clean_absl_all_funds.py"
+call :run_step "AlphaGrep Clean"      "02_scripts\Cleaning_Scripts\clean_alphagrep_all_funds.py"
 call :run_step "Axis Clean"         "02_scripts\Cleaning_Scripts\clean_axis_all_funds.py"
+call :run_step "BNP Clean"          "02_scripts\Cleaning_Scripts\clean_bnp_all_funds.py"
+call :run_step "Canara Clean"          "02_scripts\Cleaning_Scripts\clean_canara_all_funds.py"
+call :run_step "Capital Mind Clean"    "02_scripts\Cleaning_Scripts\clean_capitalmind_all_funds.py"
+call :run_step "ITI Clean"             "02_scripts\Cleaning_Scripts\clean_iti_all_funds.py"
+call :run_step "JM Financial Clean"    "02_scripts\Cleaning_Scripts\clean_jm_all_funds.py"
 call :run_step "BOI Clean"          "02_scripts\Cleaning_Scripts\clean_boimf_all_funds.py"
 call :run_step "DSP Clean"          "02_scripts\Cleaning_Scripts\clean_dsp_all_funds.py"
 call :run_step "HDFC Clean"         "02_scripts\Cleaning_Scripts\clean_hdfc_all_funds.py"

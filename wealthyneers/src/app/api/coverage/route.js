@@ -55,7 +55,7 @@ export async function GET(request) {
         Authorization: `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ p_amcs: null }),
       next: { revalidate: 21600 },
     });
 

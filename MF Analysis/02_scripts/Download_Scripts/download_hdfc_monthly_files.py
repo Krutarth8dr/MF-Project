@@ -146,8 +146,8 @@ FUNDS = [
 ]
 
 # Date Range Configuration
-START_YEAR, START_MONTH = 2026, 8
-END_YEAR, END_MONTH = 2026, 8
+START_YEAR, START_MONTH = 2026, 9
+END_YEAR, END_MONTH = 2026, 9
 
 MONTH_NUM = {
     "january": 1, "jan": 1,
@@ -239,7 +239,7 @@ def main():
         for a in anchors:
             text = a.text.strip().replace("\n", " ")
             href = a.get_attribute("href")
-            if href and (href.endswith(".xlsx") or href.endswith(".xls")):
+            if href and href.split("?")[0].lower().endswith((".xlsx", ".xls")):
                 all_files.append((text, href))
 
         downloaded_count = 0

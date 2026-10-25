@@ -46,7 +46,7 @@ START_YEAR = 2024
 START_MONTH = 1  # January
 
 END_YEAR = 2026
-END_MONTH = 8  # August
+END_MONTH = 9  # September
 TIMEOUT = 60
 # ==============================================================================
 # HELPER FUNCTIONS

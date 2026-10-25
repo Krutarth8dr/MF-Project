@@ -63,6 +63,15 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 SUPABASE_HOST = SUPABASE_URL.replace("https://", "").replace("http://", "").strip("/")
 API_URL = f"https://{SUPABASE_HOST}/rest/v1"
 
+# Fix local Windows DNS resolution timeout for Cloudflare Supabase host
+import socket
+_real_getaddrinfo = socket.getaddrinfo
+def _patched_getaddrinfo(host, port, *args, **kwargs):
+    if host == SUPABASE_HOST:
+        return _real_getaddrinfo("172.64.149.246", port, *args, **kwargs)
+    return _real_getaddrinfo(host, port, *args, **kwargs)
+socket.getaddrinfo = _patched_getaddrinfo
+
 # Allowed schema columns for fund_holdings table
 FUND_HOLDINGS_VALID_COLUMNS = [
     "amc",

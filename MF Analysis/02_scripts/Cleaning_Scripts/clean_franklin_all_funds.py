@@ -186,7 +186,7 @@ def clean_openpyxl_workbook(workbook_path: Path) -> list:
         portfolio_dt = extract_portfolio_date(date_text, workbook_path.name)
 
         if portfolio_dt is None:
-            portfolio_dt = pd.to_datetime("2026-08-01")
+            portfolio_dt = pd.to_datetime("2026-09-01")
 
         p_date_str = portfolio_dt.strftime("%Y-%m-%d")
         month_str = portfolio_dt.strftime("%b-%Y")
@@ -258,7 +258,7 @@ def clean_xlrd_workbook(workbook_path: Path) -> list:
         portfolio_dt = extract_portfolio_date(date_text, workbook_path.name)
 
         if portfolio_dt is None:
-            portfolio_dt = pd.to_datetime("2026-08-01")
+            portfolio_dt = pd.to_datetime("2026-09-01")
 
         p_date_str = portfolio_dt.strftime("%Y-%m-%d")
         month_str = portfolio_dt.strftime("%b-%Y")

@@ -205,6 +205,10 @@ def main():
         raise RuntimeError("No cleaned data generated.")
 
     final_df = pd.concat(all_data, ignore_index=True)
+    # Exclude discontinued funds completely
+    discontinued_funds = ["quant Mid Cap Fund", "quant Multi Asset Fund"]
+    final_df = final_df[~final_df["Fund_Name"].isin(discontinued_funds)]
+
     final_df["Portfolio_Date"] = pd.to_datetime(final_df["Portfolio_Date"], errors="coerce")
     final_df = final_df.drop_duplicates(subset=["Fund_Name", "Portfolio_Date", "ISIN"])
     final_df = final_df.sort_values(["Portfolio_Date", "Fund_Name", "Security_Name"]).reset_index(drop=True)

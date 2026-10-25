@@ -365,7 +365,7 @@ def main():
     )
     parser.add_argument(
         "--end",
-        default="2026-08",
+        default="2026-09",
         help="Inclusive end month in YYYY-MM format, e.g. 2026-08",
     )
     parser.add_argument(

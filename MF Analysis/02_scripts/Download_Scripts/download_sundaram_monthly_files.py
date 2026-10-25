@@ -19,7 +19,7 @@ PAGE_URL = "https://www.sundarammutual.com/monthly-fortnightly-adhoc-portfolios"
 AJAX_URL = "https://www.sundarammutual.com/ajax/Modules_Disclosure_Monthly_Fortnightly_Adhoc_Portfolios,App_Web_2fjxvqiq.ashx?_method=GetCategory&_session=no"
 
 START_DATE = datetime(2024, 10, 1)
-END_DATE = datetime(2026, 8, 31)
+END_DATE = datetime(2026, 9, 30)
 
 MONTH_MAP = {
     "january": 1, "jan": 1,
@@ -46,7 +46,15 @@ def fetch_sundaram_monthly_catalog(session):
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
-    r = session.post(AJAX_URL, data="Catid=Monthly", headers=headers, timeout=30)
+    # Dynamically find ashx URL
+    page_resp = session.get(PAGE_URL, headers={"User-Agent": headers["User-Agent"]}, timeout=30)
+    match = re.search(r'/ajax/(Modules_Disclosure_Monthly_Fortnightly_Adhoc_Portfolios,[^"\']+\.ashx)', page_resp.text)
+    if match:
+        ajax_endpoint = f"https://www.sundarammutual.com/ajax/{match.group(1)}?_method=GetCategory&_session=no"
+    else:
+        ajax_endpoint = AJAX_URL
+
+    r = session.post(ajax_endpoint, data="Catid=Monthly", headers=headers, timeout=30)
     r.raise_for_status()
 
     res_text = r.text.strip()

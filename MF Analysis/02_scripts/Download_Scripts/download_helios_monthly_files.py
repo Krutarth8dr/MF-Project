@@ -48,7 +48,7 @@ MONTH_MAP = {
 }
 
 START_MONTH = "2024-10"
-END_MONTH = "2026-08"
+END_MONTH = "2026-09"
 
 
 def extract_helios_monthly_links():

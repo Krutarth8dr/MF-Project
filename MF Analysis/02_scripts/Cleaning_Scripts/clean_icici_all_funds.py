@@ -325,33 +325,46 @@ def clean_icici_file(file_path, fund_name, sheet_name, portfolio_date):
 
     df = df[list(available_columns.keys())].rename(columns=available_columns)
 
-    # Stop scanning rows once a stop marker appears and keep only rows above it.
-    def row_contains_stop_marker(row):
-        for cell in row.astype(str):
-            text = str(cell).strip()
-            t_lower = text.lower()
-            t_upper = text.upper()
-            if (
-                t_lower in ["subtotal", "sub total", "sub-total", "sub_total", "total", "grand total", "total:"]
-                or t_upper in ["TOTAL", "GRAND TOTAL", "REIT", "REITS"]
-                or t_lower.startswith("sub total")
-                or t_lower.startswith("subtotal")
-                or t_lower.startswith("(b) unlisted")
-                or t_lower.startswith("b) unlisted")
-                or t_lower.startswith("(b) privately placed")
-                or t_lower == "unlisted"
-                or any(m in t_upper for m in ["UNITS OF REAL ESTATE INVESTMENT TRUST", "PREFERENCE SHARES", "DEBT INSTRUMENTS"])
-                or t_upper.endswith(" REIT")
-                or t_upper.endswith(" REITS")
-                or t_upper.endswith("(REIT)")
-                or bool(re.search(r"\(REIT\)|REIT\*|UNITS ISSUED BY REIT|UNITS OF REAL ESTATE INVESTMENT TRUST|\bREITS?\b", t_upper))
-            ):
-                return True
-        return False
+    # Stop scanning rows once a genuine non-equity section begins (debt/money market/totals)
+    stop_markers = [
+        "debt instruments",
+        "government securities",
+        "treasury bills",
+        "money market instruments",
+        "certificate of deposits",
+        "commercial papers",
+        "non-convertible debentures",
+        "net current assets",
+        "total net assets",
+        "subtotal",
+        "sub total",
+        "sub-total",
+        "sub_total",
+        "grand total",
+        "total:",
+        "(b) unlisted",
+        "b) unlisted",
+        "(b) privately placed",
+        "unlisted",
+        "preference shares",
+    ]
 
     stop_index = None
     for idx in range(len(df)):
-        if row_contains_stop_marker(df.iloc[idx]):
+        row = df.iloc[idx]
+        isin_val = str(row.get("ISIN", "")).strip().upper()
+        if isin_val.startswith("INE"):
+            continue
+        row_stopped = False
+        for cell in row.values:
+            text = str(cell).strip().lower()
+            if text in ["total", "grand total", "subtotal", "sub total", "sub-total", "unlisted", "debt instruments", "government securities"]:
+                row_stopped = True
+                break
+            if any(text.startswith(sm) for sm in stop_markers):
+                row_stopped = True
+                break
+        if row_stopped:
             stop_index = idx
             break
 
@@ -403,6 +416,13 @@ def clean_icici_file(file_path, fund_name, sheet_name, portfolio_date):
     df["ISIN"] = df["ISIN"].astype(str).str.strip().str.upper()
 
     df = df[df["ISIN"].str.startswith("INE")]
+
+    # Exclude REIT / InvIT holdings
+    is_reit = (
+        df["Security_Name"].astype(str).str.contains(r"\bREIT\b|REIT\*|\bREITS\b|Real Estate Investment Trust|\bInvIT\b", case=False, regex=True)
+        | df["Industry_Rating"].astype(str).str.contains(r"Real Estate Investment Trust|\bREIT\b|\bInvIT\b", case=False, regex=True)
+    )
+    df = df[~is_reit]
 
     # --------------------------------------------------------------------------
     # Metadata
@@ -518,6 +538,10 @@ def main():
                     existing_df["Portfolio_Date"],
                     errors="coerce",
                 )
+
+                if "--reprocess-latest" in sys.argv or "--reprocess-sep" in sys.argv:
+                    existing_df = existing_df[existing_df["Portfolio_Date"] < "2026-09-01"]
+                    print("Reprocessing September 2026 funds.")
 
                 processed_keys = set(
                     zip(

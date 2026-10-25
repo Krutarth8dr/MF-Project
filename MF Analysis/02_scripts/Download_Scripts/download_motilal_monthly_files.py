@@ -48,7 +48,8 @@ TARGET_MONTHS = [
     ("2026-05", ["31-05-2026", "may 2026"]),
     ("2026-06", ["june 2026", "jun 2026", "jun-26", "06-2026", "30-06-2026", "30062026"]),
     ("2026-07", ["31-07-2026", "july 2026"]),
-    ("2026-08", ["august 2026", "aug 2026", "aug-26", "08-2026", "31-08-2026", "31082026"])
+    ("2026-08", ["august 2026", "aug 2026", "aug-26", "08-2026", "31-08-2026", "31082026"]),
+    ("2026-09", ["september 2026", "sep 2026", "sep-26", "09-2026", "30-09-2026", "30092026"])
 ]
 
 # Explicit static fallback mapping verified from Motilal API
@@ -75,7 +76,8 @@ STATIC_FILE_MAP = {
     "2026-05": "/content/dam/motilal-mf/downloads/mf/month-end-portfolio/2026/jun/Scheme Portfolio Details 31-05-2026.xlsx",
     "2026-06": "/content/dam/motilal-mf/downloads/mf/month-end-portfolio/2026/jul/Scheme Portfolio Details June 20261.xlsx",
     "2026-07": "/content/dam/motilal-mf/downloads/mf/month-end-portfolio/2026/aug/Monthly Portfolio 31-07-2026-Final.xlsx",
-    "2026-08": "/content/dam/motilal-mf/downloads/mf/month-end-portfolio/2026/sep/Copy of Scheme Portfolio Details Aug 2026.xlsx"
+    "2026-08": "/content/dam/motilal-mf/downloads/mf/month-end-portfolio/2026/sep/Copy of Scheme Portfolio Details Aug 2026.xlsx",
+    "2026-09": "/content/dam/motilal-mf/downloads/mf/month-end-portfolio/2026/oct/scheme portfolio details september 2026.xlsx"
 }
 
 

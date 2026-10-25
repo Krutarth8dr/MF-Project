@@ -38,7 +38,7 @@ for r in records:
         mon = m.group(1).lower()
         yr = int(m.group(2))
         m_num = month_order.get(mon[:3], 0)
-        if (yr == 2024 and m_num >= 10) or (yr == 2025) or (yr == 2026 and m_num <= 8):
+        if (yr == 2024 and m_num >= 10) or (yr == 2025) or (yr == 2026 and m_num <= 9):
             target_files.append((yr, m_num, fname, href))
 
 target_files.sort(key=lambda x: (x[0], x[1]))

@@ -26,7 +26,7 @@ OUTPUT_FILE = OUTPUT_FOLDER / "Motilal_All_Funds_Cleaned.xlsx"
 
 AMC_NAME = "Motilal Oswal MF"
 START_DATE = pd.Timestamp(year=2024, month=10, day=1)
-END_DATE = pd.Timestamp(year=2026, month=8, day=31)
+END_DATE = pd.Timestamp(year=2026, month=9, day=30)
 
 STANDARD_COLUMNS = [
     "AMC",
@@ -114,7 +114,7 @@ def parse_portfolio_date_from_sheet(sheet_data, file_path):
         last_d = calendar.monthrange(y, m)[1]
         return datetime(y, m, last_d)
     except Exception:
-        return datetime(2026, 8, 31)
+        return datetime(2026, 9, 30)
 
 
 def parse_holdings(sheet_data, fund_code, fund_name, portfolio_dt):

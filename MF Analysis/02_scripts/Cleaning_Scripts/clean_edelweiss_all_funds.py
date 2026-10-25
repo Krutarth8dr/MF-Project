@@ -18,7 +18,7 @@ OUTPUT_FILE = OUTPUT_FOLDER / "Edelweiss_All_Funds_Cleaned.xlsx"
 
 AMC_NAME = "Edelweiss Mutual Fund"
 START_DATE = pd.Timestamp(year=2024, month=10, day=1)
-END_DATE = pd.Timestamp(year=2026, month=8, day=31)
+END_DATE = pd.Timestamp(year=2026, month=9, day=30)
 
 STANDARD_COLUMNS = [
     "AMC",

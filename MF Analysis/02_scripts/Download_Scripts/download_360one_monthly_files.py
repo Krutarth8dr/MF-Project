@@ -65,7 +65,7 @@ def get_target_files():
     for f in all_monthly_files:
         yr = f["year"]
         m = f["month_num"]
-        if (yr == 2024 and m >= 10) or (yr == 2025) or (yr == 2026 and m <= 8):
+        if (yr == 2024 and m >= 10) or (yr == 2025) or (yr == 2026 and m <= 9):
             target_files.append(f)
 
     target_files.sort(key=lambda x: (x["year"], x["month_num"]))

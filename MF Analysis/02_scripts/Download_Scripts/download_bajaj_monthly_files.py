@@ -19,7 +19,7 @@ PAGE_URL = "https://www.bajajamc.com/downloads?portfolio="
 AJAX_URL = "https://www.bajajamc.com/wp-admin/admin-ajax.php"
 
 START_DATE = datetime(2024, 10, 1)
-END_DATE = datetime(2026, 8, 31)
+END_DATE = datetime(2026, 9, 30)
 
 MONTH_MAP = {
     "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,

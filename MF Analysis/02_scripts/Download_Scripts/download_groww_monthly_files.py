@@ -19,7 +19,7 @@ RAW_FOLDER.mkdir(parents=True, exist_ok=True)
 PAGE_URL = "https://www.growwmf.in/statutory-disclosure/portfolio"
 
 START_DATE = datetime(2024, 10, 1)
-END_DATE = datetime(2026, 8, 31)
+END_DATE = datetime(2026, 9, 30)
 
 MONTH_MAP = {
     "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,

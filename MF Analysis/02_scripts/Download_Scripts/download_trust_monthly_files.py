@@ -30,7 +30,7 @@ TEMP_DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 DISCLOSURES_URL = "https://www.trustmf.com/disclosures?activeTab=portfolio-disclosures"
 
 START_MONTH = "2024-10"
-END_MONTH = "2026-08"
+END_MONTH = "2026-09"
 
 # Optional: also download 2024-08 if available
 EXTRA_MONTHS = ["2024-08"]

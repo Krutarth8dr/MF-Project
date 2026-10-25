@@ -23,11 +23,11 @@ RAW_FOLDER.mkdir(parents=True, exist_ok=True)
 BASE_URL = "https://www.edelweissmf.com"
 API_URL = "https://api.edelweissmf.com/edelweissmf/api/v1/mf/statutory-menus/single"
 
-SECRET_KEY = "5b6714126d3149fbab994747b2633287"
-HASH_KEY = "r4vcos0ejvndsow95n"
+SECRET_KEY = "97a9497605fa7f0ea64fbcbed6a9b7bea8f06650d771b84db0b5ffa2882d1000"
+HASH_KEY = "45de59a4bd24ceabe59c52775532e2cf7904f2b7457d73579eafd06bc1e02c41"
 
 START_DATE = datetime(2024, 10, 1)
-END_DATE = datetime(2026, 8, 31)
+END_DATE = datetime(2026, 9, 30)
 
 MONTH_MAP = {
     "jan": 1, "january": 1,
