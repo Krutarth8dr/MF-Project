@@ -1,6 +1,6 @@
 {
-  "amcCount": 38,
-  "fundCount": 542,
+  "amcCount": 39,
+  "fundCount": 545,
   "amcs": [
     "360 One MF",
     "Abakkus MF",
@@ -30,6 +30,7 @@
     "Mahindra Manulife MF",
     "Mirae MF",
     "Motilal Oswal MF",
+    "Navi MF",
     "Nippon India Mutual Fund",
     "PPFAS Mutual Fund",
     "QUANT",
@@ -447,6 +448,9 @@
     "NIPPON INDIA QUANT FUND",
     "NIPPON INDIA SMALL CAP FUND",
     "NIPPON INDIA VALUE FUND",
+    "Navi Aggressive Hybrid Fund",
+    "Navi Flexi Cap Fund",
+    "Navi Large & Midcap Fund",
     "Nippon India ELSS Tax Saver Fund",
     "Nippon India Flexi Cap Fund",
     "Nippon India Focused Fund",
@@ -1203,6 +1207,11 @@
       "Mirae Asset Multi Asset Allocation Fund",
       "Mirae Asset Multicap Fund",
       "Mirae Asset Small Cap Fund"
+    ],
+    "Navi MF": [
+      "Navi Aggressive Hybrid Fund",
+      "Navi Flexi Cap Fund",
+      "Navi Large & Midcap Fund"
     ]
   }
 }
