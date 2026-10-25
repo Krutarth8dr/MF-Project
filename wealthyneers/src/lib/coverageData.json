@@ -1,16 +1,16 @@
 {
-  "amcCount": 40,
-  "fundCount": 548,
+  "amcCount": 41,
+  "fundCount": 550,
   "amcs": [
     "360 One MF",
-    "Abakkus MF",
     "ABSL",
-    "AlphaGrep MF",
     "AXIS",
+    "Abakkus MF",
+    "AlphaGrep MF",
     "BAJAJ Finserv MF",
+    "BNP MF",
     "Bandhan MF",
     "Bank Of India",
-    "BNP MF",
     "Canara MF",
     "Capital Mind MF",
     "DSP Mutual Fund",
@@ -18,11 +18,11 @@
     "Franklin Templeton MF",
     "Groww MF",
     "HDFC Mutual Fund",
-    "Helios MF",
     "HSBC Mutual Fund",
+    "Helios MF",
     "ICICI Prudential Mutual Fund",
-    "Invesco Mutual Fund",
     "ITI MF",
+    "Invesco Mutual Fund",
     "JIO_BLACKROCK",
     "JM Financial MF",
     "Kotak MF",
@@ -30,9 +30,10 @@
     "Mahindra Manulife MF",
     "Mirae MF",
     "Motilal Oswal MF",
+    "NJ MF",
     "Navi MF",
     "Nippon India Mutual Fund",
-    "NJ MF",
+    "Old Bridge MF",
     "PPFAS Mutual Fund",
     "QUANT",
     "SBI MF",
@@ -460,6 +461,8 @@
     "Nippon India Focused Fund",
     "Nippon India Growth Mid Cap Fund",
     "Nippon India Vision Large & Mid Cap Fund",
+    "Old Bridge Flexi Cap Fund",
+    "Old Bridge Focused Fund",
     "Parag Parikh ELSS Tax Saver Fund",
     "Parag Parikh Flexi Cap Fund",
     "Parag Parikh Large Cap Fund",
@@ -1221,6 +1224,10 @@
       "NJ Balanced Advantage Fund",
       "NJ Flexi Cap Fund",
       "NJ Value Fund"
+    ],
+    "Old Bridge MF": [
+      "Old Bridge Flexi Cap Fund",
+      "Old Bridge Focused Fund"
     ]
   }
 }
