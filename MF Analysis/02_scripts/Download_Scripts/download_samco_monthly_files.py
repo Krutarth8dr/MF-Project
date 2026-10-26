@@ -4,11 +4,17 @@ Download monthly portfolio disclosure files for Samco Mutual Fund (Samco MF).
 Source:
     Website: https://www.samcomf.com/StatutoryDisclosure#PortfolioDisclosures
 
-Target Funds (4 funds):
-    1. Samco Multi Cap Fund (MultiCap)
-    2. Samco Special Opportunities Fund (Special_Opportunities)
-    3. Samco Flexi Cap Fund (Flexicap)
-    4. Samco Small Cap Fund (Small_Cap)
+Target Funds (10 funds):
+    1. Samco Multi Cap Fund (SAMCO_MULTICAP)
+    2. Samco Special Opportunities Fund (SAMCO_SPECIAL_OPP)
+    3. Samco Flexi Cap Fund (SAMCO_FLEXICAP)
+    4. Samco Small Cap Fund (SAMCO_SMALLCAP)
+    5. Samco Multi Asset Allocation Fund (SAMCO_MULTI_ASSET)
+    6. Samco Mid Cap Fund (SAMCO_MIDCAP)
+    7. Samco Large Cap Fund (SAMCO_LARGECAP)
+    8. Samco Large & Mid Cap Fund (SAMCO_LARGE_MIDCAP)
+    9. Samco ELSS Tax Saver Fund (SAMCO_ELSS)
+    10. Samco Dynamic Asset Allocation Fund (SAMCO_DYNAMIC_ASSET)
 
 Target Period:
     October 2024 to September 2026 (24 months or from fund inception).
@@ -45,22 +51,16 @@ HEADERS = {
 }
 
 FUNDS = {
-    "SAMCO_MULTICAP": {
-        "name": "Samco Multi Cap Fund",
-        "regex": r"multicap|multi_cap",
-    },
-    "SAMCO_SPECIAL_OPP": {
-        "name": "Samco Special Opportunities Fund",
-        "regex": r"special_opportunities|specialopportunities",
-    },
-    "SAMCO_FLEXICAP": {
-        "name": "Samco Flexi Cap Fund",
-        "regex": r"flexicap|flexi_cap",
-    },
-    "SAMCO_SMALLCAP": {
-        "name": "Samco Small Cap Fund",
-        "regex": r"small_cap|smallcap",
-    },
+    "SAMCO_MULTICAP": "Samco Multi Cap Fund",
+    "SAMCO_SPECIAL_OPP": "Samco Special Opportunities Fund",
+    "SAMCO_FLEXICAP": "Samco Flexi Cap Fund",
+    "SAMCO_SMALLCAP": "Samco Small Cap Fund",
+    "SAMCO_MULTI_ASSET": "Samco Multi Asset Allocation Fund",
+    "SAMCO_MIDCAP": "Samco Mid Cap Fund",
+    "SAMCO_LARGECAP": "Samco Large Cap Fund",
+    "SAMCO_LARGE_MIDCAP": "Samco Large & Mid Cap Fund",
+    "SAMCO_ELSS": "Samco ELSS Tax Saver Fund",
+    "SAMCO_DYNAMIC_ASSET": "Samco Dynamic Asset Allocation Fund",
 }
 
 MONTH_MAP = {
@@ -89,7 +89,7 @@ def parse_month_year(filename: str):
         return None, None
     year = int(years[0])
 
-    # Search for month name (longest name match first to avoid 'mar' in 'march')
+    # Search for month name (longest name match first)
     month = None
     for m_name in sorted(MONTH_MAP.keys(), key=lambda x: -len(x)):
         if m_name in fn_lower:
@@ -97,6 +97,31 @@ def parse_month_year(filename: str):
             break
 
     return year, month
+
+
+def match_fund(fn_l: str):
+    """Classify filename into target fund code and canonical fund name."""
+    if "large" in fn_l and "mid" in fn_l:
+        return "SAMCO_LARGE_MIDCAP", "Samco Large & Mid Cap Fund"
+    elif "dynamic" in fn_l and "asset" in fn_l:
+        return "SAMCO_DYNAMIC_ASSET", "Samco Dynamic Asset Allocation Fund"
+    elif "multi" in fn_l and "asset" in fn_l:
+        return "SAMCO_MULTI_ASSET", "Samco Multi Asset Allocation Fund"
+    elif "elss" in fn_l:
+        return "SAMCO_ELSS", "Samco ELSS Tax Saver Fund"
+    elif "special" in fn_l and "opp" in fn_l:
+        return "SAMCO_SPECIAL_OPP", "Samco Special Opportunities Fund"
+    elif "small" in fn_l and "cap" in fn_l:
+        return "SAMCO_SMALLCAP", "Samco Small Cap Fund"
+    elif "flexi" in fn_l and "cap" in fn_l:
+        return "SAMCO_FLEXICAP", "Samco Flexi Cap Fund"
+    elif "multicap" in fn_l or "multi_cap" in fn_l:
+        return "SAMCO_MULTICAP", "Samco Multi Cap Fund"
+    elif "large" in fn_l and "cap" in fn_l:
+        return "SAMCO_LARGECAP", "Samco Large Cap Fund"
+    elif "mid" in fn_l and "cap" in fn_l:
+        return "SAMCO_MIDCAP", "Samco Mid Cap Fund"
+    return None, None
 
 
 def scrape_samco_catalog():
@@ -131,47 +156,49 @@ def scrape_samco_catalog():
     print(f"Discovered {len(all_links)} unique Excel links across Samco site.")
 
     # Match against target schemes and months (Oct 2024 to Sep 2026)
+    results = {}
+    for url in sorted(all_links):
+        fn = url.split("/")[-1]
+        fn_lower = fn.lower()
+
+        # Ignore fortnightly files
+        if "fortnightly" in fn_lower or re.search(r"15[0-9]{6}", fn_lower):
+            continue
+
+        fund_code, fund_name = match_fund(fn_lower)
+        if not fund_code:
+            continue
+
+        year, month = parse_month_year(fn)
+        if not year or not month:
+            continue
+
+        # Target range: Oct 2024 to Sep 2026
+        if (year == 2024 and month >= 10) or (year == 2025) or (year == 2026 and month <= 9):
+            key = f"{year}-{month:02d}"
+            is_hy = "hy" in fn_lower or "half" in fn_lower
+
+            if fund_code not in results:
+                results[fund_code] = {}
+
+            # Prefer monthly over half-yearly if both present
+            if key not in results[fund_code] or (results[fund_code][key]["is_hy"] and not is_hy):
+                results[fund_code][key] = {
+                    "fund_code": fund_code,
+                    "fund_name": fund_name,
+                    "year": year,
+                    "month": month,
+                    "is_hy": is_hy,
+                    "url": url,
+                    "filename": fn,
+                }
+
     tasks = []
-    for fund_code, fund_cfg in FUNDS.items():
-        pattern = fund_cfg["regex"]
-        found_for_fund = {}
-
-        for url in sorted(all_links):
-            fn = url.split("/")[-1]
-            fn_lower = fn.lower()
-
-            # Ignore fortnightly files
-            if "fortnightly" in fn_lower or re.search(r"15[0-9]{6}", fn_lower):
-                continue
-
-            if not re.search(pattern, fn_lower):
-                continue
-
-            year, month = parse_month_year(fn)
-            if not year or not month:
-                continue
-
-            # Target range: Oct 2024 to Sep 2026
-            if (year == 2024 and month >= 10) or (year == 2025) or (year == 2026 and month <= 9):
-                key = f"{year}-{month:02d}"
-                is_hy = "hy" in fn_lower or "half" in fn_lower
-
-                # Prefer monthly over half-yearly if both present
-                if key not in found_for_fund or (found_for_fund[key]["is_hy"] and not is_hy):
-                    found_for_fund[key] = {
-                        "fund_code": fund_code,
-                        "fund_name": fund_cfg["name"],
-                        "year": year,
-                        "month": month,
-                        "is_hy": is_hy,
-                        "url": url,
-                        "filename": fn,
-                    }
-
-        for item in found_for_fund.values():
+    for fcode, months in results.items():
+        for item in months.values():
             tasks.append(item)
 
-    print(f"Matched {len(tasks)} target monthly files for the 4 schemes.")
+    print(f"Matched {len(tasks)} target monthly files for the {len(results)} schemes.")
     return sorted(tasks, key=lambda t: (t["fund_code"], t["year"], t["month"]))
 
 
@@ -248,7 +275,7 @@ def main():
     skipped = 0
     failed = 0
 
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {executor.submit(download_single_file, task): task for task in tasks}
         for future in as_completed(futures):
             res = future.result()

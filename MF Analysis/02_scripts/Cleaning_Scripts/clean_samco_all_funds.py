@@ -40,10 +40,16 @@ CLEAN_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_FILE = CLEAN_DIR / "Samco_MF_All_Funds_Cleaned.xlsx"
 
 CODE_TO_FUND = {
+    "SAMCO_LARGE_MIDCAP": "Samco Large & Mid Cap Fund",
+    "SAMCO_LARGECAP": "Samco Large Cap Fund",
+    "SAMCO_DYNAMIC_ASSET": "Samco Dynamic Asset Allocation Fund",
+    "SAMCO_MULTI_ASSET": "Samco Multi Asset Allocation Fund",
     "SAMCO_MULTICAP": "Samco Multi Cap Fund",
+    "SAMCO_MIDCAP": "Samco Mid Cap Fund",
+    "SAMCO_ELSS": "Samco ELSS Tax Saver Fund",
     "SAMCO_SPECIAL_OPP": "Samco Special Opportunities Fund",
-    "SAMCO_FLEXICAP": "Samco Flexi Cap Fund",
     "SAMCO_SMALLCAP": "Samco Small Cap Fund",
+    "SAMCO_FLEXICAP": "Samco Flexi Cap Fund",
 }
 
 STOP_TERMS = [
@@ -122,7 +128,7 @@ def parse_samco_file(filepath: Path):
     parts = filepath.stem.split("_")
     # Identify fund code
     matched_code = None
-    for code in CODE_TO_FUND:
+    for code in sorted(CODE_TO_FUND.keys(), key=lambda c: -len(c)):
         if filepath.stem.startswith(code):
             matched_code = code
             break

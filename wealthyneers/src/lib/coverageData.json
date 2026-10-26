@@ -1,6 +1,6 @@
 {
   "amcCount": 44,
-  "fundCount": 572,
+  "fundCount": 578,
   "amcs": [
     "360 One MF",
     "Abakkus MF",
@@ -505,7 +505,13 @@
     "Quantum Multi Asset Allocation Fund",
     "Quantum Small Cap Fund",
     "Quantum Value Fund",
+    "Samco Dynamic Asset Allocation Fund",
+    "Samco ELSS Tax Saver Fund",
     "Samco Flexi Cap Fund",
+    "Samco Large & Mid Cap Fund",
+    "Samco Large Cap Fund",
+    "Samco Mid Cap Fund",
+    "Samco Multi Asset Allocation Fund",
     "Samco Multi Cap Fund",
     "Samco Small Cap Fund",
     "Samco Special Opportunities Fund",
@@ -1153,7 +1159,13 @@
       "Quantum Value Fund"
     ],
     "Samco MF": [
+      "Samco Dynamic Asset Allocation Fund",
+      "Samco ELSS Tax Saver Fund",
       "Samco Flexi Cap Fund",
+      "Samco Large & Mid Cap Fund",
+      "Samco Large Cap Fund",
+      "Samco Mid Cap Fund",
+      "Samco Multi Asset Allocation Fund",
       "Samco Multi Cap Fund",
       "Samco Small Cap Fund",
       "Samco Special Opportunities Fund"
