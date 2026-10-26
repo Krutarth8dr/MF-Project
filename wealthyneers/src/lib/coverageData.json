@@ -1,6 +1,6 @@
 {
-  "amcCount": 45,
-  "fundCount": 584,
+  "amcCount": 46,
+  "fundCount": 592,
   "amcs": [
     "360 One MF",
     "ABSL",
@@ -44,6 +44,7 @@
     "Sundaram MF",
     "TATA MF",
     "Taurus MF",
+    "The Wealth Company MF",
     "Trust MF",
     "Union MF",
     "WhiteOak MF"
@@ -581,6 +582,14 @@
     "Taurus Large Cap Fund",
     "Taurus Mid Cap Fund",
     "Templeton India Value Fund",
+    "The Wealth Company Balanced Advantage Fund",
+    "The Wealth Company Ethical Fund",
+    "The Wealth Company Flexicap Fund",
+    "The Wealth Company Large & Mid Cap Fund",
+    "The Wealth Company Mid Cap Fund",
+    "The Wealth Company Multi Asset Allocation Fund",
+    "The Wealth Company Multi Cap Fund",
+    "The Wealth Company Small Cap Fund",
     "Union Active Momentum Fund",
     "Union Aggressive Hybrid Fund",
     "Union Balanced Advantage Fund",
@@ -1308,6 +1317,16 @@
       "Shriram Flexi Cap Fund",
       "Shriram Multi Asset Allocation Fund",
       "Shriram Multi Sector Rotation Fund"
+    ],
+    "The Wealth Company MF": [
+      "The Wealth Company Balanced Advantage Fund",
+      "The Wealth Company Ethical Fund",
+      "The Wealth Company Flexicap Fund",
+      "The Wealth Company Large & Mid Cap Fund",
+      "The Wealth Company Mid Cap Fund",
+      "The Wealth Company Multi Asset Allocation Fund",
+      "The Wealth Company Multi Cap Fund",
+      "The Wealth Company Small Cap Fund"
     ]
   }
 }
