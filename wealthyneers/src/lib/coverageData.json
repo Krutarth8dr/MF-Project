@@ -1,6 +1,6 @@
 {
-  "amcCount": 43,
-  "fundCount": 568,
+  "amcCount": 44,
+  "fundCount": 572,
   "amcs": [
     "360 One MF",
     "Abakkus MF",
@@ -38,6 +38,7 @@
     "PPFAS Mutual Fund",
     "QUANT",
     "Quantum MF",
+    "Samco MF",
     "SBI MF",
     "Sundaram MF",
     "TATA MF",
@@ -504,6 +505,10 @@
     "Quantum Multi Asset Allocation Fund",
     "Quantum Small Cap Fund",
     "Quantum Value Fund",
+    "Samco Flexi Cap Fund",
+    "Samco Multi Cap Fund",
+    "Samco Small Cap Fund",
+    "Samco Special Opportunities Fund",
     "SBI Automotive Opportunities Fund",
     "SBI Consumption Opportunities Fund",
     "SBI ELSS Tax Saver Fund",
@@ -1146,6 +1151,12 @@
       "Quantum Multi Asset Allocation Fund",
       "Quantum Small Cap Fund",
       "Quantum Value Fund"
+    ],
+    "Samco MF": [
+      "Samco Flexi Cap Fund",
+      "Samco Multi Cap Fund",
+      "Samco Small Cap Fund",
+      "Samco Special Opportunities Fund"
     ],
     "SBI MF": [
       "SBI Automotive Opportunities Fund",
