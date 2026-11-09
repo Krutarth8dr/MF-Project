@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -51,6 +51,41 @@ export default function ProfilePage() {
   const [activeSubIds, setActiveSubIds] = useState(new Set());
   const [currentSub, setCurrentSub] = useState(null);
   const [subStatus, setSubStatus] = useState('inactive'); // 'active' | 'expired' | 'pending' | 'failed' | 'inactive'
+
+  // ── Derived Multi-Subscription Aggregates ───────────────────────────
+  // Derives earliest start date and latest expiry independently across completed records
+  const completedSubscriptions = useMemo(
+    () => subscriptions.filter((sub) => sub.payment_status === 'completed'),
+    [subscriptions]
+  );
+
+  const originalStartDate = useMemo(() => {
+    if (completedSubscriptions.length === 0) return null;
+    return completedSubscriptions.reduce((earliest, sub) => {
+      const rawDate = sub.subscription_start_date || sub.created_at;
+      const start = parseUtcDate(rawDate);
+      if (!start || Number.isNaN(start.getTime())) return earliest;
+      return !earliest || start < earliest ? start : earliest;
+    }, null);
+  }, [completedSubscriptions]);
+
+  const latestExpiryDate = useMemo(() => {
+    if (completedSubscriptions.length === 0) return null;
+    return completedSubscriptions.reduce((latest, sub) => {
+      if (sub.subscription_end_date === null) return 'continuous';
+      if (latest === 'continuous') return 'continuous';
+      const end = parseUtcDate(sub.subscription_end_date);
+      if (!end || Number.isNaN(end.getTime())) return latest;
+      return !latest || end > latest ? end : latest;
+    }, null);
+  }, [completedSubscriptions]);
+
+  const totalAmountPaid = useMemo(() => {
+    return completedSubscriptions.reduce((sum, s) => {
+      const amt = Number(s.amount_paid || s.amount || (s.plan_type === 'yearly_250' ? 250 : 30));
+      return sum + (Number.isNaN(amt) ? 0 : amt);
+    }, 0);
+  }, [completedSubscriptions]);
 
   // ── Password Change Form States ────────────────────────────────────
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -474,7 +509,9 @@ export default function ProfilePage() {
 
           <div className="profile-info-list">
             <div className="profile-info-item">
-              <span className="profile-info-label">Current Plan</span>
+              <span className="profile-info-label">
+                {completedSubscriptions.length > 1 ? 'Latest Plan / Extension' : 'Current Plan'}
+              </span>
               <span className="profile-info-value">
                 <strong>
                   {currentSub?.plan_name ||
@@ -490,7 +527,9 @@ export default function ProfilePage() {
             <div className="profile-info-item">
               <span className="profile-info-label">Subscription Started</span>
               <span className="profile-info-value">
-                {currentSub?.subscription_start_date
+                {originalStartDate
+                  ? formatDate(originalStartDate)
+                  : currentSub?.subscription_start_date
                   ? formatDate(currentSub.subscription_start_date)
                   : '—'}
               </span>
@@ -499,7 +538,11 @@ export default function ProfilePage() {
             <div className="profile-info-item">
               <span className="profile-info-label">Subscription Valid Until</span>
               <span className="profile-info-value">
-                {currentSub?.subscription_end_date
+                {latestExpiryDate === 'continuous'
+                  ? 'Active (Continuous)'
+                  : latestExpiryDate
+                  ? formatDate(latestExpiryDate)
+                  : currentSub?.subscription_end_date
                   ? formatDate(currentSub.subscription_end_date)
                   : subStatus === 'active'
                   ? 'Active (Continuous)'
@@ -509,10 +552,25 @@ export default function ProfilePage() {
 
             {currentSub && (
               <div className="profile-info-item">
-                <span className="profile-info-label">Amount Paid</span>
+                <span className="profile-info-label">
+                  {completedSubscriptions.length > 1 ? 'Latest Payment' : 'Amount Paid'}
+                </span>
                 <span className="profile-info-value">
                   {currentSub.currency === 'INR' || !currentSub.currency ? '₹' : currentSub.currency + ' '}
-                  {Number(currentSub.amount_paid || currentSub.amount || 30).toFixed(2)}
+                  {Number(
+                    currentSub.amount_paid ||
+                    currentSub.amount ||
+                    (currentSub.plan_type === 'yearly_250' ? 250 : 30)
+                  ).toFixed(2)}
+                </span>
+              </div>
+            )}
+
+            {completedSubscriptions.length > 1 && (
+              <div className="profile-info-item">
+                <span className="profile-info-label">Total Paid</span>
+                <span className="profile-info-value">
+                  ₹{totalAmountPaid.toFixed(2)}
                 </span>
               </div>
             )}
