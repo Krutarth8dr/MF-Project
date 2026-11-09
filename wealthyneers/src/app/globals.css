@@ -425,6 +425,33 @@ a {
   background-color: var(--card-bg);
 }
 
+.pricing-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.pricing-header h2 {
+  font-size: 2.2rem;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.pricing-header p {
+  color: var(--secondary);
+  font-size: 1.05rem;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  max-width: 1040px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
 .pricing-card {
   max-width: 560px;
   margin: 0 auto;
@@ -434,6 +461,50 @@ a {
   border: 2px solid var(--primary);
   box-shadow: 0 10px 40px rgba(10, 77, 104, 0.1);
   background-color: var(--card-bg);
+}
+
+.pricing-grid .pricing-card {
+  max-width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  text-align: left;
+  padding: 2.5rem 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pricing-grid .pricing-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 45px rgba(10, 77, 104, 0.14);
+}
+
+.pricing-card-featured {
+  border-color: var(--accent) !important;
+  box-shadow: 0 10px 40px rgba(5, 191, 219, 0.12) !important;
+  background: linear-gradient(180deg, rgba(5, 191, 219, 0.03) 0%, var(--card-bg) 35%) !important;
+}
+
+.pricing-best-value-badge {
+  position: absolute;
+  top: -13px;
+  right: 24px;
+  background: linear-gradient(135deg, #05bfdb 0%, #088395 100%);
+  color: #061a23;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.35rem 0.95rem;
+  border-radius: 2rem;
+  box-shadow: 0 4px 14px rgba(5, 191, 219, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pricing-card-top {
+  margin-bottom: 1rem;
 }
 
 .pricing-plan-tag {
@@ -449,6 +520,42 @@ a {
   border-radius: 2rem;
 }
 
+.pricing-card-featured .pricing-plan-tag {
+  color: #088395;
+  background: rgba(8, 131, 149, 0.09);
+  border-color: rgba(8, 131, 149, 0.25);
+}
+
+.pricing-card-title {
+  margin-top: 0.85rem;
+  margin-bottom: 0.35rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.pricing-card-desc {
+  color: var(--secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  min-height: 2.8rem;
+  margin: 0;
+}
+
+.pricing-savings-callout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.22);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .price-single-wrap {
   display: flex;
   align-items: baseline;
@@ -457,10 +564,19 @@ a {
   margin: 1.5rem 0 1rem;
 }
 
+.pricing-grid .price-single-wrap {
+  justify-content: flex-start;
+  margin: 1.25rem 0 0.5rem;
+}
+
 .price-single-currency {
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--primary);
+}
+
+.pricing-card-featured .price-single-currency {
+  color: var(--accent);
 }
 
 .price-single-val {
@@ -470,10 +586,24 @@ a {
   line-height: 1;
 }
 
+.pricing-card-featured .price-single-val {
+  color: var(--accent);
+}
+
 .price-single-period {
   font-size: 1.1rem;
   color: var(--secondary);
   font-weight: 600;
+}
+
+.pricing-non-recurring-notice {
+  font-size: 0.82rem;
+  color: var(--secondary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
 }
 
 .pricing-policy-box {
@@ -509,6 +639,11 @@ a {
   gap: 0.85rem;
 }
 
+.pricing-grid .features {
+  margin: 1rem 0 2rem;
+  flex-grow: 1;
+}
+
 .features li {
   display: flex;
   align-items: flex-start;
@@ -516,6 +651,49 @@ a {
   font-size: 0.92rem;
   color: var(--foreground);
   line-height: 1.45;
+}
+
+.pricing-card-actions {
+  margin-top: auto;
+}
+
+.pricing-footer-note {
+  text-align: center;
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    max-width: 520px;
+    gap: 2.5rem;
+  }
+  .pricing-grid .pricing-card {
+    padding: 2.25rem 1.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .pricing-grid {
+    max-width: 100%;
+    gap: 2rem;
+  }
+  .pricing-grid .pricing-card {
+    padding: 1.75rem 1.25rem !important;
+  }
+  .pricing-card-title {
+    font-size: 1.4rem;
+  }
+  .price-single-val {
+    font-size: 3.2rem;
+  }
+  .pricing-card-desc {
+    min-height: auto;
+  }
 }
 
 .upi-badge {

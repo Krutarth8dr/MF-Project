@@ -6,13 +6,14 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { startRazorpayCheckout, loadRazorpaySDK } from '@/lib/razorpay';
 import { setCachedSubscription, clearSubscriptionCache } from '@/lib/subscriptionCache';
+import { parseUtcDate } from '@/lib/plans';
 
 // ─── Date Formatter Helper ───────────────────────────────────────────
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
+    const d = parseUtcDate(dateStr);
+    if (!d || isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'long',
@@ -47,6 +48,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [profileName, setProfileName] = useState('');
   const [subscriptions, setSubscriptions] = useState([]);
+  const [activeSubIds, setActiveSubIds] = useState(new Set());
   const [currentSub, setCurrentSub] = useState(null);
   const [subStatus, setSubStatus] = useState('inactive'); // 'active' | 'expired' | 'pending' | 'failed' | 'inactive'
 
@@ -58,20 +60,21 @@ export default function ProfilePage() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState(null);
   const [pwSuccess, setPwSuccess] = useState(null);
-  const [paying, setPaying] = useState(false);
+  const [payingPlan, setPayingPlan] = useState(null);
+  const paying = payingPlan !== null;
   const [checkoutError, setCheckoutError] = useState(null);
 
   // ── Handle Instant Razorpay Subscription ────────────────────────────
-  const handleProfileSubscribe = () => {
+  const handleProfileSubscribe = (planType = 'monthly_30') => {
     if (!user) return;
-    setPaying(true);
+    setPayingPlan(planType);
     setCheckoutError(null);
 
     const safetyTimer = setTimeout(() => {
-      setPaying((current) => {
+      setPayingPlan((current) => {
         if (current) {
           setCheckoutError('Checkout is taking longer than expected. Please check your connection or reload.');
-          return false;
+          return null;
         }
         return current;
       });
@@ -79,13 +82,14 @@ export default function ProfilePage() {
 
     startRazorpayCheckout({
       user,
+      planType,
       onOpen: () => {
         clearTimeout(safetyTimer);
-        setPaying(false);
+        setPayingPlan(null);
       },
       onSuccess: async () => {
         clearTimeout(safetyTimer);
-        setPaying(false);
+        setPayingPlan(null);
         // Refresh subscription records from database
         const { data: refreshedSubs } = await supabase
           .from('subscriptions')
@@ -96,26 +100,36 @@ export default function ProfilePage() {
         const subs = refreshedSubs || [];
         setSubscriptions(subs);
 
-        const active = subs.find(
+        const activeSubs = subs.filter(
           (s) =>
             s.payment_status === 'completed' &&
             (s.subscription_end_date === null ||
-              new Date(s.subscription_end_date) > new Date())
+              (parseUtcDate(s.subscription_end_date)?.getTime() || 0) > Date.now())
         );
+        setActiveSubIds(new Set(activeSubs.map((s) => s.id)));
 
-        if (active) {
-          setCurrentSub(active);
+        if (activeSubs.length > 0) {
+          const sortedByEnd = [...activeSubs].sort((a, b) => {
+            if (!a.subscription_end_date) return -1;
+            if (!b.subscription_end_date) return 1;
+            const bTime = parseUtcDate(b.subscription_end_date)?.getTime() || 0;
+            const aTime = parseUtcDate(a.subscription_end_date)?.getTime() || 0;
+            return bTime - aTime;
+          });
+          const primaryActive = sortedByEnd[0];
+          setCurrentSub(primaryActive);
           setSubStatus('active');
+          setCachedSubscription(user.id, true, primaryActive.subscription_end_date);
         }
       },
       onError: (msg) => {
         clearTimeout(safetyTimer);
         setCheckoutError(msg || 'Payment failed or was declined.');
-        setPaying(false);
+        setPayingPlan(null);
       },
       onDismiss: () => {
         clearTimeout(safetyTimer);
-        setPaying(false);
+        setPayingPlan(null);
       },
     });
   };
@@ -160,18 +174,27 @@ export default function ProfilePage() {
         if (!isMounted) return;
         setSubscriptions(subs);
 
-        // Determine Active Subscription
-        const active = subs.find(
+        // Determine Active Subscription (Select latest effective expiry)
+        const activeSubs = subs.filter(
           (s) =>
             s.payment_status === 'completed' &&
             (s.subscription_end_date === null ||
-              new Date(s.subscription_end_date) > new Date())
+              (parseUtcDate(s.subscription_end_date)?.getTime() || 0) > Date.now())
         );
+        setActiveSubIds(new Set(activeSubs.map((s) => s.id)));
 
-        if (active) {
-          setCurrentSub(active);
+        if (activeSubs.length > 0) {
+          const sortedByEnd = [...activeSubs].sort((a, b) => {
+            if (!a.subscription_end_date) return -1;
+            if (!b.subscription_end_date) return 1;
+            const bTime = parseUtcDate(b.subscription_end_date)?.getTime() || 0;
+            const aTime = parseUtcDate(a.subscription_end_date)?.getTime() || 0;
+            return bTime - aTime;
+          });
+          const primaryActive = sortedByEnd[0];
+          setCurrentSub(primaryActive);
           setSubStatus('active');
-          setCachedSubscription(authUser.id, true, active.subscription_end_date);
+          setCachedSubscription(authUser.id, true, primaryActive.subscription_end_date);
         } else if (subs.length > 0) {
           const latest = subs[0];
           setCurrentSub(latest);
@@ -181,7 +204,7 @@ export default function ProfilePage() {
           } else if (
             latest.payment_status === 'completed' &&
             latest.subscription_end_date &&
-            new Date(latest.subscription_end_date) <= new Date()
+            ((parseUtcDate(latest.subscription_end_date)?.getTime() || 0) <= Date.now())
           ) {
             setSubStatus('expired');
             setCachedSubscription(authUser.id, false);
@@ -454,11 +477,12 @@ export default function ProfilePage() {
               <span className="profile-info-label">Current Plan</span>
               <span className="profile-info-value">
                 <strong>
-                  {subStatus === 'active'
+                  {currentSub?.plan_name ||
+                  (currentSub?.plan_type === 'yearly_250'
+                    ? 'Yearly Institutional Access'
+                    : subStatus === 'active' || currentSub?.plan_type === 'monthly_30'
                     ? '30-Day Institutional Access'
-                    : currentSub?.plan_type === 'monthly_30'
-                    ? '30-Day Institutional Access'
-                    : currentSub?.plan_type || 'No active plan'}
+                    : currentSub?.plan_type || 'No active plan')}
                 </strong>
               </span>
             </div>
@@ -514,19 +538,52 @@ export default function ProfilePage() {
             )}
 
             {subStatus === 'active' ? (
-              <Link href="/dashboard" className="btn btn-outline" style={{ width: '100%' }}>
-                Access Institutional Reports →
-              </Link>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <Link href="/dashboard" className="btn btn-primary" style={{ width: '100%', textAlign: 'center', textDecoration: 'none' }}>
+                  Access Institutional Reports →
+                </Link>
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleProfileSubscribe('monthly_30')}
+                    disabled={payingPlan !== null}
+                    className="btn btn-outline"
+                    style={{ flex: 1, fontSize: '0.85rem', padding: '0.65rem 0.5rem' }}
+                  >
+                    {payingPlan === 'monthly_30' ? 'Opening…' : '+ Extend 30 Days (₹30)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleProfileSubscribe('yearly_250')}
+                    disabled={payingPlan !== null}
+                    className="btn btn-outline"
+                    style={{ flex: 1, fontSize: '0.85rem', padding: '0.65rem 0.5rem' }}
+                  >
+                    {payingPlan === 'yearly_250' ? 'Opening…' : '+ Extend 1 Year (₹250)'}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <button
-                type="button"
-                onClick={handleProfileSubscribe}
-                disabled={paying}
-                className="btn btn-primary"
-                style={{ width: '100%' }}
-              >
-                {paying ? 'Opening Checkout…' : 'Get Access Now — ₹30 for 30 days'}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => handleProfileSubscribe('yearly_250')}
+                  disabled={payingPlan !== null}
+                  className="btn btn-primary"
+                  style={{ width: '100%', fontSize: '1.05rem', padding: '0.85rem' }}
+                >
+                  {payingPlan === 'yearly_250' ? 'Opening Checkout…' : 'Get Yearly Access — ₹250 (Best Value)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleProfileSubscribe('monthly_30')}
+                  disabled={payingPlan !== null}
+                  className="btn btn-outline"
+                  style={{ width: '100%', fontSize: '0.95rem', padding: '0.75rem' }}
+                >
+                  {payingPlan === 'monthly_30' ? 'Opening Checkout…' : 'Get 30-Day Access — ₹30'}
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -696,32 +753,34 @@ export default function ProfilePage() {
                       <td>
                         <strong>
                           {sub.plan_name ||
-                            (sub.plan_type === 'monthly_30'
-                              ? 'Monthly Institutional Access'
-                              : sub.plan_type || 'Monthly')}
+                            (sub.plan_type === 'yearly_250'
+                              ? 'Yearly Institutional Access'
+                              : sub.plan_type === 'monthly_30'
+                              ? '30-Day Institutional Access'
+                              : sub.plan_type || 'Institutional Access')}
                         </strong>
                       </td>
                       <td>{formatDate(sub.subscription_start_date || sub.created_at)}</td>
                       <td>{formatDate(sub.subscription_end_date)}</td>
                       <td>
                         {sub.currency === 'INR' || !sub.currency ? '₹' : sub.currency + ' '}
-                        {Number(sub.amount_paid || sub.amount || 30).toFixed(2)}
+                        {Number(
+                          sub.amount_paid ||
+                          sub.amount ||
+                          (sub.plan_type === 'yearly_250' ? 250 : 30)
+                        ).toFixed(2)}
                       </td>
                       <td>
                         <span
                           className={`profile-badge-pill ${
-                            sub.payment_status === 'completed' &&
-                            (sub.subscription_end_date === null ||
-                              new Date(sub.subscription_end_date) > new Date())
+                            sub.payment_status === 'completed' && activeSubIds.has(sub.id)
                               ? 'badge-active'
                               : sub.payment_status === 'pending'
                               ? 'badge-pending'
                               : 'badge-expired'
                           }`}
                         >
-                          {sub.payment_status === 'completed' &&
-                          (sub.subscription_end_date === null ||
-                            new Date(sub.subscription_end_date) > new Date())
+                          {sub.payment_status === 'completed' && activeSubIds.has(sub.id)
                             ? '● Active'
                             : sub.payment_status === 'pending'
                             ? '● Pending'

@@ -71,13 +71,21 @@ export default function TermsPage() {
         <div className="legal-section">
           <h2>5. Subscription, Pricing &amp; Billing</h2>
           <p>
-            Wealthyneers offers a monthly institutional membership at ₹30 per month (or as specified during checkout).
-            Payments are processed securely via authorized third-party payment gateways (Razorpay).
+            Wealthyneers offers two non-recurring institutional access plans for research and analytics:
           </p>
           <ul>
-            <li>Subscription fees are billed in advance on a recurring monthly cycle unless cancelled.</li>
-            <li>Applicable taxes and transaction fees are calculated during checkout.</li>
-            <li>Failure to complete renewal payment will result in the suspension of subscriber-only access.</li>
+            <li><strong>30-Day Institutional Access:</strong> ₹30 for 30 calendar days of complete access.</li>
+            <li><strong>Yearly Institutional Access:</strong> ₹250 for 1 full calendar year (365 days) of complete access.</li>
+          </ul>
+          <p>
+            Both plans provide identical, unrestricted access to all six proprietary institutional research reports and interactive dashboards.
+            Payments are processed securely via authorized third-party payment gateways (Razorpay) supporting UPI, Cards, and Netbanking.
+          </p>
+          <ul>
+            <li><strong>One-Time Payments:</strong> All purchases are strictly one-time payments. Neither plan automatically renews, and no recurring billing mandates or auto-debits are created.</li>
+            <li><strong>Extension &amp; Repurchase:</strong> If you purchase an additional pass while an existing subscription is active, your new access period begins sequentially from the end of your currently paid access so you never lose paid time.</li>
+            <li><strong>Post-Expiry:</strong> When your access period ends, your account remains active and simply transitions to the free tier without automatic charges. You may repurchase access at any time.</li>
+            <li><strong>Taxes &amp; Fees:</strong> Applicable transaction charges and taxes are clearly displayed during checkout.</li>
           </ul>
         </div>
 

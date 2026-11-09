@@ -35,8 +35,10 @@ function isAuthorized(request) {
 /**
  * Generates the HTML email body for expired subscription notification.
  */
-function buildExpiredEmailHtml({ fullName, renewUrl }) {
+function buildExpiredEmailHtml({ fullName, renewUrl, planType }) {
   const displayName = fullName ? fullName.split(' ')[0] : 'Investor';
+  const isYearly = planType === 'yearly_250';
+  const planTitle = isYearly ? 'Yearly Institutional Access' : '30-Day Institutional Access';
 
   return `
 <!DOCTYPE html>
@@ -44,7 +46,7 @@ function buildExpiredEmailHtml({ fullName, renewUrl }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Wealthyneers access has expired</title>
+  <title>Your Wealthyneers ${isYearly ? 'Yearly' : '30-Day'} Access Has Expired</title>
 </head>
 <body style="margin:0;padding:0;background-color:#061A23;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#e2e8f0;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#061A23;padding:40px 15px;">
@@ -64,13 +66,13 @@ function buildExpiredEmailHtml({ fullName, renewUrl }) {
           <tr>
             <td style="padding-bottom:20px;">
               <h2 style="margin:0 0 12px 0;font-size:20px;font-weight:700;color:#ffffff;">
-                Your Access Has Expired
+                Your ${isYearly ? 'Yearly' : '30-Day'} Access Has Expired
               </h2>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
                 Hello ${displayName},
               </p>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                Your Wealthyneers Premium access has now expired.
+                Your Wealthyneers ${planTitle} has now expired.
               </p>
               <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
                 We hope you found Wealthyneers useful and that our research helped you gain better insights into institutional activity, mutual fund holdings, and market trends.
@@ -79,14 +81,14 @@ function buildExpiredEmailHtml({ fullName, renewUrl }) {
                 Your account is still active, but access to the premium research reports and interactive dashboard is currently locked.
               </p>
               <p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#cbd5e1;">
-                If you would like to continue using Wealthyneers, you can renew your access for ₹30 and get another 30 days of premium access.
+                If you would like to continue using Wealthyneers, you can renew your access starting from ₹30 for 30 days or ₹250 for a full year of institutional research access.
               </p>
             </td>
           </tr>
           <tr>
             <td align="center" style="padding-bottom:28px;">
               <a href="${renewUrl}" target="_blank" style="display:inline-block;background-color:#05BFDB;color:#061A23;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:8px;letter-spacing:0.3px;">
-                Renew for ₹30 &rarr;
+                Renew Access &rarr;
               </a>
             </td>
           </tr>
@@ -120,21 +122,23 @@ function buildExpiredEmailHtml({ fullName, renewUrl }) {
 /**
  * Generates the plain text email fallback for expired subscription notification.
  */
-function buildExpiredEmailText({ fullName, renewUrl }) {
+function buildExpiredEmailText({ fullName, renewUrl, planType }) {
   const displayName = fullName ? fullName.split(' ')[0] : 'Investor';
+  const isYearly = planType === 'yearly_250';
+  const planTitle = isYearly ? 'Yearly Institutional Access' : '30-Day Institutional Access';
 
   return `
 WEALTHYNEERS - Institutional Mutual Fund Research
 
 Hello ${displayName},
 
-Your Wealthyneers Premium access has now expired.
+Your Wealthyneers ${planTitle} has now expired.
 
 We hope you found Wealthyneers useful and that our research helped you gain better insights into institutional activity, mutual fund holdings, and market trends.
 
 Your account is still active, but access to the premium research reports and interactive dashboard is currently locked.
 
-If you would like to continue using Wealthyneers, you can renew your access for ₹30 and get another 30 days of premium access:
+If you would like to continue using Wealthyneers, you can renew your access starting from ₹30 for 30 days or ₹250 for a full year of institutional research access:
 ${renewUrl}
 
 We'd be happy to have you back.
@@ -182,7 +186,7 @@ async function handleExpiryCron(request) {
     // 2. Query Subscriptions that have ALREADY EXPIRED (subscription_end_date < NOW)
     let subQuery = supabaseAdmin
       .from('subscriptions')
-      .select('id, user_id, full_name, subscription_end_date, payment_status')
+      .select('id, user_id, full_name, plan_type, subscription_end_date, payment_status')
       .eq('payment_status', 'completed')
       .lt('subscription_end_date', now);
 
@@ -249,7 +253,24 @@ async function handleExpiryCron(request) {
           continue;
         }
 
-        // 3b. Verify user email and email confirmation status from Supabase Auth
+        // 3b. Continuous Access Check: Verify user does not have ANOTHER active subscription
+        // E.g., user renewed early with a yearly or 30-day pass that extends beyond 'now'
+        const { data: activeContSub } = await supabaseAdmin
+          .from('subscriptions')
+          .select('id')
+          .eq('user_id', sub.user_id)
+          .eq('payment_status', 'completed')
+          .gt('subscription_end_date', now)
+          .limit(1)
+          .maybeSingle();
+
+        if (activeContSub) {
+          // User still has active continuous paid access through another subscription
+          counts.skipped += 1;
+          continue;
+        }
+
+        // 3c. Verify user email and email confirmation status from Supabase Auth
         const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(sub.user_id);
 
         if (authUserError || !authUserData?.user) {
@@ -273,17 +294,22 @@ async function handleExpiryCron(request) {
         const html = buildExpiredEmailHtml({
           fullName,
           renewUrl,
+          planType: sub.plan_type,
         });
 
         const text = buildExpiredEmailText({
           fullName,
           renewUrl,
+          planType: sub.plan_type,
         });
 
         // 3c. Dispatch Email via SMTP
+        const isYearlySub = sub.plan_type === 'yearly_250';
         await sendEmail({
           to: recipientEmail,
-          subject: 'Your Wealthyneers access has expired',
+          subject: isYearlySub
+            ? 'Your Wealthyneers Yearly access has expired'
+            : 'Your Wealthyneers 30-Day access has expired',
           html,
           text,
         });

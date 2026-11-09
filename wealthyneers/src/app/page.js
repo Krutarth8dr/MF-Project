@@ -15,7 +15,8 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
+  const [payingPlan, setPayingPlan] = useState(null);
+  const paying = payingPlan !== null;
 
   useEffect(() => {
     let mounted = true;
@@ -103,21 +104,21 @@ export default function Home() {
 
   const [checkoutError, setCheckoutError] = useState(null);
 
-  const handleSubscribe = () => {
+  const handleSubscribe = (planType = 'monthly_30') => {
     if (!user) {
       router.push('/signup');
       return;
     }
 
-    setPaying(true);
+    setPayingPlan(planType);
     setCheckoutError(null);
 
     // Fallback safety timeout so button never gets stuck
     const safetyTimer = setTimeout(() => {
-      setPaying((current) => {
+      setPayingPlan((current) => {
         if (current) {
           setCheckoutError('Checkout is taking longer than expected. Please check your internet connection or reload.');
-          return false;
+          return null;
         }
         return current;
       });
@@ -125,24 +126,25 @@ export default function Home() {
 
     startRazorpayCheckout({
       user,
+      planType,
       onOpen: () => {
         clearTimeout(safetyTimer);
-        setPaying(false);
+        setPayingPlan(null);
       },
       onSuccess: () => {
         clearTimeout(safetyTimer);
         setIsSubscribed(true);
-        setPaying(false);
+        setPayingPlan(null);
         router.push('/dashboard');
       },
       onError: (msg) => {
         clearTimeout(safetyTimer);
         setCheckoutError(msg || 'Payment failed or was declined.');
-        setPaying(false);
+        setPayingPlan(null);
       },
       onDismiss: () => {
         clearTimeout(safetyTimer);
-        setPaying(false);
+        setPayingPlan(null);
       },
     });
   };
@@ -347,94 +349,205 @@ export default function Home() {
 
       <section id="pricing" className="pricing">
         <div className="container">
-          <div className="pricing-card">
-            <span className="pricing-plan-tag">
-              {isSubscribed ? '● Active Access' : '30-Day Institutional Access'}
-            </span>
-            <h2 style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>Wealthyneers 30-Day Access</h2>
-            <p style={{ color: 'var(--secondary)', fontSize: '0.95rem' }}>
+          <div className="pricing-header">
+            <span className="pricing-plan-tag">Institutional Research Access</span>
+            <h2 style={{ marginTop: '0.75rem', marginBottom: '0.5rem' }}>Simple, Transparent Pricing</h2>
+            <p>
               {isSubscribed
                 ? 'Your institutional intelligence access is currently active.'
-                : 'One simple one-time payment. Complete access to all six institutional research reports for 30 days.'}
+                : 'Choose the access pass that fits your research cadence. One-time payment with zero automatic renewals.'}
             </p>
-            
-            <div className="price-single-wrap">
-              <span className="price-single-currency">₹</span>
-              <span className="price-single-val">30</span>
-              <span className="price-single-period">for 30 days</span>
+          </div>
+
+          {checkoutError && (
+            <div
+              style={{
+                color: '#dc2626',
+                backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                border: '1px solid rgba(220, 38, 38, 0.25)',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem',
+                marginBottom: '1.75rem',
+                maxWidth: '680px',
+                margin: '0 auto 1.75rem auto',
+                textAlign: 'left',
+                lineHeight: 1.45,
+              }}
+            >
+              ⚠️ {checkoutError}
             </div>
-            
-            <ul className="features">
-              <li>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Complete access to <strong>all 6 institutional reports</strong> (Reports 1 to 6)</span>
-              </li>
-              <li>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Comprehensive monthly coverage across <strong>46 AMCs and 592 funds</strong></span>
-              </li>
+          )}
+
+          <div className="pricing-grid">
+            {/* ── Card 1: 30-Day Institutional Access ── */}
+            <div className="pricing-card">
+              <div className="pricing-card-top">
+                <span className="pricing-plan-tag">
+                  {isSubscribed ? '● Active Access' : '30-Day Pass'}
+                </span>
+                <h3 className="pricing-card-title">30-Day Access</h3>
+                <p className="pricing-card-desc">
+                  Complete access to all six institutional research reports for 30 days. Perfect for monthly rebalancing.
+                </p>
+              </div>
+
+              <div className="price-single-wrap">
+                <span className="price-single-currency">₹</span>
+                <span className="price-single-val">30</span>
+                <span className="price-single-period">for 30 days</span>
+              </div>
+
+              <div className="pricing-non-recurring-notice">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                One-time payment • No auto-renewal
+              </div>
+
+              <ul className="features">
                 <li>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Historical quantity trends, directional matrices &amp; breadth rankings</span>
+                  <span>Complete access to <strong>all 6 institutional reports</strong></span>
                 </li>
                 <li>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Interactive web dashboards with custom filters &amp; multi-AMC comparison tools</span>
+                  <span>Comprehensive coverage across <strong>46 AMCs and 592 funds</strong></span>
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Historical quantity trends &amp; directional matrices</span>
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Interactive dashboards with multi-AMC comparison tools</span>
                 </li>
               </ul>
 
-              {checkoutError && (
-                <div
-                  style={{
-                    color: '#dc2626',
-                    backgroundColor: 'rgba(220, 38, 38, 0.08)',
-                    border: '1px solid rgba(220, 38, 38, 0.25)',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    marginBottom: '1rem',
-                    textAlign: 'left',
-                    lineHeight: 1.45,
-                  }}
-                >
-                  ⚠️ {checkoutError}
-                </div>
-              )}
+              <div className="pricing-card-actions">
+                {isSubscribed ? (
+                  <Link
+                    href="/dashboard"
+                    className="btn btn-outline"
+                    style={{ width: '100%', fontSize: '1.05rem', padding: '0.85rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    Go to Dashboard →
+                  </Link>
+                ) : user ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSubscribe('monthly_30')}
+                    disabled={payingPlan !== null}
+                    className="btn btn-outline"
+                    style={{ width: '100%', fontSize: '1.05rem', padding: '0.85rem', display: 'block', textAlign: 'center', fontWeight: 700 }}
+                  >
+                    {payingPlan === 'monthly_30' ? 'Opening Checkout…' : 'Get Access Now — ₹30 for 30 days'}
+                  </button>
+                ) : (
+                  <Link
+                    href="/signup"
+                    className="btn btn-outline"
+                    style={{ width: '100%', fontSize: '1.05rem', padding: '0.85rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    Get Access Now — ₹30 for 30 days
+                  </Link>
+                )}
+              </div>
+            </div>
 
-              {isSubscribed ? (
-                <Link
-                  href="/dashboard"
-                  className="btn btn-primary"
-                  style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
-                >
-                  Go to Research Dashboard →
-                </Link>
-              ) : user ? (
-                <button
-                  type="button"
-                  onClick={handleSubscribe}
-                  disabled={paying}
-                  className="btn btn-primary"
-                  style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700 }}
-                >
-                  {paying ? 'Opening Checkout…' : 'Get Access Now — ₹30 for 30 days'}
-                </button>
-              ) : (
-                <Link
-                  href="/signup"
-                  className="btn btn-primary"
-                  style={{ width: '100%', fontSize: '1.2rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
-                >
-                  Get Access Now — ₹30 for 30 days
-                </Link>
-              )}
-              <div className="upi-badge">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                Instant Access via Razorpay (Supports all UPI Apps)
+            {/* ── Card 2: Yearly Institutional Access ── */}
+            <div className="pricing-card pricing-card-featured">
+              <span className="pricing-best-value-badge">
+                ★ Best Value
+              </span>
+
+              <div className="pricing-card-top">
+                <span className="pricing-plan-tag">
+                  {isSubscribed ? '● Active Access' : 'Yearly Pass'}
+                </span>
+                <h3 className="pricing-card-title">1-Year Access</h3>
+                <p className="pricing-card-desc">
+                  One full year of continuous institutional research and holdings updates. Our most popular plan.
+                </p>
+                <div>
+                  <span className="pricing-savings-callout">
+                    ⚡ Save approximately 31% compared with 12 separate 30-day passes
+                  </span>
+                </div>
+              </div>
+
+              <div className="price-single-wrap">
+                <span className="price-single-currency">₹</span>
+                <span className="price-single-val">250</span>
+                <span className="price-single-period">for 1 full year</span>
+              </div>
+
+              <div className="pricing-non-recurring-notice">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                One-time payment • No auto-renewal
+              </div>
+
+              <ul className="features">
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Complete access to <strong>all 6 institutional reports</strong></span>
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Comprehensive coverage across <strong>46 AMCs and 592 funds</strong></span>
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Historical quantity trends, turning points &amp; breadth rankings</span>
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>All upcoming monthly mutual fund data refreshes for 12 months</span>
+                </li>
+                <li>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#05bfdb" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span><strong>Maximum value:</strong> Only ₹250 for 365 days of intelligence</span>
+                </li>
+              </ul>
+
+              <div className="pricing-card-actions">
+                {isSubscribed ? (
+                  <Link
+                    href="/dashboard"
+                    className="btn btn-primary"
+                    style={{ width: '100%', fontSize: '1.1rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    Go to Research Dashboard →
+                  </Link>
+                ) : user ? (
+                  <button
+                    type="button"
+                    onClick={() => handleSubscribe('yearly_250')}
+                    disabled={payingPlan !== null}
+                    className="btn btn-primary"
+                    style={{ width: '100%', fontSize: '1.15rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700 }}
+                  >
+                    {payingPlan === 'yearly_250' ? 'Opening Checkout…' : 'Get Yearly Access — ₹250'}
+                  </button>
+                ) : (
+                  <Link
+                    href="/signup"
+                    className="btn btn-primary"
+                    style={{ width: '100%', fontSize: '1.15rem', padding: '0.9rem', display: 'block', textAlign: 'center', fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    Get Yearly Access — ₹250
+                  </Link>
+                )}
               </div>
             </div>
           </div>
-        </section>
+
+          <div className="pricing-footer-note">
+            <div className="upi-badge">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Instant Access via Razorpay (Supports UPI Apps, Cards &amp; Netbanking)
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { parseUtcDate } from './plans';
 
 const CACHE_KEY = 'wn_sub_status';
 
@@ -9,9 +10,12 @@ export function getCachedSubscription(userId) {
     if (!raw) return false;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed.active !== 'boolean') return false;
-    // Check if end_date has expired
-    if (parsed.endDate && new Date(parsed.endDate) <= new Date()) {
-      return false;
+    // Check if end_date has expired using UTC-safe parsing
+    if (parsed.endDate) {
+      const endD = parseUtcDate(parsed.endDate);
+      if (endD && endD.getTime() <= Date.now()) {
+        return false;
+      }
     }
     return parsed.active;
   } catch {
@@ -74,10 +78,11 @@ export async function checkUserSubscription(userId) {
         return getCachedSubscription(userId);
       }
 
+      const endD = parseUtcDate(subData?.subscription_end_date);
       const active =
         subData &&
         (subData.subscription_end_date === null ||
-          new Date(subData.subscription_end_date) > new Date());
+          (endD ? endD.getTime() > Date.now() : false));
 
       setCachedSubscription(userId, !!active, subData?.subscription_end_date);
       return !!active;

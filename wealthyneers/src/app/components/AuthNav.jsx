@@ -299,7 +299,7 @@ export default function AuthNav() {
                     onClick={(e) => handleSectionClick(e, 'pricing', pathname, () => setIsMobileOpen(false))}
                   >
                     <span className="mobile-nav-icon">💎</span>
-                    <span>Subscription Plan (₹30/mo)</span>
+                    <span>Subscription Plans (from ₹30)</span>
                   </Link>
                   <Link href="/invest" className="mobile-nav-row" onClick={() => setIsMobileOpen(false)}>
                     <span className="mobile-nav-icon">🎯</span>

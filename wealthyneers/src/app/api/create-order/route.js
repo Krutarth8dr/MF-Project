@@ -2,11 +2,8 @@ import Razorpay from 'razorpay';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getClientIp, checkRateLimit, rateLimitExceededResponse } from '@/lib/rateLimit';
-
-// Server-enforced subscription specifications (₹30.00 = 3000 paise)
-const SUBSCRIPTION_PRICE_PAISE = 3000;
-const SUBSCRIPTION_CURRENCY = 'INR';
-const SUBSCRIPTION_PLAN_TYPE = 'monthly_30';
+import { getRazorpayCredentials } from '@/lib/envHelper';
+import { PLANS, DEFAULT_PLAN_ID, getPlan } from '@/lib/plans';
 
 // Rate Limiting: 5 orders / 15 min in production, 100 in dev
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
@@ -20,8 +17,6 @@ function getSupabaseUserClient(authToken) {
     auth: { persistSession: false },
   });
 }
-
-import { getRazorpayCredentials } from '@/lib/envHelper';
 
 export async function POST(request) {
   try {
@@ -67,7 +62,34 @@ export async function POST(request) {
       );
     }
 
-    // 3. Validate Server-Side Razorpay Configuration (Fail Closed)
+    // 3. Resolve & Validate Plan (Server-Authoritative)
+    let planId = DEFAULT_PLAN_ID;
+    try {
+      const body = await request.json();
+      if (body) {
+        const requested = body.planType || body.plan_type;
+        if (requested !== undefined && requested !== null) {
+          const matchedPlan = getPlan(requested);
+          if (!matchedPlan) {
+            return NextResponse.json(
+              {
+                code: 'INVALID_PLAN_TYPE',
+                error: 'Invalid subscription plan. Allowed plans are monthly_30 and yearly_250.',
+              },
+              { status: 400 }
+            );
+          }
+          planId = matchedPlan.id;
+        }
+      }
+    } catch (_) {
+      // Empty or non-JSON body defaults safely to DEFAULT_PLAN_ID (monthly_30)
+      planId = DEFAULT_PLAN_ID;
+    }
+
+    const selectedPlan = PLANS[planId];
+
+    // 4. Validate Server-Side Razorpay Configuration (Fail Closed)
     const { keyId, keySecret } = getRazorpayCredentials();
 
     if (!keyId || !keySecret) {
@@ -78,21 +100,22 @@ export async function POST(request) {
       );
     }
 
-    // 4. Create Fixed ₹30 Razorpay Order with Authenticated User Association
+    // 5. Create Razorpay Order with Authenticated User & Plan Association
+    // Price and currency are determined 100% on the server
     const instance = new Razorpay({
       key_id: keyId,
       key_secret: keySecret,
     });
 
     const options = {
-      amount: SUBSCRIPTION_PRICE_PAISE,
-      currency: SUBSCRIPTION_CURRENCY,
+      amount: selectedPlan.amountPaise, // 3000 or 25000 paise
+      currency: selectedPlan.currency, // 'INR'
       receipt: `rcpt_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`,
       checkout_config_id: 'config_TTA4yOciDuRJ46',
       notes: {
         user_id: user.id,
         user_email: user.email || '',
-        plan_type: SUBSCRIPTION_PLAN_TYPE,
+        plan_type: selectedPlan.id,
       },
     };
 
@@ -105,6 +128,8 @@ export async function POST(request) {
       currency: order.currency,
       keyId: keyId,
       key_id: keyId,
+      planType: selectedPlan.id,
+      planName: selectedPlan.name,
     });
   } catch (error) {
     const errorDescription = error?.error?.description || error?.message || 'Failed to create payment order.';

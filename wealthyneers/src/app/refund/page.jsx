@@ -40,18 +40,20 @@ export default function RefundPage() {
         </div>
 
         <div className="legal-section">
-          <h2>3. Subscription Cancellation</h2>
-          <p>You may choose to discontinue your membership at any time:</p>
+          <h2>3. Subscription Cancellation &amp; Expiry</h2>
+          <p>Wealthyneers subscriptions are one-time, non-recurring access passes:</p>
           <ul>
             <li>
-              <strong>Active Period Retention:</strong> If you cancel or choose not to renew your monthly plan, you will retain full,
-              unrestricted access to all subscriber reports until the end of your current 30-day billing cycle.
+              <strong>Active Period Retention:</strong> When you purchase either the 30-Day Access (₹30) or Yearly Access (₹250),
+              you retain full, unrestricted access to all subscriber reports until the end of your paid access term (30 days or 1 calendar year).
             </li>
             <li>
-              <strong>No Cancellation Penalties:</strong> There are no cancellation fees, lock-in contracts, or hidden exit charges.
+              <strong>No Automatic Debits:</strong> Because all purchases are strictly one-time passes, there are no recurring payment
+              mandates, automatic renewals, or cancellation penalties.
             </li>
             <li>
-              <strong>Subsequent Cycles:</strong> Once expired, your account simply transitions to a free tier without automated renewed debits.
+              <strong>Subsequent Cycles:</strong> Once your access window concludes, your account seamlessly transitions to the free tier
+              without automated renewal debits.
             </li>
           </ul>
         </div>
@@ -62,7 +64,7 @@ export default function RefundPage() {
           <ul>
             <li>
               <strong>Duplicate / Multiple Charges:</strong> If an electronic glitch or gateway error causes your account or payment method
-              to be debited multiple times for a single monthly subscription cycle, the duplicate amount will be refunded in full.
+              to be debited multiple times for a single subscription purchase cycle (30-day or yearly), the duplicate amount will be refunded in full.
             </li>
             <li>
               <strong>Technical Non-Delivery:</strong> If a confirmed payment is debited by Razorpay but the platform fails to activate

@@ -1,5 +1,7 @@
 // ─── Razorpay Checkout Helper (UPI, Cards, Netbanking) ──────────────────
 import { supabase } from '@/lib/supabase';
+import { setCachedSubscription } from '@/lib/subscriptionCache';
+import { PLANS, DEFAULT_PLAN_ID, getPlan } from '@/lib/plans';
 
 let sdkLoadPromise = null;
 
@@ -72,11 +74,15 @@ export function loadRazorpaySDK() {
 }
 
 /**
- * Initiates Razorpay checkout for Wealthyneers 30-Day Institutional Access (₹30 for 30 days).
+ * Initiates Razorpay checkout for Wealthyneers Institutional Access.
+ * Supports both:
+ * 1. 30-Day Access (₹30) - 'monthly_30'
+ * 2. Yearly Access (₹250) - 'yearly_250'
  * Full UPI & QR Code support.
  *
  * @param {Object} params
  * @param {Object} params.user - Authenticated Supabase user object { id, email, user_metadata }
+ * @param {string} [params.planType='monthly_30'] - 'monthly_30' | 'yearly_250'
  * @param {Function} [params.onOpen] - Callback when checkout modal successfully opens
  * @param {Function} [params.onSuccess] - Callback on verified payment completion
  * @param {Function} [params.onError] - Callback on error
@@ -84,6 +90,7 @@ export function loadRazorpaySDK() {
  */
 export async function startRazorpayCheckout({
   user,
+  planType = DEFAULT_PLAN_ID,
   onOpen,
   onSuccess,
   onError,
@@ -93,6 +100,8 @@ export async function startRazorpayCheckout({
     if (onError) onError('User session not found. Please log in first.');
     return;
   }
+
+  const selectedPlan = getPlan(planType) || PLANS[DEFAULT_PLAN_ID];
 
   try {
     // 1. Eagerly start loading the SDK concurrently with server request
@@ -110,13 +119,14 @@ export async function startRazorpayCheckout({
       throw new Error('Active user session not found. Please log in again.');
     }
 
-    // 3. Create server-side order with JWT authorization
+    // 3. Create server-side order with JWT authorization and selected plan
     const orderRes = await fetch('/api/create-order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
+      body: JSON.stringify({ planType: selectedPlan.id }),
     });
 
     const orderData = await orderRes.json();
@@ -146,10 +156,13 @@ export async function startRazorpayCheckout({
       key: keyId,
       order_id: orderId,
       checkout_config_id: 'config_TTA4yOciDuRJ46',
-      amount: orderData.amount || 3000,
-      currency: orderData.currency || 'INR',
+      amount: orderData.amount || selectedPlan.amountPaise,
+      currency: orderData.currency || selectedPlan.currency || 'INR',
       name: 'Wealthyneers',
-      description: 'Wealthyneers 30-Day Access — ₹30',
+      description:
+        selectedPlan.id === 'yearly_250'
+          ? 'Wealthyneers Yearly Access — ₹250'
+          : 'Wealthyneers 30-Day Access — ₹30',
       image: '/wealthyneers-logo.png',
       prefill: {
         email: user.email || '',
@@ -163,23 +176,58 @@ export async function startRazorpayCheckout({
           const { data: { session: freshSession } } = await supabase.auth.getSession();
           const activeToken = freshSession?.access_token || token;
 
-          const verifyRes = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${activeToken}`,
-            },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id || orderId,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
+          let verifyData = null;
+          let lastError = null;
+          const maxRetries = 2;
 
-          const verifyData = await verifyRes.json();
-          if (!verifyRes.ok || !verifyData.success) {
-            throw new Error(verifyData.error || 'Payment verification failed.');
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              if (attempt > 0) {
+                // Wait 1.5s before retry in case of transient database recovery
+                await new Promise((res) => setTimeout(res, 1500));
+              }
+
+              const verifyRes = await fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${activeToken}`,
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id || orderId,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              });
+
+              verifyData = await verifyRes.json();
+
+              if (verifyRes.ok && verifyData.success) {
+                break; // Verified and provisioned successfully
+              }
+
+              // If non-recoverable error (e.g. invalid signature, bad parameters), don't retry
+              if (!verifyData?.recoverable && verifyRes.status !== 503) {
+                throw new Error(verifyData?.error || 'Payment verification failed.');
+              }
+
+              lastError = new Error(verifyData?.error || 'Temporary system issue during activation.');
+            } catch (fetchErr) {
+              lastError = fetchErr;
+              if (attempt === maxRetries) throw fetchErr;
+            }
           }
+
+          if (!verifyData || !verifyData.success) {
+            throw lastError || new Error('Payment verification could not be completed.');
+          }
+
+          // Immediately prime the client-side subscription cache for 0ms transitions
+          setCachedSubscription(
+            user.id,
+            true,
+            verifyData.subscription?.subscription_end_date
+          );
 
           if (onSuccess) {
             onSuccess(verifyData.subscription);
